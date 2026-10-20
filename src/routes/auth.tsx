@@ -7,6 +7,7 @@ import "../performance.css";
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
     redirect: typeof search["redirect"] === "string" ? search["redirect"] : undefined,
+    mode: search["mode"] === "reset" ? "reset" : undefined,
   }),
   head: () => ({
     meta: [
@@ -31,10 +32,10 @@ function Brand() {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { redirect: redirectTo } = Route.useSearch();
+  const { redirect: redirectTo, mode: searchMode } = Route.useSearch();
   const destination = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
 
-  const [mode, setMode] = useState<"signin" | "signup" | "check-email">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "check-email" | "forgot" | "reset" | "sent-reset">(searchMode === "reset" ? "reset" : "signin");
   const [fullName, setFullName] = useState("");
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
@@ -44,9 +45,45 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: destination, replace: true });
+      if (data.session && searchMode !== "reset") navigate({ to: destination, replace: true });
     });
   }, [navigate, destination]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setMode("reset");
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleForgotPassword(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin + "/auth?mode=reset",
+    });
+    setBusy(false);
+    if (resetError) {
+      setError("Não foi possível solicitar a recuperação. Aguarde um pouco e tente novamente.");
+      return;
+    }
+    setMode("sent-reset");
+  }
+
+  async function handleNewPassword(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const { error: updateError } = await supabase.auth.updateUser({ password });
+    setBusy(false);
+    if (updateError) {
+      setError("O link pode estar inválido ou expirado. Solicite uma nova recuperação de senha.");
+      return;
+    }
+    setPassword("");
+    navigate({ to: "/dashboard", replace: true });
+  }
 
   async function handleSignIn(e: FormEvent) {
     e.preventDefault();
@@ -108,7 +145,39 @@ function AuthPage() {
       </div>
       <div className="loginArea">
         <div className="loginCard">
-          {mode === "check-email" ? (
+          {mode === "forgot" || mode === "sent-reset" ? (
+            <>
+              <span className="eyebrow">RECUPERAÇÃO DE ACESSO</span>
+              <h2>{mode === "forgot" ? "Esqueceu sua senha?" : "Confira seu e-mail"}</h2>
+              <p>{mode === "forgot"
+                ? "Informe o e-mail da sua conta para receber um link de redefinição."
+                : "Se existir uma conta cadastrada para este e-mail, enviaremos as instruções para redefinir sua senha."}</p>
+              {mode === "forgot" && (
+                <form onSubmit={handleForgotPassword}>
+                  <label>E-mail
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="voce@empresa.com.br" />
+                  </label>
+                  {error && <div className="demoNote authError">{error}</div>}
+                  <button className="primary full" type="submit" disabled={busy}>{busy ? "Enviando…" : "Enviar link de recuperação"}</button>
+                </form>
+              )}
+              <button className="secondary full" type="button" onClick={() => { setMode("signin"); setError(null); }}>Voltar para o login</button>
+            </>
+          ) : mode === "reset" ? (
+            <>
+              <span className="eyebrow">RECUPERAÇÃO DE ACESSO</span>
+              <h2>Defina uma nova senha</h2>
+              <p>Digite sua nova senha após abrir o link de recuperação recebido por e-mail.</p>
+              <form onSubmit={handleNewPassword}>
+                <label>Nova senha
+                  <input type="password" minLength={8} value={password} onChange={e => setPassword(e.target.value)} required placeholder="Mínimo de 8 caracteres" />
+                </label>
+                {error && <div className="demoNote authError">{error}</div>}
+                <button className="primary full" type="submit" disabled={busy}>{busy ? "Salvando…" : "Atualizar senha"}</button>
+              </form>
+              <button className="secondary full" type="button" onClick={() => {setMode("forgot"); setError(null);}}>Solicitar outro link</button>
+            </>
+          ) : mode === "check-email" ? (
             <>
               <span className="eyebrow">QUASE LÁ</span>
               <h2>Confirme seu e-mail</h2>
@@ -181,6 +250,7 @@ function AuthPage() {
                   {busy ? "Aguarde…" : mode === "signin" ? "Entrar" : "Criar conta"} <ArrowUpRight size={17} />
                 </button>
               </form>
+              {mode === "signin" && <button className="secondary full" type="button" onClick={() => { setMode("forgot"); setError(null); }}>Esqueci minha senha</button>}
               <button
                 className="secondary full"
                 onClick={() => {
