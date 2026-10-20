@@ -10,33 +10,65 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiIntegrationsProviderCallbackRouteImport } from './routes/api/integrations.$provider.callback'
+import { Route as ApiIntegrationsProviderStartRouteImport } from './routes/api/integrations.$provider.start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIntegrationsProviderCallbackRoute =
+  ApiIntegrationsProviderCallbackRouteImport.update({
+    id: '/api/integrations/$provider/callback',
+    path: '/api/integrations/$provider/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsProviderStartRoute =
+  ApiIntegrationsProviderStartRouteImport.update({
+    id: '/api/integrations/$provider/start',
+    path: '/api/integrations/$provider/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
+  '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
+  '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
+  '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/api/integrations/$provider/callback'
+    | '/api/integrations/$provider/start'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/api/integrations/$provider/callback'
+    | '/api/integrations/$provider/start'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/integrations/$provider/callback'
+    | '/api/integrations/$provider/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiIntegrationsProviderCallbackRoute: typeof ApiIntegrationsProviderCallbackRoute
+  ApiIntegrationsProviderStartRoute: typeof ApiIntegrationsProviderStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +80,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/$provider/callback': {
+      id: '/api/integrations/$provider/callback'
+      path: '/api/integrations/$provider/callback'
+      fullPath: '/api/integrations/$provider/callback'
+      preLoaderRoute: typeof ApiIntegrationsProviderCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/$provider/start': {
+      id: '/api/integrations/$provider/start'
+      path: '/api/integrations/$provider/start'
+      fullPath: '/api/integrations/$provider/start'
+      preLoaderRoute: typeof ApiIntegrationsProviderStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiIntegrationsProviderCallbackRoute: ApiIntegrationsProviderCallbackRoute,
+  ApiIntegrationsProviderStartRoute: ApiIntegrationsProviderStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
