@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { constantTimeEqual, exchangeCode, stateHash, type Provider } from "../../../lib/ads-oauth.server";
-import { isAuthenticatedAgencyAdmin, NOT_READY } from "../../../lib/integration-security.server";
+import { constantTimeEqual, exchangeCode, stateHash, type Provider } from "../../lib/ads-oauth.server";
+import { isAuthenticatedAgencyAdmin, NOT_READY } from "../../lib/integration-security.server";
 
 export const Route = createFileRoute("/api/integrations/$provider/callback")({
   server:{handlers:{GET:async ({request,params})=>{
