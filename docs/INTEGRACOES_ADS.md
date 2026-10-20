@@ -10,7 +10,7 @@ Esses IDs são públicos/identificadores, não credenciais de acesso.
 
 ## Google Ads
 1. No Google Cloud, configurar projeto, tela de consentimento e cliente OAuth de tipo Web.
-2. Cadastrar o endereço HTTPS `https://SEU-DOMINIO/api/integrations/google/callback` como URI de redirecionamento autorizado.
+2. Cadastrar o endereço HTTPS `https://ola-create-something.lovable.app/api/integrations/google/callback` como URI de redirecionamento autorizado.
 3. Configurar no backend `APP_ORIGIN`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_ADS_DEVELOPER_TOKEN`. Não enviar tokens ao repositório.
 4. Obter o Developer Token na central de API da MCC e confirmar nível de acesso para dados de produção.
 5. Após habilitar autenticação administrativa real, iniciar com `/api/integrations/google/start`, confirmar acesso da conta autorizadora à MCC e solicitar consentimento para `https://www.googleapis.com/auth/adwords`.
@@ -19,7 +19,7 @@ Esses IDs são públicos/identificadores, não credenciais de acesso.
 
 ## Meta Ads
 1. Criar aplicativo empresarial no Meta for Developers, configurar Facebook Login for Business e produto Marketing API.
-2. Cadastrar URI HTTPS `https://SEU-DOMINIO/api/integrations/meta/callback` e configurar `META_APP_ID` e `META_APP_SECRET` no servidor.
+2. Cadastrar URI HTTPS `https://ola-create-something.lovable.app/api/integrations/meta/callback` e configurar `META_APP_ID` e `META_APP_SECRET` no servidor.
 3. Solicitar permissões de leitura `ads_read` e `business_management` com os níveis de acesso/revisão exigidos para as contas gerenciadas.
 4. Após autenticação de admin, iniciar `/api/integrations/meta/start`. Trocar o código no servidor, gerenciar duração/renovação de token com segurança e listar contas da BM (incluindo contas próprias e de clientes, conforme as permissões e endpoints efetivos).
 5. Implementar paginação, armazenar metadados de contas autorizadas e permitir vínculo manual com clientes SCASE.
@@ -38,3 +38,10 @@ Referências oficiais:
 - https://developers.google.com/google-ads/api/rest/auth
 - https://developers.google.com/google-ads/api/docs/oauth/access-model
 - https://developers.facebook.com/docs/marketing-apis/
+
+## URLs cadastráveis no domínio publicado
+- Origem JavaScript autorizada (Google Cloud): `https://ola-create-something.lovable.app`
+- Google redirect URI: `https://ola-create-something.lovable.app/api/integrations/google/callback`
+- Meta redirect URI: `https://ola-create-something.lovable.app/api/integrations/meta/callback`
+
+**Importante:** o domínio está configurado nos exemplos e documentação, não foi possível verificar o deploy ou cadastrar URLs nos consoles externos. O OAuth permanece bloqueado no backend; o ambiente deve receber APP_ORIGIN e segredos privadamente.
