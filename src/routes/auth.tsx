@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowUpRight, MailCheck, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, MailCheck, ShieldCheck, BarChart3, Target, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import "../performance.css";
 
@@ -140,6 +140,16 @@ function AuthPage() {
             <em>Resultados reais.</em>
           </h1>
           <p>Google Ads, Meta Ads e inteligência estratégica no mesmo lugar.</p>
+          <div className="loginBenefits" aria-label="Benefícios da plataforma">
+            <div><span><BarChart3 size={23} /></span><strong>Mais<br/>desempenho</strong></div>
+            <div><span><Target size={23} /></span><strong>Decisões<br/>mais rápidas</strong></div>
+            <div><span><TrendingUp size={23} /></span><strong>Crescimento<br/>sustentável</strong></div>
+          </div>
+          <div className="loginDashboardArt" aria-hidden="true">
+            <div className="loginDashboardHeading"><span>VISÃO DE PERFORMANCE</span><span>● EM ALTA</span></div>
+            <div className="loginSparkBars">{[28,41,34,49,44,61,57,73,67,86,79,100].map((h,i)=><i key={i} style={{height: h + "%"}} />)}</div>
+            <div className="loginDashboardFooter"><span>Desempenho das campanhas</span><strong>↗ +24,8%</strong></div>
+          </div>
         </div>
         <small>© 2026 SCASE • Plataforma de performance</small>
       </div>
