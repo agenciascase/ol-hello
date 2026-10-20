@@ -15,3 +15,49 @@
 .perf .topbar{box-shadow:0 1px 6px rgba(19,39,26,.025)}
 .perf .kpi:first-child{border-top:3px solid #00ff71;padding-top:16px}
 @media(max-width:780px){.perf .sideBrand{display:flex;align-items:center;gap:6px}.perf .sideBrand .brand{flex:1}.perf .loginAside>.brand{width:215px}}
+
+
+/* SCASE 2026 visual refresh: transparent branding on every application surface */
+.perf .brand{background:transparent;border:0;box-shadow:none;padding:0;min-height:0}
+.perf .brandOfficial{width:100%;height:auto;max-height:70px;object-fit:contain}
+.perf .loginAside>.brand{width:min(370px,100%);padding:0;min-height:0}
+.perf .sideBrand>.brand{background:transparent;padding:0}
+.perf .loginAside .brandOfficial,.perf .side .brandOfficial{filter:brightness(0) invert(1)}
+.perf .loginAside .brandOfficial,.perf .side .brandOfficial{filter:none}
+/* Logo SVG is transparent. On dark backgrounds its original black glyphs become white;
+   the green path is kept by rendering a white CSS mask copy behind the original colored mark. */
+.perf .loginAside .brand,.perf .sideBrand .brand{position:relative}
+.perf .loginAside .brand:before,.perf .sideBrand .brand:before{content:"";position:absolute;inset:0;background:#fff;mask:url('/scase-logo.svg') center/contain no-repeat;-webkit-mask:url('/scase-logo.svg') center/contain no-repeat;opacity:1}
+.perf .loginAside .brandOfficial,.perf .sideBrand .brandOfficial{position:relative;filter:none;mix-blend-mode:screen}
+.perf.login{grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);background:#f7f9f9;font-family:"Manrope",system-ui,sans-serif}
+.perf .loginAside{background:radial-gradient(ellipse at 0 0,rgba(0,255,120,.19),transparent 42%),radial-gradient(ellipse at 95% 90%,rgba(0,237,111,.17),transparent 45%),linear-gradient(135deg,#061b15,#05130f 66%,#00271b);padding:clamp(32px,5vw,88px);gap:55px}
+.perf .loginAside:after{width:540px;height:540px;bottom:-350px;right:-180px;background:#00ff71;filter:blur(120px);opacity:.22}
+.perf .loginAside h1{font-size:clamp(48px,5.2vw,78px);line-height:1.06;letter-spacing:-.06em;margin:25px 0 24px;font-weight:900;max-width:650px}
+.perf .loginAside h1 em{color:#00ee70}
+.perf .loginTag{font-size:12px;letter-spacing:3.4px;color:#00ed7e}
+.perf .loginAside p{font-size:clamp(16px,1.4vw,20px);color:#bdccc6;max-width:480px;line-height:1.65}
+.perf .loginAside small{color:#8aa99b;font-size:12px}
+.perf .loginArea{background:radial-gradient(ellipse at 100% 0%,#d0fae5,transparent 46%),#f5f7f8;padding:clamp(24px,5vw,75px)}
+.perf .loginCard{width:min(530px,100%);border-radius:26px;padding:clamp(28px,4.4vw,58px);border:1px solid #ecf0ef;box-shadow:0 24px 85px rgba(13,53,33,.08)}
+.perf .loginCard h2{font-size:clamp(29px,2.7vw,39px);line-height:1.12;letter-spacing:-1.5px;margin:12px 0 13px;font-weight:850;color:#0d1720}
+.perf .loginCard>p{color:#697787;font-size:15px;line-height:1.65;margin-bottom:32px}
+.perf .loginCard label{font-size:13px;color:#182530;font-weight:800;margin-bottom:22px}
+.perf .loginCard input{margin-top:11px;padding:16px 17px;border:1px solid #dae1e6;border-radius:12px;background:#fcfdfd;font-size:14px;transition:box-shadow .2s,border-color .2s}
+.perf .loginCard input:focus{border-color:#00bf69;box-shadow:0 0 0 4px rgba(0,215,108,.12)}
+.perf .loginCard .primary.full{min-height:56px;border-radius:12px;background:linear-gradient(135deg,#00dc70,#00b965);border:0;color:#fff;font-size:15px;box-shadow:0 12px 25px rgba(0,180,94,.14)}
+.perf .loginCard .primary.full:hover{background:linear-gradient(135deg,#00cb6b,#009f59)}
+.perf .loginCard .secondary.full{min-height:51px;border-radius:12px;margin-top:12px;background:#fff;color:#263846}
+.perf .loginCard .demoNote{font-size:12px;line-height:1.65;color:#83909c;margin-top:25px}
+.perf .loginCard .demoNote svg{flex:none;color:#00b46a}
+.perf .loginBenefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:30px;max-width:495px}
+.perf .loginBenefits>div{display:grid;gap:11px;color:#e6fff0;font-size:13px;line-height:1.35}
+.perf .loginBenefits span{height:49px;width:49px;display:grid;place-items:center;border:1px solid #0f8b57;border-radius:13px;color:#00e87e;background:rgba(0,189,90,.07)}
+.perf .loginBenefits strong{font-weight:650}
+.perf .loginDashboardArt{position:relative;max-width:500px;height:170px;margin-top:32px;border:1px solid rgba(0,255,136,.2);border-radius:20px;padding:20px 24px;background:linear-gradient(145deg,rgba(6,68,44,.8),rgba(0,19,15,.7));box-shadow:0 24px 55px rgba(0,0,0,.2);transform:rotate(-3deg);overflow:hidden}
+.perf .loginDashboardHeading,.perf .loginDashboardFooter{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;letter-spacing:1px;color:#8cd7ac;font-weight:800}
+.perf .loginSparkBars{height:78px;display:flex;align-items:end;gap:8px;margin-top:12px;border-bottom:1px solid rgba(0,255,136,.3)}
+.perf .loginSparkBars i{flex:1;display:block;border-radius:4px 4px 0 0;background:linear-gradient(0deg,rgba(0,254,116,.22),#05ed82)}
+.perf .loginDashboardFooter{letter-spacing:0;margin-top:9px;font-weight:600}
+.perf .loginDashboardFooter strong{color:#00fa8a;font-size:13px}
+@media(max-width:900px){.perf.login{grid-template-columns:1fr}.perf .loginAside{padding:30px 26px;gap:32px;min-height:0}.perf .loginAside h1{font-size:clamp(37px,7vw,56px);letter-spacing:-2px}.perf .loginAside>.brand{width:250px}.perf .loginDashboardArt{display:none}.perf .loginBenefits{margin-top:22px}.perf .loginArea{padding:26px 17px 45px}.perf .loginCard{padding:30px 25px}}
+@media(max-width:480px){.perf .loginAside h1{font-size:40px}.perf .loginTag{font-size:10px;letter-spacing:2px}.perf .loginBenefits{gap:9px}.perf .loginBenefits>div{font-size:11px}.perf .loginBenefits span{width:42px;height:42px}.perf .loginCard h2{font-size:29px}}
