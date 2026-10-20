@@ -104,7 +104,7 @@ function Performance(){
   await queryClient.cancelQueries();
   queryClient.clear();
   await supabase.auth.signOut();
-  navigate({ to: "/auth", replace: true });
+  navigate({ to: "/auth", search: { redirect: undefined }, replace: true });
  }
  if(isLoading||!account)return <div className="flex min-h-screen items-center justify-center bg-background"><p className="text-sm text-muted-foreground">Carregando sua conta…</p></div>;
  const isAdmin=account.isAdmin&&!viewAsClient;
