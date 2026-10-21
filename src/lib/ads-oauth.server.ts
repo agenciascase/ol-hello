@@ -55,11 +55,17 @@ export async function exchangeCode(provider: Provider, code: string) {
   if(!res.ok) throw new Error(`${provider} OAuth exchange failed (${res.status})`);
   return await res.json() as {access_token:string;refresh_token?:string;expires_in?:number};
 }
+export async function refreshGoogleToken(refreshToken:string){
+ const c=config("google");
+ const data=new URLSearchParams({client_id:c.clientId,client_secret:c.clientSecret,refresh_token:refreshToken,grant_type:"refresh_token"});
+ const res=await fetch(c.tokenUrl,{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:data,cache:"no-store"});
+ if(!res.ok)throw new Error("Google refresh failed: "+res.status);
+ return res.json() as Promise<{access_token:string;expires_in?:number}>;
+}
 export async function googleAccounts(accessToken:string){
-  const devToken=required("GOOGLE_ADS_DEVELOPER_TOKEN");
   const api=process.env["GOOGLE_ADS_API_VERSION"]||"v26";
   const response=await fetch(`https://googleads.googleapis.com/${api}/customers/${MCC_CUSTOMER_ID}/googleAds:searchStream`,{
-    method:"POST",headers:{authorization:`Bearer ${accessToken}`,"developer-token":devToken,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},
+    method:"POST",headers:{authorization:`Bearer ${accessToken}`,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},
     body:JSON.stringify({query:"SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.level FROM customer_client WHERE customer_client.level <= 2"}),
     cache:"no-store"
   });
