@@ -483,3 +483,26 @@
 .perf.themeDark .biNarrativeText p{color:#d4efde}
 .perf.themeDark .biNarrativeHeading p,.perf.themeDark .biNarrativeNote{color:#a9cbb6}
 @media print{.perf .biNarrative{break-inside:avoid;background:#fff!important;padding:12px!important}.perf .biNarrativeText p{font-size:10px!important;line-height:1.55!important}.perf .biNarrativeNote{font-size:9px!important}}
+
+
+.perf .classicPdfActions{display:flex;justify-content:flex-end;margin:0 0 14px}
+.perf .biShareBox{display:grid;gap:8px;justify-items:end}
+.perf .biShareBox .biExport:disabled{opacity:.45;cursor:not-allowed}
+.perf .biShareBox small{color:#ba3941;font-size:11px}
+.perf .biShareLink{display:flex;align-items:center;gap:5px;max-width:440px;width:100%}
+.perf .biShareLink input{min-width:0;flex:1;border:1px solid #c8e4d0;border-radius:8px;padding:10px;background:#fff;font-size:11px}
+.perf .biShareLink button{border:1px solid #c8e4d0;border-radius:8px;padding:9px;background:#f5fff9}
+.sharePage{min-height:100vh;background:#f3f8f4;font-family:"Open Sans",Arial,sans-serif;color:#142c1c}
+.sharePage header{background:#071e14;color:#e9fff1;padding:22px max(24px,calc((100vw - 1180px)/2));display:flex;align-items:center;gap:28px;justify-content:space-between}
+.sharePage header img{width:180px;max-height:65px;object-fit:contain}
+.sharePage header span{font-size:12px}
+.shareContent,.shareError{max-width:1150px;margin:50px auto;padding:0 26px}
+.shareContent h1{font-size:clamp(27px,4vw,42px);margin:10px 0 5px}
+.shareContent>p{color:#678572}
+.shareMetricGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-top:26px}
+.shareMetricGrid article{background:#fff;border:1px solid #d9ebde;border-radius:15px;padding:23px;display:grid;gap:12px}
+.shareMetricGrid span{color:#758c7a;font-size:13px}
+.shareMetricGrid strong{font-size:clamp(23px,2vw,31px)}
+.shareDemo{background:#fff6e5;color:#826124;padding:12px 16px;border-radius:9px;margin-top:18px}
+.shareFooter{margin-top:30px;line-height:1.8;font-size:12px}
+@media(max-width:620px){.shareMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.sharePage header{flex-wrap:wrap}.perf .biShareBox{justify-items:stretch}}
