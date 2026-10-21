@@ -9,7 +9,7 @@ export async function downloadCampaignPdf(report:ReportInput) {
   ctx.fillStyle="#142e21";ctx.font="bold 39px Arial";ctx.fillText("Visão de campanha",75,300);
   ctx.font="22px Arial";ctx.fillStyle="#546c5d";
   const lines=[["Cliente",report.client],["Campanha",report.campaign],["Período",report.period]];
-  lines.forEach(([label,value],i)=>{ctx.fillStyle="#778b7e";ctx.font="18px Arial";ctx.fillText(label,75,356+i*66);ctx.fillStyle="#193b26";ctx.font="bold 23px Arial";ctx.fillText(value.slice(0,70),230,356+i*66)});
+  lines.forEach(([label,value],i)=>{ctx.fillStyle="#778b7e";ctx.font="18px Arial";ctx.fillText(label ?? "",75,356+i*66);ctx.fillStyle="#193b26";ctx.font="bold 23px Arial";ctx.fillText((value ?? "").slice(0,70),230,356+i*66)});
   ctx.fillStyle="#087a48";ctx.font="bold 26px Arial";ctx.fillText("Indicadores do período",75,590);
   report.metrics.slice(0,16).forEach((m,i)=>{const x=75+(i%2)*550,y=625+Math.floor(i/2)*105;ctx.fillStyle="#f4faf6";ctx.fillRect(x,y,520,89);ctx.strokeStyle="#d7e9de";ctx.strokeRect(x,y,520,89);ctx.fillStyle="#65806c";ctx.font="17px Arial";ctx.fillText(m.label,x+20,y+31);ctx.fillStyle="#102f1d";ctx.font="bold 28px Arial";ctx.fillText(m.value,x+20,y+67)});
   ctx.fillStyle="#647c6b";ctx.font="17px Arial";ctx.fillText("SCASE Performance • Relatório gerado em "+new Date().toLocaleString("pt-BR"),75,1580);
@@ -97,7 +97,7 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string){
  const ids=images.map((_,i)=>3+i*3);
  object(2,"<< /Type /Pages /Kids ["+ids.map(id=>id+" 0 R").join(" ")+"] /Count "+count+" >>");
  images.forEach((img,i)=>{
-  const pageId=ids[i],imageId=pageId+1,streamId=pageId+2;
+  const pageId=ids[i]! ,imageId=pageId+1,streamId=pageId+2;
   const height=Math.min(sliceHeight,canvas.height-i*sliceHeight),printedHeight=height/canvas.width*contentWidth;
   const stream="q\n"+contentWidth+" 0 0 "+printedHeight+" "+margin+" "+(pageHeight-margin-printedHeight)+" cm\n/Im1 Do\nQ\n";
   object(pageId,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pageWidth+" "+pageHeight+"] /Resources << /XObject << /Im1 "+imageId+" 0 R >> >> /Contents "+streamId+" 0 R >>");
