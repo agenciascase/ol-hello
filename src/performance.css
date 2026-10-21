@@ -159,3 +159,4 @@
 .perf.login .loginDonutCard b{height:4px;border-radius:3px;background:#00e47c}
 .perf.login .loginDonutCard b:nth-child(2){width:70%;opacity:.7}
 .perf.login .loginDonutCard b:nth-child(3){width:45%;opacity:.5}
+@media (min-width:1001px){.perf.login .loginDashboardArt{margin-top:clamp(40px,7vh,80px);transform:perspective(900px) rotateY(-12deg) rotateX(6deg) rotate(-4deg);transform-origin:center}}
