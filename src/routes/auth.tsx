@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowUpRight, MailCheck, ShieldCheck, BarChart3, Target, TrendingUp, Mail, LockKeyhole, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, MailCheck, ShieldCheck, BarChart3, Target, TrendingUp, Mail, LockKeyhole, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import "../performance.css";
 
@@ -149,7 +149,7 @@ function AuthPage() {
           <div className="loginDashboardArt" aria-hidden="true">
             <div className="loginDashboardHeading"><span>VISÃO DE PERFORMANCE</span><span>● EM ALTA</span></div>
             <div className="loginGraph"><div className="loginSparkBars">{[28,41,34,49,44,61,57,73,67,86,79,100].map((h,i)=><i key={i} style={{height: h + "%"}} />)}</div><svg className="loginTrend" viewBox="0 0 460 132" preserveAspectRatio="none"><polyline points="0,122 40,108 79,112 110,71 141,80 180,62 218,69 259,44 290,38 320,51 353,21 400,16 460,0" /></svg><div className="loginGraphStats"><span>Conversões <b>+12,5%</b></span><span>Investimento <b>-8,3%</b></span><span>Receita <b>+32,1%</b></span></div></div>
-            <div className="loginDashboardFooter"><span>Desempenho das campanhas</span><strong>↗ +24,8%</strong></div>
+            <div className="loginDonutCard"><i className="loginDonut" /><span><b /><b /><b /></span></div>
           </div>
         </div>
         <small>© 2026 SCASE • Plataforma de performance</small>
@@ -205,12 +205,11 @@ function AuthPage() {
             </>
           ) : (
             <>
-              <span className="eyebrow">BEM-VINDO À PLATAFORMA</span>
-              <h2>{mode === "signin" ? "Acesse sua conta" : "Crie sua conta"}</h2>
-              <p>
+              <h2 className="loginTitle">{mode === "signin" ? "Acesse sua conta" : "Crie sua conta"}</h2>
+              <p className="loginSubtitle">
                 {mode === "signin"
-                  ? "Entre para acompanhar o desempenho das campanhas."
-                  : "Cadastre-se para acompanhar o desempenho das campanhas."}
+                  ? "Entre na sua plataforma e acompanhe o desempenho das suas campanhas."
+                  : "Cadastre-se para acompanhar o desempenho das suas campanhas."}
               </p>
               <form onSubmit={mode === "signin" ? handleSignIn : handleSignUp}>
                 {mode === "signup" && (
@@ -250,7 +249,7 @@ function AuthPage() {
                 {mode === "signin" && <button className="forgotLink" type="button" onClick={() => { setMode("forgot"); setError(null); }}>Esqueceu sua senha?</button>}
                 {error && <div className="demoNote authError">{error}</div>}
                 <button className="primary full" type="submit" disabled={busy}>
-                  {busy ? "Aguarde…" : mode === "signin" ? "Entrar" : "Criar conta"} <ArrowUpRight size={17} />
+                  {busy ? "Aguarde…" : mode === "signin" ? "Entrar" : "Criar conta"} <ArrowRight size={19} />
                 </button>
               </form>
               <div className="loginDivider">ou</div>

@@ -139,3 +139,24 @@
   .perf.login .loginAside h1{font-size:clamp(35px,5vh,52px)}
   .perf.login .loginAside{padding-top:20px;padding-bottom:20px}
 }
+
+/* Reference fidelity pass — Oct 2026 */
+.perf.login .loginCard .loginTitle{text-align:center;font-weight:900;margin-top:0}
+.perf.login .loginCard .loginSubtitle{text-align:center;max-width:380px;margin-left:auto;margin-right:auto}
+.perf.login .loginCard .primary.full{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800}
+.perf.login .loginCard .demoNote{background:transparent;border:0;align-items:flex-start;gap:12px;padding:0 6px}
+.perf.login .loginCard .demoNote svg{width:22px;height:22px}
+.perf.login .loginArea{background:radial-gradient(ellipse at 90% 0%,#c9ffe0,transparent 45%),radial-gradient(ellipse at 100% 100%,#d5ffe6,transparent 40%),#f4f7f8}
+.perf.login .loginAside{position:relative;overflow:hidden}
+.perf.login .loginAside:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 120% 40%,transparent 48%,rgba(0,255,130,.18) 48.3%,transparent 48.8%),radial-gradient(circle at -40% 60%,transparent 55%,rgba(0,255,130,.12) 55.3%,transparent 55.8%)}
+.perf.login .loginAside>*{position:relative;z-index:1}
+.perf.login .loginDashboardArt{display:flex;gap:14px;transform:perspective(900px) rotateY(-14deg) rotateX(8deg) rotate(-6deg);transform-origin:left bottom}
+.perf.login .loginDashboardHeading{display:none}
+.perf.login .loginGraph{flex:1;margin-top:0;height:100%}
+.perf.login .loginDonutCard{width:26%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid rgba(0,255,136,.18);border-radius:12px;background:rgba(0,30,22,.7)}
+.perf.login .loginDonut{width:56%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#00140f 40%,transparent 41%),conic-gradient(#00ff8c 0 62%,#00a75b 62% 84%,#0b4a33 84%);box-shadow:0 0 18px rgba(0,255,130,.4)}
+.perf.login .loginDonutCard span{display:grid;gap:5px;width:60%}
+.perf.login .loginDonutCard b{height:4px;border-radius:3px;background:#00e47c}
+.perf.login .loginDonutCard b:nth-child(2){width:70%;opacity:.7}
+.perf.login .loginDonutCard b:nth-child(3){width:45%;opacity:.5}
+@media (min-width:1001px){.perf.login .loginDashboardArt{margin-top:clamp(48px,8vh,90px)!important;transform:perspective(1000px) rotateY(-10deg) rotateX(5deg) rotate(-3deg)!important;transform-origin:center!important}}
