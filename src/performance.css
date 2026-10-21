@@ -103,3 +103,39 @@
 .perf.login .loginCard .demoNote{font-size:13px;color:#7e8ba3}
 @media(max-width:1000px){.perf.login{grid-template-columns:1fr}.perf.login .loginAside{padding:38px 28px}.perf.login .loginAside h1{font-size:clamp(42px,8vw,65px)}.perf.login .loginDashboardArt{display:none}.perf.login .loginArea{padding:30px 18px 55px}}
 @media(max-width:480px){.perf.login .loginAside h1{font-size:40px}.perf.login .loginBenefits span{width:46px;height:46px}.perf.login .loginBenefits>div{font-size:11px}.perf.login .loginCard{padding:30px 23px}.perf.login .loginCard h2{font-size:29px}}
+
+
+/* Fit the approved reference into a complete desktop viewport without cropping. */
+@media (min-width:1001px) {
+  .perf.login{height:100dvh;min-height:650px;overflow:hidden;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .perf.login .loginAside{height:100%;min-height:0;padding:clamp(22px,3vh,45px) clamp(35px,5.15vw,90px);gap:clamp(8px,1.4vh,20px);display:flex;justify-content:space-between}
+  .perf.login .loginAside>.brand{width:clamp(230px,22vw,340px);flex:none}
+  .perf.login .loginAside .brandOfficial{max-height:70px}
+  .perf.login .loginAside h1{font-size:clamp(37px,min(4.05vw,5.65vh),71px);line-height:1.045;letter-spacing:-.05em;margin:clamp(10px,1.7vh,21px) 0 clamp(10px,1.7vh,20px)}
+  .perf.login .loginTag{font-size:clamp(9px,1vh,13px);letter-spacing:2.6px}
+  .perf.login .loginAside p{font-size:clamp(13px,1.2vw,18px);line-height:1.55}
+  .perf.login .loginBenefits{margin-top:clamp(14px,2vh,26px);gap:12px}
+  .perf.login .loginBenefits span{height:clamp(36px,5.5vh,56px);width:clamp(36px,5.5vh,56px);border-radius:11px}
+  .perf.login .loginBenefits>div{font-size:clamp(10px,1vw,14px);gap:7px}
+  .perf.login .loginDashboardArt{height:clamp(100px,18vh,175px);margin-top:clamp(15px,3vh,34px);padding:clamp(11px,1.4vh,17px) 20px;transform:rotate(-5deg)}
+  .perf.login .loginGraph{height:calc(100% - 19px)}
+  .perf.login .loginSparkBars{height:100%}
+  .perf.login .loginTrend{height:90%}
+  .perf.login .loginAside small{font-size:10px}
+  .perf.login .loginArea{height:100%;min-height:0;padding:clamp(22px,4vh,45px)}
+  .perf.login .loginCard{width:min(520px,100%);max-height:calc(100dvh - 45px);overflow-y:auto;padding:clamp(24px,3.1vh,43px) clamp(28px,3vw,48px)}
+  .perf.login .loginCard h2{font-size:clamp(27px,3.2vh,37px);margin:9px 0}
+  .perf.login .loginCard>p{font-size:13px;margin-bottom:clamp(13px,2vh,25px)}
+  .perf.login .loginCard label{margin-bottom:clamp(10px,1.4vh,17px)}
+  .perf.login .loginInputWrap input{min-height:clamp(43px,5.6vh,56px);padding-top:11px;padding-bottom:11px}
+  .perf.login .forgotLink{margin-bottom:clamp(10px,1.5vh,17px)}
+  .perf.login .loginCard .primary.full{min-height:clamp(45px,6vh,57px)}
+  .perf.login .loginCard .secondary.full{min-height:clamp(43px,5.7vh,54px)}
+  .perf.login .loginDivider{margin:clamp(10px,1.5vh,19px) 0 5px}
+  .perf.login .loginCard .demoNote{margin-top:clamp(12px,2vh,22px);font-size:11px}
+}
+@media (min-width:1001px) and (max-height:710px) {
+  .perf.login .loginDashboardArt{display:none}
+  .perf.login .loginAside h1{font-size:clamp(35px,5vh,52px)}
+  .perf.login .loginAside{padding-top:20px;padding-bottom:20px}
+}
