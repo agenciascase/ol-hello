@@ -193,6 +193,6 @@ function CampaignTable({rows,multiplier}:{rows:ReadonlyArray<(typeof baseCampaig
  return <div className="tableScroll"><table className="campaignTable"><thead><tr>{["Campanha","Objetivo","Plataforma","Investimento","Indicador principal","Resultado","Indicador de eficiência","Valor"].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map(c=>{
  const m=campaignMetrics(c,multiplier);
  const efficiency=m.items[1] ?? {label:"Indicador",value:"—"};
- return <tr key={c.name}><td className="campaignName">{c.name}</td><td><span className="pill">{objectiveLabels[m.obj]}</span></td><td><span className={"network "+c.network}>{c.network==="google"?"Google Ads":"Meta Ads"}</span></td><td>{cash(m.cost)}</td><td>{m.items[0].label}</td><td className="tableResult">{m.items[0]?.value ?? "—"}</td><td>{efficiency.label}</td><td className="tableResult">{efficiency.value}</td></tr>
+ return <tr key={c.name}><td className="campaignName">{c.name}</td><td><span className="pill">{objectiveLabels[m.obj]}</span></td><td><span className={"network "+c.network}>{c.network==="google"?"Google Ads":"Meta Ads"}</span></td><td>{cash(m.cost)}</td><td>{m.items[0]?.label ?? "Resultado"}</td><td className="tableResult">{m.items[0]?.value ?? "—"}</td><td>{efficiency.label}</td><td className="tableResult">{efficiency.value}</td></tr>
  })}</tbody></table></div>;
 }
