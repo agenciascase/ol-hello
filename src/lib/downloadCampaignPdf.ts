@@ -29,3 +29,83 @@ export async function downloadCampaignPdf(report:ReportInput) {
   add("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF");
   const blob=new Blob(parts as BlobPart[],{type:"application/pdf"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="SCASE-Relatorio-"+report.campaign.replace(/[^a-z0-9-]/gi,"-").slice(0,38)+".pdf";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
+
+
+/**
+ * Export the actual dashboard DOM as a downloadable, multi-page PDF.
+ * Charts and typography are captured as rendered, rather than reconstructed.
+ */
+export async function downloadDashboardPdf(selector: string, filename: string) {
+  const element=document.querySelector<HTMLElement>(selector);
+  if(!element)throw new Error("A área do relatório não está disponível.");
+  const source="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js";
+  type HtmlImageWindow=Window & {htmlToImage?:{toCanvas:(node:HTMLElement,options?:Record<string,unknown>)=>Promise<HTMLCanvasElement>}};
+  const current=window as HtmlImageWindow;
+  if(!current.htmlToImage){
+    await new Promise<void>((resolve,reject)=>{
+      const script=document.createElement("script");
+      script.src=source;script.crossOrigin="anonymous";
+      script.onload=()=>resolve();
+      script.onerror=()=>reject(new Error("Não foi possível carregar o gerador visual de PDF."));
+      document.head.appendChild(script);
+    });
+  }
+  if(!current.htmlToImage)throw new Error("Gerador visual indisponível.");
+  const clone=element.cloneNode(true) as HTMLElement;
+  clone.style.width=Math.max(1100,element.scrollWidth)+"px";
+  clone.style.maxWidth="none";
+  clone.style.padding="24px";
+  clone.style.background="#f5f9f6";
+  clone.querySelectorAll("button,input,select,.biDataWarning,.biShareBox,.biExport,.biPrintHeading").forEach(node=>{
+    if(node.matches(".biPrintHeading"))return;
+    if(node.matches(".biShareBox,.biExport,.biDataWarning"))(node as HTMLElement).style.display="none";
+  });
+  const printHeading=document.createElement("div");
+  printHeading.style.cssText="display:flex;align-items:center;gap:22px;background:#09251b;padding:20px 26px;border-radius:12px;color:white;margin-bottom:16px;font:700 22px 'Open Sans',Arial,sans-serif";
+  const logo=document.createElement("img");logo.src="/scase-logo-light.svg";logo.style.cssText="width:170px;height:65px;object-fit:contain";
+  const title=document.createElement("div");title.textContent="Relatório SCASE Performance";
+  printHeading.append(logo,title);
+  clone.prepend(printHeading);
+  const host=document.createElement("div");host.style.cssText="position:fixed;left:-20000px;top:0;z-index:-9999";
+  host.appendChild(clone);document.body.appendChild(host);
+  try{
+    await document.fonts.ready;
+    // Allow ResizeObservers in chart components to settle before capture.
+    await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+    const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.5,cacheBust:true,backgroundColor:"#f5f9f6",width:clone.scrollWidth,height:clone.scrollHeight});
+    if(!canvas.width||!canvas.height)throw new Error("Não foi possível capturar o relatório.");
+    await downloadCanvasPagesPdf(canvas,filename);
+  }finally{host.remove();}
+}
+async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string){
+ const encoder=new TextEncoder();const parts:Uint8Array[]=[];const offsets:number[]=[0];let offset=0;const add=(value:string|Uint8Array)=>{const bytes=typeof value==="string"?encoder.encode(value):value;parts.push(bytes);offset+=bytes.length};
+ const object=(n:number,body:string|Uint8Array,prefix="",suffix="")=>{offsets[n]=offset;add(n+" 0 obj\n");if(prefix)add(prefix);add(body);if(suffix)add(suffix);add("\nendobj\n")};
+ const pageWidth=842,pageHeight=595,margin=22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
+ const sliceHeight=Math.floor(canvas.width*contentHeight/contentWidth);
+ const count=Math.ceil(canvas.height/sliceHeight);
+ const images:Uint8Array[]=[];
+ for(let i=0;i<count;i++){
+  const y=i*sliceHeight,h=Math.min(sliceHeight,canvas.height-y);
+  const tile=document.createElement("canvas");tile.width=canvas.width;tile.height=h;
+  const ctx=tile.getContext("2d");if(!ctx)throw new Error("Falha no PDF.");
+  ctx.fillStyle="white";ctx.fillRect(0,0,tile.width,tile.height);
+  ctx.drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);
+  const bytes=await new Promise<Uint8Array>((resolve,reject)=>tile.toBlob(async blob=>blob?resolve(new Uint8Array(await blob.arrayBuffer())):reject(new Error("Falha ao criar página.")),"image/jpeg",.94));
+  images.push(bytes);
+ }
+ add("%PDF-1.4\n");object(1,"<< /Type /Catalog /Pages 2 0 R >>");
+ const ids=images.map((_,i)=>3+i*3);
+ object(2,"<< /Type /Pages /Kids ["+ids.map(id=>id+" 0 R").join(" ")+"] /Count "+count+" >>");
+ images.forEach((img,i)=>{
+  const pageId=ids[i],imageId=pageId+1,streamId=pageId+2;
+  const height=Math.min(sliceHeight,canvas.height-i*sliceHeight),printedHeight=height/canvas.width*contentWidth;
+  const stream="q\n"+contentWidth+" 0 0 "+printedHeight+" "+margin+" "+(pageHeight-margin-printedHeight)+" cm\n/Im1 Do\nQ\n";
+  object(pageId,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pageWidth+" "+pageHeight+"] /Resources << /XObject << /Im1 "+imageId+" 0 R >> >> /Contents "+streamId+" 0 R >>");
+  object(imageId,img,"<< /Type /XObject /Subtype /Image /Width "+canvas.width+" /Height "+height+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+img.length+" >>\nstream\n","\nendstream");
+  object(streamId,"<< /Length "+encoder.encode(stream).length+" >>\nstream\n"+stream+"endstream");
+ });
+ const xref=offset;add("xref\n0 "+(3+count*3)+"\n0000000000 65535 f \n");for(let i=1;i<3+count*3;i++)add(String(offsets[i]).padStart(10,"0")+" 00000 n \n");
+ add("trailer\n<< /Size "+(3+count*3)+" /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF");
+ const blob=new Blob(parts as BlobPart[],{type:"application/pdf"});const url=URL.createObjectURL(blob);
+ const link=document.createElement("a");link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
