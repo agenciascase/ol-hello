@@ -1,11 +1,13 @@
-import {createFileRoute,useParams} from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
 import {supabase} from "@/integrations/supabase/client";
 import "../performance.css";
 type SharedReport={client:string;campaign:string;period:string;metrics:{label:string;value:string}[];createdAt:string;demo:boolean};
-export const Route=createFileRoute("/share/$token")({component:CampaignShare});
+export const Route = createFileRoute("/share/$token")({
+  component: CampaignShare,
+});
 function CampaignShare(){
- const {token}=useParams({strict:false}) as {token:string};
+ const { token } = Route.useParams();
  const {data,isLoading,error}=useQuery({queryKey:["campaign-share",token],queryFn:async()=>{
   const result=await supabase.rpc("read_campaign_share" as never,{p_token:token} as never);
   if(result.error)throw result.error;
