@@ -273,3 +273,34 @@
 .perf.themeDark .insight{border-color:#33513e}
 .perf.themeDark .foot{color:#a8c5b2}
 @media(max-width:800px){.perf.appShell .feedbackItems{grid-template-columns:1fr}.perf.appShell .themeToggle span{display:none}}
+
+
+/* SCASE visual immersion v3. Rounded editorial typography, optional imagery. */
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800;900&display=swap');
+.perf.appShell{font-family:"Nunito Sans",system-ui,sans-serif;font-size:13px}
+.perf.appShell button,.perf.appShell input,.perf.appShell select{font-family:inherit}
+.perf.appShell .heading h1{font-size:clamp(31px,2.75vw,41px);font-weight:900;letter-spacing:-1.25px}
+.perf.appShell .heading p{font-size:14px}
+.perf.appShell .panelHead h2,.perf.appShell .sectionTitle h2{font-size:17px;letter-spacing:-.35px;font-weight:900}
+.perf.appShell .kpi{border-radius:21px;padding:23px;transition:transform .2s,box-shadow .2s}
+.perf.appShell .kpi:hover{transform:translateY(-3px);box-shadow:0 14px 35px #063f2016}
+.perf.appShell .kpi>strong{font-weight:900;letter-spacing:-1px}
+.perf.appShell .panel{border-radius:21px}
+.perf.appShell .filters{border-radius:17px}
+.perf.appShell .navItem{font-size:13px;font-weight:800;border-radius:12px}
+.perf.appShell .dashboardIntro{isolation:isolate;min-height:170px;padding:36px 37px;border-radius:25px}
+.perf.appShell .dashboardIntro strong{font-size:clamp(25px,2.5vw,36px);max-width:440px;line-height:1.15;font-weight:900;letter-spacing:-1.2px}
+.perf.appShell .dashboardIntro .eyebrow,.perf.appShell .dashboardIntro strong,.perf.appShell .dashboardIntro p,.perf.appShell .dashboardIntro button{position:relative;z-index:1}
+.perf.appShell.visualsEnabled .dashboardIntro:before{content:"";position:absolute;inset:0;background:url('/scase-growth-background.svg') center right/cover no-repeat;opacity:var(--visual-opacity,.36);pointer-events:none;z-index:0}
+.perf.appShell.visualsEnabled .chartPanel{position:relative;isolation:isolate;overflow:hidden}
+.perf.appShell.visualsEnabled .chartPanel:before{content:"";position:absolute;inset:0;background:url('/scase-growth-background.svg') center/cover no-repeat;opacity:calc(var(--visual-opacity,.36) * .12);pointer-events:none;z-index:-1}
+.perf.appShell.visualsEnabled .objectiveOverview{position:relative;overflow:hidden;isolation:isolate}
+.perf.appShell.visualsEnabled .objectiveOverview:before{content:"";position:absolute;right:-10%;top:-100%;width:65%;height:260%;background:url('/scase-growth-background.svg') center/cover;opacity:calc(var(--visual-opacity,.36) * .3);border-radius:50%;pointer-events:none;z-index:-1}
+.perf.appShell .visualControls{display:flex;align-items:center;gap:10px}
+.perf.appShell .opacityControl{display:flex;align-items:center;gap:8px;padding:5px 9px;border:1px solid #d9e6df;border-radius:11px;background:#fff;color:#426453;font-size:11px;font-weight:800;white-space:nowrap}
+.perf.appShell .opacityControl input{accent-color:#00bb68;width:82px;cursor:pointer}
+.perf.appShell .opacityControl b{font-variant-numeric:tabular-nums}
+.perf.themeDark .opacityControl{background:#193829;color:#c6f9d9;border-color:#365b44}
+.perf.themeDark .opacityControl input{accent-color:#1dff96}
+@media(max-width:1200px){.perf.appShell .topRight{gap:8px}.perf.appShell .opacityControl span{display:none}.perf.appShell .opacityControl input{width:55px}.perf.appShell .visualControls .themeToggle span{display:none}}
+@media(max-width:780px){.perf.appShell .dashboardIntro{padding:27px 22px}.perf.appShell .opacityControl{display:none}.perf.appShell .dashboardIntro strong{font-size:26px}}
