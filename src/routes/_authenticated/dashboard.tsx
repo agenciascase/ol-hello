@@ -166,6 +166,25 @@ function Performance(){
   <footer className="foot">SCASE Performance · Protótipo visual · *Variações e resultados são exclusivamente ilustrativos. Nenhum dado real está conectado.</footer>
   </main></div></div>;
 }
+
+type BIMetric="cost"|"views"|"clicks"|"leads"|"conversions"|"revenue";
+const biLabels:Record<BIMetric,string>={cost:"Investimento",views:"Impressões",clicks:"Cliques",leads:"Leads",conversions:"Conversões",revenue:"Receita atribuída"};
+function BIView({rows,duration,multiplier,metric,onMetricChange,kpis,chart}:{rows:ReadonlyArray<(typeof baseCampaigns)[number]>;duration:Duration;multiplier:number;metric:BIMetric;onMetricChange:(value:BIMetric)=>void;kpis:{label:string;value:string;delta:string}[];chart:{day:string;current:number;previous:number}[]}){
+ const bars=rows.map(c=>({name:c.name.length>26?c.name.slice(0,25)+"…":c.name,value:Math.round(c[metric]*multiplier)}));
+ const isMoney=metric==="cost"||metric==="revenue";
+ const total=bars.reduce((a,b)=>a+b.value,0);
+ const ranked=[...rows].sort((a,b)=>b[metric]-a[metric]);
+ return <div className="biView">
+  <section className="biHero"><div><span className="eyebrow">CENTRAL BI · DEMONSTRAÇÃO</span><h2>Resultados em perspectiva.</h2><p>Compare objetivos, visualize tendências e acompanhe cada campanha com mais profundidade.</p></div><div className="biAvailability"><span className="biStatusDot"/> Painel disponível 24 horas <small>Dados ilustrativos. Atualização automática real depende das APIs do Google Ads e Meta Ads.</small></div></section>
+  <div className="biTopKpis">{kpis.filter(k=>["Investimento","Cliques","Leads","Custo por lead","Conversões","ROAS"].includes(k.label)).map(k=><div className="biKpi" key={k.label}><span>{k.label}</span><strong>{k.value}</strong><small>Dados de demonstração</small></div>)}</div>
+  <section className="panel biChartPanel"><div className="panelHead"><div><h2>Comparação de campanhas</h2><p>Escolha uma métrica para comparar os resultados no período selecionado</p></div><label className="biSelectLabel">Métrica <select value={metric} onChange={e=>onMetricChange(e.target.value as BIMetric)}>{(Object.keys(biLabels) as BIMetric[]).map(k=><option value={k} key={k}>{biLabels[k]}</option>)}</select></label></div>
+  <div className="biChart"><ResponsiveContainer width="100%" height="100%"><BarChart data={bars} layout="vertical" margin={{top:10,right:18,bottom:12,left:4}}><CartesianGrid stroke="#dbe9df" horizontal={false}/><XAxis type="number" tickFormatter={v=>int(Number(v))}/><YAxis type="category" dataKey="name" width={160} tick={{fontSize:11}}/><Tooltip formatter={v=>isMoney?cash(Number(v)):int(Number(v))}/><Bar dataKey="value" name={biLabels[metric]} fill="#00bd69" radius={[0,7,7,0]}/></BarChart></ResponsiveContainer></div><div className="biChartFoot"><span>Total: <b>{isMoney?cash(total):int(total)}</b></span><span>{rows.length} campanhas</span></div></section>
+  <div className="biBottomGrid"><section className="panel biTrendPanel"><div className="panelHead"><div><h2>Evolução do investimento</h2><p>Comparação ilustrativa: {duration==="today"?"hoje":duration==="7"?"7 dias":"30 dias"}</p></div></div><div className="chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={chart}><CartesianGrid stroke="#dbe9df" vertical={false}/><XAxis dataKey="day"/><Tooltip formatter={v=>cash(Number(v))}/><Area dataKey="previous" name="Anterior" stroke="#9bb5a6" strokeDasharray="4 5" fill="none"/><Area dataKey="current" name="Atual" stroke="#00bd69" strokeWidth={3} fill="#00bd691f"/></AreaChart></ResponsiveContainer></div></section>
+  <section className="panel biHighlights"><h2>Leitura executiva</h2><p><strong>Indicador em análise:</strong> {biLabels[metric]}</p><p><strong>Maior resultado:</strong> {ranked[0]?.name??"Nenhuma campanha"}</p><p><strong>Período:</strong> {duration==="today"?"Hoje":duration==="7"?"Últimos 7 dias":"Últimos 30 dias"}</p><div className="biDisclaimer">A plataforma poderá ser consultada a qualquer hora. Atualização em tempo real e métricas reais ainda precisam da conexão segura com as APIs.</div></section></div>
+  <section className="panel biFullTable"><div className="panelHead"><div><h2>Detalhes por campanha</h2><p>Objetivo, resultado e eficiência em um só comparativo</p></div></div><CampaignTable rows={rows} multiplier={multiplier}/></section>
+ </div>;
+}
+
 function CampaignFeedback({rows,multiplier,duration}:{rows:ReadonlyArray<(typeof baseCampaigns)[number]>;multiplier:number;duration:Duration}){
  const spend=rows.reduce((a,c)=>a+c.cost*multiplier,0);
  const leads=rows.reduce((a,c)=>a+c.leads*multiplier,0);
