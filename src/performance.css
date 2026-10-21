@@ -160,3 +160,18 @@
 .perf.login .loginDonutCard b:nth-child(2){width:70%;opacity:.7}
 .perf.login .loginDonutCard b:nth-child(3){width:45%;opacity:.5}
 @media (min-width:1001px){.perf.login .loginDashboardArt{margin-top:clamp(48px,8vh,90px)!important;transform:perspective(1000px) rotateY(-10deg) rotateX(5deg) rotate(-3deg)!important;transform-origin:center!important}}
+
+/* Exact reference: single dark canvas, floating card */
+@media (min-width:1001px){
+  .perf.login{grid-template-columns:52fr 48fr;background:radial-gradient(ellipse at 0 0,rgba(0,255,130,.45),transparent 22%),radial-gradient(ellipse at 100% 100%,rgba(0,255,140,.55),transparent 28%),radial-gradient(ellipse at 100% 0,rgba(0,200,110,.35),transparent 25%),radial-gradient(ellipse at 10% 100%,rgba(0,255,120,.4),transparent 30%),linear-gradient(135deg,#02140d,#010a07 50%,#021a10)}
+  .perf.login .loginAside{background:transparent!important;padding-left:clamp(40px,7.5vw,110px)}
+  .perf.login .loginAside:after{display:none}
+  .perf.login .loginArea{background:transparent!important;padding:clamp(30px,8vh,90px) clamp(30px,3.5vw,60px) clamp(30px,8vh,90px) 0}
+  .perf.login .loginCard{width:min(560px,100%);border-radius:30px;border:0;background:linear-gradient(160deg,#fff 60%,#eefdf4);box-shadow:0 30px 90px rgba(0,0,0,.45),0 0 0 14px rgba(255,255,255,.06)}
+  .perf.login .loginAside h1{font-size:clamp(40px,min(4.4vw,6.4vh),78px);line-height:1;letter-spacing:-.045em}
+  .perf.login .loginAside p{color:#d5e2dc}
+  .perf.login .loginBenefits>div{text-align:center;justify-items:center;font-weight:500}
+  .perf.login .loginBenefits strong{font-weight:500}
+  .perf.login .loginDashboardArt{margin-left:calc(-1 * clamp(40px,7.5vw,110px))!important;max-width:none;width:calc(100% + clamp(40px,7.5vw,110px));border-radius:0 22px 22px 0;box-shadow:0 0 60px rgba(0,255,130,.25)}
+}
+@media (min-width:1001px){.perf.login .loginAside h1{max-width:7.2em;font-size:clamp(40px,min(4.6vw,7vh),84px)}.perf.login .loginAside p{max-width:440px}}
