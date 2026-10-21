@@ -233,3 +233,43 @@
 .perf .campaignTable .tableResult{color:#087944;font-size:13px;font-weight:850}
 @media(max-width:1150px){.perf .campaignTiles{grid-template-columns:repeat(2,minmax(0,1fr))}.perf .objectiveKpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.perf .campaignTiles{grid-template-columns:1fr}.perf .objectiveKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.perf .campaignExplorer,.perf .campaignDetail,.perf .objectiveOverview{padding:18px}.perf .dashboardIntro{display:block}.perf .dashboardIntro p{margin:10px 0}.perf .dashboardIntro .primary{margin-top:12px}.perf .campaignTile .tileNumbers b{font-size:15px}}
+
+
+/* Premium light/dark client experience */
+.perf.appShell .themeToggle{border:1px solid #d9e6df;border-radius:11px;background:#fff;color:#244034;display:flex;gap:8px;align-items:center;padding:10px 13px;font-weight:800}
+.perf.appShell .metricPickerWrap{position:relative}
+.perf.appShell .metricPicker{position:absolute;z-index:15;right:0;top:calc(100% + 8px);display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:11px;padding:20px;background:#fff;border:1px solid #dae8df;box-shadow:0 18px 40px #05271724;border-radius:15px;width:min(420px,85vw)}
+.perf.appShell .metricPicker strong{grid-column:1/-1;font-size:14px}
+.perf.appShell .metricPicker label{display:flex;align-items:center;gap:8px;font-size:12px;color:#315442;cursor:pointer}
+.perf.appShell .metricPicker input{accent-color:#00b968}
+.perf.appShell .metricPicker .textLink{grid-column:1/-1;margin-top:6px}
+.perf.appShell .feedbackPanel{padding:23px;display:flex;flex-direction:column}
+.perf.appShell .feedbackItems{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.perf.appShell .feedbackItems>div{border:1px solid #e4eee8;background:#f9fffb;border-radius:13px;padding:15px;display:grid;gap:8px;align-content:start}
+.perf.appShell .feedbackItems svg{color:#00af61}
+.perf.appShell .feedbackItems strong{font-size:12px}
+.perf.appShell .feedbackItems p{color:#647e6f;font-size:11px;line-height:1.5}
+.perf.appShell .feedbackPanel>small{margin-top:16px;color:#8a9e93;font-size:10px}
+.perf.appShell.themeDark{--bg:#091611;--line:#284536;--muted:#a5bcb0;color:#f2fff6;background:#091611}
+.perf.themeDark .body,.perf.themeDark .main{background:#091611}
+.perf.themeDark .topbar{background:#10231a;border-color:#284536}
+.perf.themeDark .breadcrumb,.perf.themeDark .heading,.perf.themeDark .sectionTitle{color:#edfff5}
+.perf.themeDark .panel,.perf.themeDark .kpi,.perf.themeDark .filters,.perf.themeDark .reportCard{background:#11241b;border-color:#2b4939;color:#f2fff6;box-shadow:0 5px 20px #0002}
+.perf.themeDark .kpiTop,.perf.themeDark .panelHead p,.perf.themeDark .heading p,.perf.themeDark .kpiBottom,.perf.themeDark .selectWrap>span{color:#a0b8aa}
+.perf.themeDark .kpi>strong,.perf.themeDark .panel h2,.perf.themeDark .campaignName{color:#f1fff6!important}
+.perf.themeDark .selectWrap select,.perf.themeDark .searchBox input{color:#effff4;background:#11241b}
+.perf.themeDark .periods,.perf.themeDark .pill,.perf.themeDark .searchBox{background:#1b3327;border-color:#375442;color:#c0e7cc}
+.perf.themeDark .periods button{color:#aac9b7}
+.perf.themeDark .periods button.chosen{background:#00be6d;color:#052317}
+.perf.themeDark .secondary,.perf.themeDark .themeToggle,.perf.themeDark .objectivePills button{background:#193829;border-color:#365b44;color:#f2fff6}
+.perf.themeDark .objectiveOverview,.perf.themeDark .campaignTile,.perf.themeDark .objectiveKpi,.perf.themeDark .objectiveChart,.perf.themeDark .feedbackItems>div{background:#173126;border-color:#315541;color:#edfff5}
+.perf.themeDark .objectivePills button.active{background:#00c773;color:#092418}
+.perf.themeDark .objectiveKpi strong,.perf.themeDark .campaignTile strong,.perf.themeDark .tileNumbers b{color:#f3fff8}
+.perf.themeDark .objectiveOverview p,.perf.themeDark .campaignTile small,.perf.themeDark .objectiveKpi small,.perf.themeDark .feedbackItems p,.perf.themeDark .feedbackPanel>small{color:#aecbb9}
+.perf.themeDark .campaignTable th{background:#19372a;color:#b9ddc7}
+.perf.themeDark .campaignTable td{color:#b7d6c4;border-color:#31513e}
+.perf.themeDark .metricPicker{background:#142b20;border-color:#41674d}
+.perf.themeDark .metricPicker label{color:#e7fff0}
+.perf.themeDark .insight{border-color:#33513e}
+.perf.themeDark .foot{color:#a8c5b2}
+@media(max-width:800px){.perf.appShell .feedbackItems{grid-template-columns:1fr}.perf.appShell .themeToggle span{display:none}}
