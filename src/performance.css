@@ -304,3 +304,37 @@
 .perf.themeDark .opacityControl input{accent-color:#1dff96}
 @media(max-width:1200px){.perf.appShell .topRight{gap:8px}.perf.appShell .opacityControl span{display:none}.perf.appShell .opacityControl input{width:55px}.perf.appShell .visualControls .themeToggle span{display:none}}
 @media(max-width:780px){.perf.appShell .dashboardIntro{padding:27px 22px}.perf.appShell .opacityControl{display:none}.perf.appShell .dashboardIntro strong{font-size:26px}}
+
+
+/* Requested branding and typography adjustments — retain original SVG geometry. */
+.perf.appShell,
+.perf.appShell *,
+.perf.appShell button,
+.perf.appShell input,
+.perf.appShell select,
+.perf.appShell textarea,
+.perf.appShell svg text{
+  font-family:"Comic Sans MS","Comic Sans",cursive!important;
+}
+.perf.appShell .sideBrand .brand,
+.perf.appShell .sideBrand .brandOfficial{
+  background:transparent!important;
+  box-shadow:none!important;
+  border:0!important;
+  opacity:1!important;
+  mix-blend-mode:normal!important;
+  filter:none!important;
+}
+.perf.appShell .sideBrand .brand:before{display:none!important}
+.perf.appShell .sideBrand .brandOfficial{
+  display:block!important;
+  width:100%;
+  height:auto;
+  max-height:none;
+  object-fit:contain;
+}
+.perf.appShell .visualControls,
+.perf.appShell .opacityControl{display:none!important}
+.perf.appShell .dashboardIntro:before,
+.perf.appShell .chartPanel:before,
+.perf.appShell .objectiveOverview:before{display:none!important}
