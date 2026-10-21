@@ -131,7 +131,7 @@ function Performance(){
   await queryClient.cancelQueries();
   queryClient.clear();
   await supabase.auth.signOut();
-  navigate({ to: "/auth", search: { redirect: undefined }, replace: true });
+  navigate({ to: "/auth", search: { redirect: undefined, mode: undefined }, replace: true });
  }
  if(isLoading||!account)return <div className="flex min-h-screen items-center justify-center bg-background"><p className="text-sm text-muted-foreground">Carregando sua conta…</p></div>;
  const isAdmin=account.isAdmin&&!viewAsClient;
@@ -150,7 +150,7 @@ function Performance(){
      <div className="objectivePills">{([{key:"all",label:"Todos"},{key:"reach",label:"Alcance"},{key:"leads",label:"Formulários e leads"},{key:"sales",label:"Vendas"},{key:"traffic",label:"Tráfego"}] as const).map(o=><button key={o.key} type="button" aria-pressed={objective===o.key} className={objective===o.key?"active":""} onClick={()=>{setObjective(o.key);setSelectedCampaign(null)}}>{o.label}</button>)}</div>
    </section>
    <section className="panel campaignExplorer"><div className="panelHead"><div><h2>Campanhas disponíveis</h2><p>Selecione uma campanha para abrir a visão detalhada • valores demonstrativos</p></div><div className="searchBox"><Search size={16}/><input aria-label="Buscar campanha" placeholder="Buscar campanha" value={search} onChange={e=>setSearch(e.target.value)}/></div></div>
-    <div className="campaignTiles">{filtered.map(c=>{const m=campaignMetrics(c,multiplier);return <button key={c.name} type="button" className={"campaignTile "+(selectedCampaign===c.name?"selected":"")} onClick={()=>setSelectedCampaign(c.name)} aria-pressed={selectedCampaign===c.name}><span className="tileTop"><span className={"network "+c.network}>{c.network==="google"?"Google Ads":"Meta Ads"}</span><span className="pill">{objectiveLabels[m.obj]}</span></span><strong>{c.name}</strong><span className="tileNumbers"><span><small>Investimento</small><b>{cash(m.cost)}</b></span><span><small>{m.items[0].label}</small><b>{m.items[0].value}</b></span></span><span className="tileAction">Ver detalhes <ArrowUpRight size={15}/></span></button>})}</div>
+    <div className="campaignTiles">{filtered.map(c=>{const m=campaignMetrics(c,multiplier);return <button key={c.name} type="button" className={"campaignTile "+(selectedCampaign===c.name?"selected":"")} onClick={()=>setSelectedCampaign(c.name)} aria-pressed={selectedCampaign===c.name}><span className="tileTop"><span className={"network "+c.network}>{c.network==="google"?"Google Ads":"Meta Ads"}</span><span className="pill">{objectiveLabels[m.obj]}</span></span><strong>{c.name}</strong><span className="tileNumbers"><span><small>Investimento</small><b>{cash(m.cost)}</b></span><span><small>{m.items[0]?.label ?? "Resultado"}</small><b>{m.items[0]?.value ?? "—"}</b></span></span><span className="tileAction">Ver detalhes <ArrowUpRight size={15}/></span></button>})}</div>
     {filtered.length===0&&<p className="emptyCampaigns">Nenhuma campanha demonstrativa encontrada para esse filtro.</p>}
    </section>
    {selectedCampaign&&filtered.some(c=>c.name===selectedCampaign)&&<CampaignDetail campaign={filtered.find(c=>c.name===selectedCampaign)!} multiplier={multiplier} duration={duration}/>}
@@ -192,7 +192,7 @@ function Brand(){return <div className="brand"><img className="brandOfficial" sr
 function CampaignTable({rows,multiplier}:{rows:ReadonlyArray<(typeof baseCampaigns)[number]>;multiplier:number}){
  return <div className="tableScroll"><table className="campaignTable"><thead><tr>{["Campanha","Objetivo","Plataforma","Investimento","Indicador principal","Resultado","Indicador de eficiência","Valor"].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map(c=>{
  const m=campaignMetrics(c,multiplier);
- const efficiency=m.items[1];
- return <tr key={c.name}><td className="campaignName">{c.name}</td><td><span className="pill">{objectiveLabels[m.obj]}</span></td><td><span className={"network "+c.network}>{c.network==="google"?"Google Ads":"Meta Ads"}</span></td><td>{cash(m.cost)}</td><td>{m.items[0].label}</td><td className="tableResult">{m.items[0].value}</td><td>{efficiency.label}</td><td className="tableResult">{efficiency.value}</td></tr>
+ const efficiency=m.items[1] ?? {label:"Indicador",value:"—"};
+ return <tr key={c.name}><td className="campaignName">{c.name}</td><td><span className="pill">{objectiveLabels[m.obj]}</span></td><td><span className={"network "+c.network}>{c.network==="google"?"Google Ads":"Meta Ads"}</span></td><td>{cash(m.cost)}</td><td>{m.items[0].label}</td><td className="tableResult">{m.items[0]?.value ?? "—"}</td><td>{efficiency.label}</td><td className="tableResult">{efficiency.value}</td></tr>
  })}</tbody></table></div>;
 }
