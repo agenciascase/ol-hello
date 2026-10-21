@@ -61,3 +61,45 @@
 .perf .loginDashboardFooter strong{color:#00fa8a;font-size:13px}
 @media(max-width:900px){.perf.login{grid-template-columns:1fr}.perf .loginAside{padding:30px 26px;gap:32px;min-height:0}.perf .loginAside h1{font-size:clamp(37px,7vw,56px);letter-spacing:-2px}.perf .loginAside>.brand{width:250px}.perf .loginDashboardArt{display:none}.perf .loginBenefits{margin-top:22px}.perf .loginArea{padding:26px 17px 45px}.perf .loginCard{padding:30px 25px}}
 @media(max-width:480px){.perf .loginAside h1{font-size:40px}.perf .loginTag{font-size:10px;letter-spacing:2px}.perf .loginBenefits{gap:9px}.perf .loginBenefits>div{font-size:11px}.perf .loginBenefits span{width:42px;height:42px}.perf .loginCard h2{font-size:29px}}
+
+
+/* Approved SCASE login artwork: final 21 Oct 2026 */
+.perf.login{grid-template-columns:1fr 1fr}
+.perf.login .loginAside{background:radial-gradient(ellipse at -12% -8%,rgba(0,255,154,.64),transparent 30%),radial-gradient(ellipse at 95% 20%,rgba(0,181,97,.2),transparent 40%),radial-gradient(ellipse at 5% 95%,rgba(0,248,120,.2),transparent 40%),linear-gradient(120deg,#031610,#001810 53%,#003c27);padding:clamp(35px,5vw,93px);gap:28px}
+.perf.login .loginAside>.brand{width:min(380px,95%);height:auto}
+.perf.login .loginAside .brand:before{display:none}
+.perf.login .loginAside .brandOfficial{mix-blend-mode:normal;max-height:none;filter:none}
+.perf.login .loginAside h1{font-size:clamp(52px,5.2vw,88px);line-height:1.03;letter-spacing:-.055em;margin:28px 0 24px}
+.perf.login .loginAside h1 em{color:#00fb79}
+.perf.login .loginAside .loginTag{color:#00fd86;font-size:clamp(10px,1.1vw,15px);letter-spacing:3.4px}
+.perf.login .loginAside p{font-size:clamp(16px,1.55vw,23px);max-width:510px}
+.perf.login .loginAside small{position:relative;z-index:2;color:#c2d7cd}
+.perf.login .loginBenefits{max-width:570px;margin-top:33px;gap:20px}
+.perf.login .loginBenefits>div{color:#fff;font-size:clamp(12px,1.12vw,16px);font-weight:600}
+.perf.login .loginBenefits span{width:68px;height:68px;border:1px solid #00b76b;border-radius:14px;background:#002f20;color:#00f784}
+.perf.login .loginDashboardArt{height:230px;max-width:600px;transform:rotate(-7deg);margin-top:52px;background:linear-gradient(125deg,rgba(0,47,36,.9),rgba(0,15,14,.96));border:1px solid #008c58;box-shadow:-30px 22px 90px rgba(0,255,121,.18)}
+.perf.login .loginGraph{position:relative;height:145px;display:flex;margin-top:8px}
+.perf.login .loginSparkBars{width:72%;height:135px;opacity:.5;margin:0;gap:10px}
+.perf.login .loginTrend{position:absolute;left:0;top:3px;width:73%;height:126px;overflow:visible;filter:drop-shadow(0 0 6px rgba(0,255,129,.85))}
+.perf.login .loginTrend polyline{fill:none;stroke:#00ff8c;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.perf.login .loginGraphStats{display:flex;flex-direction:column;justify-content:space-evenly;flex:1;padding-left:14px;font-size:9px;color:#c4d9d0}
+.perf.login .loginGraphStats span{display:flex;justify-content:space-between;gap:9px;border-bottom:1px solid #194438;padding-bottom:9px}
+.perf.login .loginGraphStats b{color:#00ff81}
+.perf.login .loginDashboardFooter{display:none}
+.perf.login .loginArea{background:radial-gradient(ellipse at 85% 0%,#c5ffdf,transparent 50%),radial-gradient(ellipse at 0 100%,#d6ffe7,transparent 45%),#f4f7f8;padding:clamp(28px,5vw,85px)}
+.perf.login .loginCard{position:relative;width:min(560px,100%);padding:clamp(30px,4.3vw,62px);border-radius:28px;border:1px solid #f0f2f4;box-shadow:0 20px 65px rgba(7,60,35,.08)}
+.perf.login .loginCard h2{font-size:clamp(30px,2.8vw,41px);letter-spacing:-1.6px;color:#0b111f}
+.perf.login .loginCard>p{font-size:16px;color:#778397}
+.perf.login .loginInputWrap{display:flex;align-items:center;position:relative;margin-top:11px;border-radius:12px;border:1px solid #d7deea;background:#fff;color:#8996ae}
+.perf.login .loginInputWrap>svg{position:absolute;left:20px;pointer-events:none}
+.perf.login .loginInputWrap input{margin:0;padding:17px 49px 17px 56px;width:100%;border:0;background:transparent;box-shadow:none;font-size:15px;min-height:60px}
+.perf.login .loginInputWrap:focus-within{border-color:#00bb69;box-shadow:0 0 0 4px rgba(0,210,117,.11)}
+.perf.login .passwordToggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#8692a8;padding:8px;display:grid;place-items:center}
+.perf.login .forgotLink{border:0;background:none;color:#00aa60;font-size:13px;font-weight:800;display:block;margin:-8px 0 22px auto;padding:0;text-align:right}
+.perf.login .loginDivider{display:flex;align-items:center;gap:14px;color:#7f8da1;margin:22px 0 6px;font-size:14px;text-align:center}
+.perf.login .loginDivider:before,.perf.login .loginDivider:after{content:"";flex:1;height:1px;background:#e0e5ed}
+.perf.login .loginCard .primary.full{background:linear-gradient(135deg,#00cc6d,#00b56d);font-size:17px;min-height:63px}
+.perf.login .loginCard .secondary.full{min-height:60px;border:1px solid #cbd3e0;font-size:14px}
+.perf.login .loginCard .demoNote{font-size:13px;color:#7e8ba3}
+@media(max-width:1000px){.perf.login{grid-template-columns:1fr}.perf.login .loginAside{padding:38px 28px}.perf.login .loginAside h1{font-size:clamp(42px,8vw,65px)}.perf.login .loginDashboardArt{display:none}.perf.login .loginArea{padding:30px 18px 55px}}
+@media(max-width:480px){.perf.login .loginAside h1{font-size:40px}.perf.login .loginBenefits span{width:46px;height:46px}.perf.login .loginBenefits>div{font-size:11px}.perf.login .loginCard{padding:30px 23px}.perf.login .loginCard h2{font-size:29px}}
