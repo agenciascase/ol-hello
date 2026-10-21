@@ -175,3 +175,61 @@
   .perf.login .loginDashboardArt{margin-left:calc(-1 * clamp(40px,7.5vw,110px))!important;max-width:none;width:calc(100% + clamp(40px,7.5vw,110px));border-radius:0 22px 22px 0;box-shadow:0 0 60px rgba(0,255,130,.25)}
 }
 @media (min-width:1001px){.perf.login .loginAside h1{max-width:7.2em;font-size:clamp(40px,min(4.6vw,7vh),84px)}.perf.login .loginAside p{max-width:440px}}
+
+
+/* Dashboard SCASE: visual refinements and campaign objective drill-down */
+.perf.appShell{--brand-accent:#00ed73;--ink:#101916;--bg:#f3f7f5;background:#f3f7f5;color:#14251d}
+.perf .side{background:linear-gradient(165deg,#101917,#08120f);border-right:1px solid #1f3c2e}
+.perf .sideBrand{padding:24px 23px 16px}
+.perf .sideBrand .brand{padding:0;box-shadow:none;background:transparent;border:0;min-height:0}
+.perf .sideBrand .brand:before{display:none}
+.perf .sideBrand .brandOfficial{mix-blend-mode:normal}
+.perf .navItem{border-radius:11px;min-height:45px}
+.perf .navActive{background:linear-gradient(90deg,#124e32,#163a2a);color:#26f18c}
+.perf .main{max-width:1660px;padding:clamp(20px,2.6vw,40px)}
+.perf .heading h1{font-size:clamp(27px,2.6vw,36px);letter-spacing:-1.2px}
+.perf .topbar{background:#fff;border-bottom:1px solid #e4ebe7}
+.perf .panel,.perf .kpi,.perf .filters{border:1px solid #e3ebe6;box-shadow:0 5px 28px rgba(3,55,32,.035);border-radius:16px}
+.perf .kpi{padding:21px}
+.perf .kpi>strong{font-size:clamp(21px,1.8vw,28px)}
+.perf .kpiTop{font-size:12px;color:#657b70}
+.perf .kpiSymbol{background:#e5fff0;border-radius:10px;color:#00ac5e}
+.perf .sectionTitle h2,.perf .panelHead h2{font-size:15px}
+.perf .dashboardIntro{position:relative;overflow:hidden;background:linear-gradient(110deg,#081e15,#03422b);color:#fff;padding:25px 28px;border-radius:20px;margin-bottom:23px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.perf .dashboardIntro:after{content:"";position:absolute;right:-90px;top:-130px;width:320px;height:320px;background:#00ee70;filter:blur(100px);opacity:.17;pointer-events:none}
+.perf .dashboardIntro .eyebrow{width:100%;color:#24fa95}
+.perf .dashboardIntro strong{font-size:clamp(19px,2vw,26px);letter-spacing:-.7px}
+.perf .dashboardIntro p{color:#c0d5ca;flex:1;font-size:12px}
+.perf .dashboardIntro .primary{position:relative;z-index:1;white-space:nowrap}
+.perf .objectiveOverview{padding:26px;margin-bottom:18px;background:linear-gradient(110deg,#fff,#f4fff9)}
+.perf .objectiveOverview h2{font-size:clamp(19px,2vw,26px);letter-spacing:-.6px;margin:9px 0}
+.perf .objectiveOverview p{color:#738779}
+.perf .objectivePills{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
+.perf .objectivePills button{padding:11px 16px;border:1px solid #d9e6dc;border-radius:12px;background:#fff;font-weight:750;color:#345344}
+.perf .objectivePills button.active,.perf .objectivePills button:hover{background:#0f3c29;border-color:#0f3c29;color:#fff}
+.perf .campaignExplorer{padding:24px;margin-bottom:18px}
+.perf .campaignTiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.perf .campaignTile{text-align:left;border:1px solid #e1eae5;border-radius:16px;background:#fff;padding:18px;display:flex;flex-direction:column;gap:18px;color:#1b3527;min-width:0;transition:transform .18s,box-shadow .18s,border-color .18s}
+.perf .campaignTile:hover,.perf .campaignTile.selected{transform:translateY(-2px);border-color:#00b96a;box-shadow:0 12px 24px rgba(0,100,56,.08)}
+.perf .campaignTile.selected{background:linear-gradient(150deg,#f6fff9,#fff)}
+.perf .campaignTile .tileTop,.perf .campaignTile .tileNumbers{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.perf .campaignTile>strong{font-size:15px;line-height:1.35}
+.perf .campaignTile .tileNumbers{padding-top:14px;border-top:1px solid #eaf1ed}
+.perf .campaignTile .tileNumbers span{display:grid;gap:6px}
+.perf .campaignTile small{font-size:10px;color:#789184}
+.perf .campaignTile .tileNumbers b{font-size:17px}
+.perf .tileAction{display:flex;align-items:center;gap:8px;color:#009652;font-weight:800;font-size:12px}
+.perf .emptyCampaigns{padding:22px;color:#6f847a}
+.perf .campaignDetail{padding:26px;margin:0 0 18px;border-color:#bdebd1}
+.perf .objectiveKpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.perf .objectiveKpi{padding:18px;border:1px solid #e0eee5;background:#f8fffa;border-radius:13px;display:grid;gap:9px;align-content:start}
+.perf .objectiveKpi>span:first-child{color:#698376;font-weight:750}
+.perf .objectiveKpi strong{font-size:clamp(18px,1.75vw,26px);letter-spacing:-.8px}
+.perf .objectiveKpi small{color:#7e9386;line-height:1.4}
+.perf .objectiveTag{background:#dafbe8;color:#008e4c;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:800;width:max-content}
+.perf .objectiveChart{margin-top:25px;padding:23px;border-radius:15px;background:#fff;border:1px solid #edf2ee}
+.perf .campaignTable th{color:#647a6f;background:#f5faf7}
+.perf .campaignTable td{padding:18px 15px}
+.perf .campaignTable .tableResult{color:#087944;font-size:13px;font-weight:850}
+@media(max-width:1150px){.perf .campaignTiles{grid-template-columns:repeat(2,minmax(0,1fr))}.perf .objectiveKpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.perf .campaignTiles{grid-template-columns:1fr}.perf .objectiveKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.perf .campaignExplorer,.perf .campaignDetail,.perf .objectiveOverview{padding:18px}.perf .dashboardIntro{display:block}.perf .dashboardIntro p{margin:10px 0}.perf .dashboardIntro .primary{margin-top:12px}.perf .campaignTile .tileNumbers b{font-size:15px}}
