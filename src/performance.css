@@ -174,3 +174,4 @@
   .perf.login .loginBenefits strong{font-weight:500}
   .perf.login .loginDashboardArt{margin-left:calc(-1 * clamp(40px,7.5vw,110px))!important;max-width:none;width:calc(100% + clamp(40px,7.5vw,110px));border-radius:0 22px 22px 0;box-shadow:0 0 60px rgba(0,255,130,.25)}
 }
+@media (min-width:1001px){.perf.login .loginAside h1{max-width:7.2em;font-size:clamp(40px,min(4.6vw,7vh),84px)}.perf.login .loginAside p{max-width:440px}}
