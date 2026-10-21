@@ -162,7 +162,7 @@ function Performance(){
   <footer className="foot">SCASE Performance · Protótipo visual · *Variações e resultados são exclusivamente ilustrativos. Nenhum dado real está conectado.</footer>
   </main></div></div>;
 }
-function CampaignFeedback({rows,multiplier,duration}:{rows:readonly typeof baseCampaigns[number][]|typeof baseCampaigns[number][];multiplier:number;duration:Duration}){
+function CampaignFeedback({rows,multiplier,duration}:{rows:ReadonlyArray<(typeof baseCampaigns)[number]>;multiplier:number;duration:Duration}){
  const spend=rows.reduce((a,c)=>a+c.cost*multiplier,0);
  const leads=rows.reduce((a,c)=>a+c.leads*multiplier,0);
  const clicks=rows.reduce((a,c)=>a+c.clicks*multiplier,0);
@@ -189,7 +189,7 @@ function CampaignDetail({campaign,multiplier,duration}:{campaign:typeof baseCamp
  <div className="objectiveChart"><div className="panelHead"><div><h2>Evolução de {obj==="reach"?"impressões":obj==="leads"?"leads":obj==="sales"?"conversões":"cliques"}</h2><p>Tendência simulada para o período escolhido, não representa dados reais</p></div></div><div className="chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={series}><defs><linearGradient id="campaignObjectiveArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#00c96d" stopOpacity={.24}/><stop offset="100%" stopColor="#00c96d" stopOpacity={0}/></linearGradient></defs><CartesianGrid vertical={false} stroke="#edf2f1"/><XAxis dataKey="day" tickLine={false} axisLine={false}/><Tooltip formatter={(v)=>int(Number(v))}/><Area dataKey="results" type="monotone" stroke="#00c96d" strokeWidth={3} fill="url(#campaignObjectiveArea)"/></AreaChart></ResponsiveContainer></div></div></section>;
 }
 function Brand(){return <div className="brand"><img className="brandOfficial" src="/scase-logo-light.svg" alt="SCASE • Branding, Design e Performance" /></div>}
-function CampaignTable({rows,multiplier}:{rows:typeof baseCampaigns[number][]|readonly typeof baseCampaigns[number][];multiplier:number}){
+function CampaignTable({rows,multiplier}:{rows:ReadonlyArray<(typeof baseCampaigns)[number]>;multiplier:number}){
  return <div className="tableScroll"><table className="campaignTable"><thead><tr>{["Campanha","Objetivo","Plataforma","Investimento","Indicador principal","Resultado","Indicador de eficiência","Valor"].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map(c=>{
  const m=campaignMetrics(c,multiplier);
  const efficiency=m.items[1];
