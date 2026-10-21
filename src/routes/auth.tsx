@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowUpRight, MailCheck, ShieldCheck, BarChart3, Target, TrendingUp } from "lucide-react";
+import { ArrowUpRight, MailCheck, ShieldCheck, BarChart3, Target, TrendingUp, Mail, LockKeyhole, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import "../performance.css";
 
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/auth")({
 function Brand() {
   return (
     <div className="brand">
-      <img className="brandOfficial" src="/scase-logo.svg" alt="SCASE • Branding, Design e Performance" />
+      <img className="brandOfficial" src="/scase-logo-light.svg" alt="SCASE • Branding, Design e Performance" />
     </div>
   );
 }
@@ -40,6 +40,7 @@ function AuthPage() {
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -147,7 +148,7 @@ function AuthPage() {
           </div>
           <div className="loginDashboardArt" aria-hidden="true">
             <div className="loginDashboardHeading"><span>VISÃO DE PERFORMANCE</span><span>● EM ALTA</span></div>
-            <div className="loginSparkBars">{[28,41,34,49,44,61,57,73,67,86,79,100].map((h,i)=><i key={i} style={{height: h + "%"}} />)}</div>
+            <div className="loginGraph"><div className="loginSparkBars">{[28,41,34,49,44,61,57,73,67,86,79,100].map((h,i)=><i key={i} style={{height: h + "%"}} />)}</div><svg className="loginTrend" viewBox="0 0 460 132" preserveAspectRatio="none"><polyline points="0,122 40,108 79,112 110,71 141,80 180,62 218,69 259,44 290,38 320,51 353,21 400,16 460,0" /></svg><div className="loginGraphStats"><span>Conversões <b>+12,5%</b></span><span>Investimento <b>-8,3%</b></span><span>Receita <b>+32,1%</b></span></div></div>
             <div className="loginDashboardFooter"><span>Desempenho das campanhas</span><strong>↗ +24,8%</strong></div>
           </div>
         </div>
@@ -234,33 +235,25 @@ function AuthPage() {
                     </label>
                   </>
                 )}
-                <label>
-                  E-mail
-                  <input
-                    placeholder="voce@empresa.com.br"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+
+                <label>E-mail
+                  <span className="loginInputWrap"><Mail size={19} aria-hidden="true" />
+                    <input placeholder="Seu e-mail" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  </span>
                 </label>
-                <label>
-                  Senha
-                  <input
-                    placeholder={mode === "signup" ? "Mínimo de 6 caracteres" : "Sua senha"}
-                    type="password"
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                <label>Senha
+                  <span className="loginInputWrap"><LockKeyhole size={19} aria-hidden="true" />
+                    <input placeholder={mode === "signup" ? "Mínimo de 6 caracteres" : "Sua senha"} type={showPassword ? "text" : "password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <button className="passwordToggle" type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
+                  </span>
                 </label>
+                {mode === "signin" && <button className="forgotLink" type="button" onClick={() => { setMode("forgot"); setError(null); }}>Esqueceu sua senha?</button>}
                 {error && <div className="demoNote authError">{error}</div>}
                 <button className="primary full" type="submit" disabled={busy}>
                   {busy ? "Aguarde…" : mode === "signin" ? "Entrar" : "Criar conta"} <ArrowUpRight size={17} />
                 </button>
               </form>
-              {mode === "signin" && <button className="secondary full" type="button" onClick={() => { setMode("forgot"); setError(null); }}>Esqueci minha senha</button>}
+              <div className="loginDivider">ou</div>
               <button
                 className="secondary full"
                 onClick={() => {
