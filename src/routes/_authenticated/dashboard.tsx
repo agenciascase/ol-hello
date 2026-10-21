@@ -193,7 +193,7 @@ function BIView({rows,allRows,selected,onSelect,duration,multiplier,metric,onMet
  const views=rows.reduce((a,c)=>a+c.views*multiplier,0);
  const reach=Math.round(views*.78);
  const ctr=views?summary.clicks/views*100:0;
- const kpiCards=[["Investimento",cash(summary.cost)],["Impressões",int(views)],["Alcance",int(reach)],["Cliques",int(summary.clicks)],["CTR",pct(ctr)],["CPC",cash(summary.clicks?summary.cost/summary.clicks:0)],["Leads",int(summary.leads)],["CPL",cash(summary.leads?summary.cost/summary.leads:0)],["Conversões",int(summary.conversions)],["Custo por conversão",cash(summary.conversions?summary.cost/summary.conversions:0)],["Receita",cash(summary.revenue)],["ROAS",(summary.cost?summary.revenue/summary.cost:0).toFixed(2).replace(".",",")+"x"]];
+ const kpiCards: [string,string][]=[["Investimento",cash(summary.cost)],["Impressões",int(views)],["Alcance",int(reach)],["Cliques",int(summary.clicks)],["CTR",pct(ctr)],["CPC",cash(summary.clicks?summary.cost/summary.clicks:0)],["Leads",int(summary.leads)],["CPL",cash(summary.leads?summary.cost/summary.leads:0)],["Conversões",int(summary.conversions)],["Custo por conversão",cash(summary.conversions?summary.cost/summary.conversions:0)],["Receita",cash(summary.revenue)],["ROAS",(summary.cost?summary.revenue/summary.cost:0).toFixed(2).replace(".",",")+"x"]];
  const distribution=rows.reduce((a,c)=>{const obj=classifyCampaign(c.name);a[obj]=(a[obj]??0)+c.cost*multiplier;return a},{} as Record<string,number>);
  const distEntries=Object.entries(distribution).map(([name,value])=>({name:objectiveLabels[name as Exclude<Objective,"all">],value})).sort((a,b)=>b.value-a.value);
  const angleColors=["#009c56","#00cf77","#54e5a3","#a2d9b8","#d7e8de"];
