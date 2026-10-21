@@ -339,3 +339,41 @@
 .perf.appShell .dashboardIntro:before,
 .perf.appShell .chartPanel:before,
 .perf.appShell .objectiveOverview:before{display:none!important}
+
+
+/* Two dashboard experiences: classic and visual BI */
+.perf .dashboardModeBar{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;background:linear-gradient(110deg,#ecfff4,#fff);border:1px solid #d9ebe0;border-radius:18px;padding:18px 22px;margin-bottom:22px}
+.perf .dashboardModeBar>div:first-child{display:grid;gap:5px}.perf .dashboardModeBar strong{font-size:15px;font-weight:800}.perf .dashboardModeBar span{font-size:12px;color:#719080}
+.perf .dashboardModeSwitch{display:flex;align-items:center;gap:5px;border-radius:13px;padding:5px;background:#e6f2ea}
+.perf .dashboardModeSwitch button{display:flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:11px 15px;background:transparent;color:#476654;font-weight:800}
+.perf .dashboardModeSwitch button.active{background:#092d1e;color:#fff;box-shadow:0 3px 12px #001a0d22}
+.perf .biView{display:grid;gap:18px}
+.perf .biHero{display:flex;align-items:center;justify-content:space-between;gap:25px;background:radial-gradient(circle at right,#08734a,#082c20 55%,#071b15);padding:27px 31px;border-radius:21px;color:#fff}
+.perf .biHero h2{font-size:clamp(22px,2.3vw,31px);font-weight:850;margin:7px 0;letter-spacing:-.8px}
+.perf .biHero p{font-size:13px;color:#c4e2d0}
+.perf .biHero .eyebrow{color:#32ff9d}
+.perf .biAvailability{max-width:300px;line-height:1.5;background:#ffffff10;padding:14px 18px;border:1px solid #ffffff2b;border-radius:15px;font-weight:800}
+.perf .biAvailability small{display:block;color:#c2d7cd;font-size:11px;font-weight:400;margin-top:7px}
+.perf .biStatusDot{display:inline-block;width:9px;height:9px;margin-right:7px;border-radius:50%;background:#15ee87}
+.perf .biTopKpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.perf .biKpi{display:grid;gap:10px;padding:21px;border:1px solid #e1ece5;border-radius:16px;background:#fff}
+.perf .biKpi span{font-size:12px;color:#617c6a}.perf .biKpi strong{font-size:clamp(22px,2.1vw,30px);font-weight:900;letter-spacing:-1px}
+.perf .biKpi small{font-size:10px;color:#90a397}
+.perf .biChartPanel,.perf .biTrendPanel,.perf .biHighlights,.perf .biFullTable{padding:24px}
+.perf .biSelectLabel{display:flex;align-items:center;gap:10px;color:#67816e;font-size:12px;font-weight:800}
+.perf .biSelectLabel select{padding:11px 13px;border-radius:11px;border:1px solid #d6e7da;background:#fff;color:#0d3824}
+.perf .biChart{height:340px;min-height:280px;margin-top:23px}
+.perf .biChartFoot{display:flex;justify-content:space-between;color:#6b8875;font-size:12px;padding-top:16px;border-top:1px solid #e1ede5}
+.perf .biBottomGrid{display:grid;grid-template-columns:1.7fr 1fr;gap:18px}
+.perf .biHighlights{display:grid;align-content:start;gap:17px}
+.perf .biHighlights h2{font-size:18px}.perf .biHighlights p{font-size:13px;color:#5a7865}
+.perf .biDisclaimer{background:#e9f9f0;border-radius:12px;padding:16px;line-height:1.65;font-size:11px;color:#326d4f}
+.perf.themeDark .dashboardModeBar{background:#10271b;border-color:#315842;color:#f0fff5}
+.perf.themeDark .dashboardModeSwitch{background:#203e2c}
+.perf.themeDark .dashboardModeSwitch button{color:#bbd7c8}.perf.themeDark .dashboardModeSwitch button.active{background:#00ba70;color:#09291b}
+.perf.themeDark .biKpi{background:#142d20;border-color:#315742;color:#f5fff7}
+.perf.themeDark .biKpi span,.perf.themeDark .biHighlights p{color:#b0cdb8}
+.perf.themeDark .biSelectLabel select{background:#13291f;border-color:#355842;color:#f7fff8}
+.perf.themeDark .biDisclaimer{background:#214733;color:#ddffec}
+@media(max-width:1000px){.perf .biTopKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.perf .biBottomGrid{grid-template-columns:1fr}}
+@media(max-width:650px){.perf .biHero{display:grid;padding:22px}.perf .biAvailability{max-width:none}.perf .biTopKpis{grid-template-columns:repeat(2,minmax(0,1fr))}.perf .biKpi{padding:15px}.perf .biChart{height:300px}.perf .biChartPanel,.perf .biTrendPanel,.perf .biHighlights,.perf .biFullTable{padding:16px}.perf .dashboardModeSwitch{width:100%}.perf .dashboardModeSwitch button{flex:1;justify-content:center}}
