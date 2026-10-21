@@ -468,3 +468,18 @@
 @media(max-width:920px){.perf .biMetricMatrix{grid-template-columns:repeat(3,minmax(0,1fr))}.perf .biChartsThree{grid-template-columns:1fr}.perf .biChartsThree>:last-child{grid-column:auto}.perf .biSummaryCards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.perf .biMetricMatrix{grid-template-columns:repeat(2,minmax(0,1fr))}.perf .biFilterTop{grid-template-columns:1fr}.perf .biMetricCard{padding:12px 8px}.perf .biMetricIcon{width:30px;height:30px}.perf .biMetricCard strong{font-size:16px}.perf .biHeaderRow{align-items:flex-start;flex-direction:column}.perf .biSummaryCards{grid-template-columns:1fr}.perf .biDonutBox{justify-content:center}}
 @media print{.perf .biFilterSurface,.perf .biHeaderRow,.perf .biDataWarning{display:none!important}.perf .biPrintHeading{display:flex!important}.perf .biMetricMatrix{display:grid!important;grid-template-columns:repeat(6,1fr);margin-bottom:12px}.perf .biMetricCard{border:1px solid #d9e8dd!important;box-shadow:none!important;padding:9px!important}.perf .biMetricCard strong{font-size:15px!important}.perf .biChartsThree{display:grid!important;grid-template-columns:1.35fr 1fr 1fr!important;gap:7px}.perf .biVisualPanel{padding:10px!important;break-inside:avoid}.perf .biVisualPanel .chart{height:180px!important}.perf .biDonut{width:105px;height:105px}.perf .biDonut>div{width:67px;height:67px}.perf .biSummaryBand{break-inside:avoid;margin-top:8px}.perf .biSummaryCards{grid-template-columns:repeat(4,1fr)}}
+
+
+/* Narrative performance analysis in the BI view */
+.perf .biNarrative{padding:25px 28px;border:1px solid #d9eee0;border-radius:18px;background:linear-gradient(135deg,#f6fff9 0%,#fff 76%)}
+.perf .biNarrativeHeading{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.perf .biNarrativeHeading h2{font-size:20px;letter-spacing:-.5px;margin:7px 0 4px}
+.perf .biNarrativeHeading p{font-size:12px;color:#73917f}
+.perf .biNarrativeText{max-width:1120px;display:grid;gap:14px}
+.perf .biNarrativeText p{font-size:13px;line-height:1.9;color:#355445;margin:0}
+.perf .biNarrativeNote{display:flex;align-items:flex-start;gap:10px;border-top:1px solid #dbece0;margin-top:18px;padding-top:14px;color:#728c7b;font-size:11px;line-height:1.6}
+.perf .biNarrativeNote svg{flex-shrink:0;color:#00aa61}
+.perf.themeDark .biNarrative{background:linear-gradient(125deg,#173829,#10291e);border-color:#335a40}
+.perf.themeDark .biNarrativeText p{color:#d4efde}
+.perf.themeDark .biNarrativeHeading p,.perf.themeDark .biNarrativeNote{color:#a9cbb6}
+@media print{.perf .biNarrative{break-inside:avoid;background:#fff!important;padding:12px!important}.perf .biNarrativeText p{font-size:10px!important;line-height:1.55!important}.perf .biNarrativeNote{font-size:9px!important}}
