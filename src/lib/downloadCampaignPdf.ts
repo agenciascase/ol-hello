@@ -75,6 +75,17 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
   .scase-pdf-export .scase-priority-card *{color:inherit!important}
   .scase-pdf-export .scase-priority-number{color:${dark?"#50e7a0":"#08764c"}!important}
   .scase-pdf-export .kpiTop,.scase-pdf-export .kpiBottom{color:inherit!important}
+  .scase-pdf-export .kpi .kpiSymbol,.scase-pdf-export .kpi .kpiSymbol *{background:${dark?"#164d36":"#e2f9eb"}!important;color:#26e88c!important;stroke:#26e88c!important;fill:none!important;opacity:1!important}
+  .scase-pdf-export .kpi .kpiSymbol svg,.scase-pdf-export .kpi .kpiSymbol path,.scase-pdf-export .kpi .kpiSymbol rect{stroke:#26e88c!important;stroke-width:2!important}
+  .scase-pdf-export .dashboardIntro{grid-template-columns:35% 37% 28%!important;min-width:0!important;gap:0!important;padding:20px 26px!important;overflow:visible!important}
+  .scase-pdf-export .dashboardIntro>div{min-width:0!important;max-width:100%!important;padding-right:10px!important}
+  .scase-pdf-export .dashboardIntro>div:last-child{padding-right:0!important;text-align:right!important;justify-self:stretch!important}
+  .scase-pdf-export .dashboardIntro>div:first-child strong{font-size:20px!important;line-height:1.27!important;overflow-wrap:anywhere!important;word-break:normal!important;white-space:normal!important}
+  .scase-pdf-export .dashboardIntro>div:nth-child(2) strong{font-size:22px!important;line-height:1.3!important}
+  .scase-pdf-export .dashboardIntro>div:last-child strong{font-size:17px!important;line-height:1.45!important;white-space:normal!important}
+  .scase-pdf-export .dashboardIntro small,.scase-pdf-export .dashboardIntro span{font-size:11px!important}
+  .scase-pdf-export .panel{overflow:visible!important}
+
   .scase-pdf-export .chart,.scase-pdf-export .recharts-wrapper{background:transparent!important}
   `;
   clone.prepend(exportStyle);
@@ -109,7 +120,7 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,o
  const encoder=new TextEncoder();const parts:Uint8Array[]=[];const offsets:number[]=[0];let offset=0;const add=(value:string|Uint8Array)=>{const bytes=typeof value==="string"?encoder.encode(value):value;parts.push(bytes);offset+=bytes.length};
  const object=(n:number,body:string|Uint8Array,prefix="",suffix="")=>{offsets[n]=offset;add(n+" 0 obj\n");if(prefix)add(prefix);add(body);if(suffix)add(suffix);add("\nendobj\n")};
  const singleA4=options.singleA4===true;
- const pageWidth=singleA4?595:842,pageHeight=singleA4?842:595,margin=singleA4?14:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
+ const pageWidth=842,pageHeight=595,margin=singleA4?0:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
  const sliceHeight=singleA4?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
  const count=Math.ceil(canvas.height/sliceHeight);
  const images:Uint8Array[]=[];
@@ -127,7 +138,7 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,o
  object(2,"<< /Type /Pages /Kids ["+ids.map(id=>id+" 0 R").join(" ")+"] /Count "+count+" >>");
  images.forEach((img,i)=>{
   const pageId=ids[i]! ,imageId=pageId+1,streamId=pageId+2;
-  const height=Math.min(sliceHeight,canvas.height-i*sliceHeight),scale=singleA4?Math.min(contentWidth/canvas.width,contentHeight/height):contentWidth/canvas.width,printedWidth=canvas.width*scale,printedHeight=height*scale;
+  const height=Math.min(sliceHeight,canvas.height-i*sliceHeight),scale=contentWidth/canvas.width,printedWidth=singleA4?contentWidth:canvas.width*scale,printedHeight=singleA4?contentHeight:height*scale;
   const bg=(options.background??"#ffffff").replace("#","");
   const red=parseInt(bg.slice(0,2),16)/255,green=parseInt(bg.slice(2,4),16)/255,blue=parseInt(bg.slice(4,6),16)/255;
   const backdrop=`${red.toFixed(4)} ${green.toFixed(4)} ${blue.toFixed(4)} rg 0 0 ${pageWidth} ${pageHeight} re f\\n`;
