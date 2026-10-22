@@ -64,8 +64,29 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
       current.current+=cost;current.impressions+=Number(item.metrics?.impressions??0);current.clicks+=Number(item.metrics?.clicks??0);current.conversions+=Number(item.metrics?.conversions??0);daily.set(day,current);}
    }
    const campaigns=[...grouped.values()].map(c=>({...c,conversionRate:c.interactions>0?c.conversions/c.interactions:null,absoluteTopImpressionPercentage:c.absoluteTopImpressions>0?c.absoluteTopWeighted/c.absoluteTopImpressions:null})).sort((a,b)=>b.cost-a.cost);
+   // Conversion actions are a separate, segmented query. Do not add these
+   // values to total conversions: they are a breakdown of the existing metric.
+   const conversionActions:Array<{campaignId:string;name:string;conversions:number}>=[];
+   try {
+    const actionQuery=`SELECT campaign.id, segments.conversion_action_name, metrics.conversions FROM campaign WHERE segments.date BETWEEN "${utcDay(start)}" AND "${utcDay(end)}" AND metrics.conversions > 0 LIMIT 10000`;
+    const actionResult=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},body:JSON.stringify({query:actionQuery}),cache:"no-store"});
+    if(actionResult.ok){
+     const chunks=await actionResult.json() as Array<{results?:Array<{campaign?:{id?:string|number};segments?:{conversionActionName?:string};metrics?:{conversions?:string|number}}> }>;
+     const byKey=new Map<string,{campaignId:string;name:string;conversions:number}>();
+     for(const chunk of chunks)for(const row of chunk.results??[]){
+      const campaignId=String(row.campaign?.id??"");
+      if(!campaignId)continue;
+      const name=row.segments?.conversionActionName?.trim()||"Ação de conversão sem nome";
+      const key=campaignId+"::"+name;
+      const entry=byKey.get(key)??{campaignId,name,conversions:0};
+      entry.conversions+=Number(row.metrics?.conversions??0);
+      byKey.set(key,entry);
+     }
+     conversionActions.push(...byKey.values().sort((a,b)=>b.conversions-a.conversions));
+    }
+   }catch{ /* Show total conversions even if action breakdown is unavailable. */ }
    const dailySeries=[...daily.values()].sort((a,b)=>a.day.localeCompare(b.day));
-   return Response.json({customerId,days:days==="today"?"today":Number(days),campaigns,dailySeries,previous,period:{start:utcDay(start),end:utcDay(end),previousStart:utcDay(previousStart),previousEnd:utcDay(previousEnd)}},{headers:{"cache-control":"private, no-store"}});
+   return Response.json({customerId,days:days==="today"?"today":Number(days),campaigns,conversionActions,dailySeries,previous,period:{start:utcDay(start),end:utcDay(end),previousStart:utcDay(previousStart),previousEnd:utcDay(previousEnd)}},{headers:{"cache-control":"private, no-store"}});
   }catch{return Response.json({error:"Não foi possível consultar campanhas. Confirme as permissões dessa conta."},{status:503})}
  }}}
 });
