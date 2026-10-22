@@ -6,7 +6,7 @@ export function encryptToken(value:string){const iv=randomBytes(12);const cipher
 export function decryptToken(value:string){const [iv,tag,data]=value.split(".");if(!iv||!tag||!data)throw new Error("Invalid cipher");const decipher=createDecipheriv("aes-256-gcm",encryptionKey(),Buffer.from(iv,"base64"));decipher.setAuthTag(Buffer.from(tag,"base64"));return Buffer.concat([decipher.update(Buffer.from(data,"base64")),decipher.final()]).toString("utf8")}
 function base(){return (process.env["SUPABASE_URL"]??required("VITE_SUPABASE_URL")).replace(/\/$/,"")}
 function publishableKey(){return process.env["SUPABASE_PUBLISHABLE_KEY"]??required("VITE_SUPABASE_PUBLISHABLE_KEY")}
-function jwtFromRequest(request:Request){return request.headers.get("cookie")?.split(";").map(v=>v.trim()).find(v=>v.startsWith("scase_integration_session="))?.slice("scase_integration_session=".length)??request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1]??null}
+function jwtFromRequest(request:Request){return request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1]??request.headers.get("cookie")?.split(";").map(v=>v.trim()).find(v=>v.startsWith("scase_integration_session="))?.slice("scase_integration_session=".length)??null}
 async function authorized(request:Request){
   if(!(await isAuthenticatedAgencyAdmin(request)))throw new Error("Administrator session required");
   const jwt=jwtFromRequest(request);if(!jwt)throw new Error("Missing administrator session");
