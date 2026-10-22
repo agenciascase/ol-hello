@@ -3,8 +3,10 @@ import { adminUserId,googleAccessToken } from "../../lib/ads-credentials.server"
 import { MCC_CUSTOMER_ID,googleAccounts,refreshGoogleToken } from "../../lib/ads-oauth.server";
 export const Route=createFileRoute("/api/integrations/google/monthly")({server:{handlers:{GET:async ({request})=>{
  if(!(await adminUserId(request)))return Response.json({error:"Administrador não autorizado"},{status:403});
- const customerId=new URL(request.url).searchParams.get("customer_id")??"";
- if(!/^\d{10}$/.test(customerId))return Response.json({error:"Conta inválida"},{status:400});
+ const params=new URL(request.url).searchParams;
+ const customerId=params.get("customer_id")??"";
+ const campaignId=params.get("campaign_id")??"";
+ if(!/^\d{10}$/.test(customerId)||(campaignId!==""&&!/^\d+$/.test(campaignId)))return Response.json({error:"Conta inválida"},{status:400});
  try{
  const access=await googleAccessToken(request,refreshGoogleToken);
  const accounts=await googleAccounts(access) as Array<{results?:Array<{customerClient?:{id?:string|number}}> }>;
@@ -13,7 +15,9 @@ export const Route=createFileRoute("/api/integrations/google/monthly")({server:{
  const end=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth()+1,0));
  const start=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth()-5,1));
  const iso=(date:Date)=>date.toISOString().slice(0,10);
- const query=`SELECT segments.month, metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.conversions FROM customer WHERE segments.date BETWEEN "${iso(start)}" AND "${iso(end)}"`;
+ const query=campaignId
+  ? `SELECT segments.month, campaign.id, metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.conversions FROM campaign WHERE campaign.id = ${campaignId} AND segments.date BETWEEN "${iso(start)}" AND "${iso(end)}"`
+  : `SELECT segments.month, metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.conversions FROM customer WHERE segments.date BETWEEN "${iso(start)}" AND "${iso(end)}"`;
  const version=process.env["GOOGLE_ADS_API_VERSION"]||"v26";
  const response=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:{authorization:"Bearer "+access,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},body:JSON.stringify({query}),cache:"no-store"});
  if(!response.ok)return Response.json({error:"Não foi possível consultar a evolução mensal.",upstream_status:response.status},{status:502});
