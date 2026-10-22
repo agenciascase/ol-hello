@@ -68,8 +68,9 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
    // values to total conversions: they are a breakdown of the existing metric.
    const conversionActions:Array<{campaignId:string;name:string;conversions:number}>=[];
    try {
-    const actionQuery=`SELECT campaign.id, segments.conversion_action_name, metrics.conversions FROM campaign WHERE segments.date BETWEEN "${utcDay(start)}" AND "${utcDay(end)}" AND metrics.conversions > 0 LIMIT 10000`;
+    const actionQuery=`SELECT campaign.id, segments.conversion_action_name, metrics.conversions FROM campaign WHERE segments.date BETWEEN "${utcDay(start)}" AND "${utcDay(end)}" LIMIT 10000`;
     const actionResult=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},body:JSON.stringify({query:actionQuery}),cache:"no-store"});
+    if(!actionResult.ok)console.warn("[scase/google] Conversion-action breakdown unavailable",actionResult.status);
     if(actionResult.ok){
      const chunks=await actionResult.json() as Array<{results?:Array<{campaign?:{id?:string|number};segments?:{conversionActionName?:string};metrics?:{conversions?:string|number}}> }>;
      const byKey=new Map<string,{campaignId:string;name:string;conversions:number}>();
@@ -84,7 +85,7 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
      }
      conversionActions.push(...byKey.values().sort((a,b)=>b.conversions-a.conversions));
     }
-   }catch{ /* Show total conversions even if action breakdown is unavailable. */ }
+   }catch(error){ console.warn("[scase/google] Conversion-action breakdown failed",error instanceof Error?error.message:"unknown"); }
    const dailySeries=[...daily.values()].sort((a,b)=>a.day.localeCompare(b.day));
    return Response.json({customerId,days:days==="today"?"today":Number(days),campaigns,conversionActions,dailySeries,previous,period:{start:utcDay(start),end:utcDay(end),previousStart:utcDay(previousStart),previousEnd:utcDay(previousEnd)}},{headers:{"cache-control":"private, no-store"}});
   }catch{return Response.json({error:"Não foi possível consultar campanhas. Confirme as permissões dessa conta."},{status:503})}
