@@ -36,11 +36,13 @@ export const Route=createFileRoute("/api/integrations/$provider/callback")({
     console.error("[scase/oauth] secure storage failed",step,detail.replace(/Bearer\\s+\\S+/g,"Bearer [redacted]"));
     return Response.json({error:"Falha ao armazenar a autorização com segurança.",step},{status:503});
   }
-  try {
-    const origin=process.env["APP_ORIGIN"]?.replace(/\/$/,"")??url.origin;
-    const response=Response.redirect(origin+"/dashboard?google_connected=1",302);
-    response.headers.append("Set-Cookie","scase_oauth_google=; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations/google; Max-Age=0");
-    return response;
-  }catch{return Response.json({error:"Falha ao concluir o redirecionamento.",step:"oauth_redirect"},{status:503})}
+  // Credentials have already been stored successfully; never fail OAuth because
+  // of a cosmetic redirect. Use a same-origin relative Location header.
+  const response=new Response(null,{status:303,headers:{
+    "Location":"/dashboard?google_connected=1",
+    "Cache-Control":"no-store"
+  }});
+  response.headers.append("Set-Cookie","scase_oauth_google=; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations/google; Max-Age=0");
+  return response;
  }}}
 });
