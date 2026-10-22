@@ -6,7 +6,7 @@ export const Route=createFileRoute("/api/integrations/google/accounts")({
   const user=await adminUserId(request);
   if(!user)return Response.json({error:"Administrador não autorizado"},{status:403});
   try{
-   const token=await googleAccessToken(user,refreshGoogleToken);
+   const token=await googleAccessToken(request,refreshGoogleToken);
    const data=await googleAccounts(token);
    return Response.json({data},{headers:{"cache-control":"no-store"}});
   }catch{return Response.json({error:"Não foi possível consultar as contas. Confirme a conexão e as permissões da MCC."},{status:503})}
