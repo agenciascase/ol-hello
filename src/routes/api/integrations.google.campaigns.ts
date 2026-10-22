@@ -25,16 +25,16 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
    const previousStart=new Date(start);previousStart.setUTCDate(previousStart.getUTCDate()-daysCount);
    const end=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
    const previousEnd=new Date(start);previousEnd.setUTCDate(previousEnd.getUTCDate()-1);
-   const query=`SELECT segments.date, campaign.id, campaign.name, campaign.status, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value, metrics.absolute_top_impression_percentage FROM campaign WHERE segments.date BETWEEN "${utcDay(previousStart)}" AND "${utcDay(end)}" ORDER BY segments.date DESC LIMIT 10000`;
+   const query=`SELECT segments.date, campaign.id, campaign.name, campaign.status, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value, metrics.absolute_top_impression_percentage, metrics.interactions FROM campaign WHERE segments.date BETWEEN "${utcDay(previousStart)}" AND "${utcDay(end)}" ORDER BY segments.date DESC LIMIT 10000`;
    const result=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{
     method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},
     body:JSON.stringify({query}),cache:"no-store"
    });
    if(!result.ok)return Response.json({error:"A API do Google Ads não conseguiu consultar as campanhas dessa conta.",upstream_status:result.status},{status:502});
-   const batches=await result.json() as Array<{results?:Array<{segments?:{date?:string};campaign?:{id?:string;name?:string;status?:string};metrics?:{costMicros?:string|number;impressions?:string|number;clicks?:string|number;conversions?:string|number;conversionsValue?:string|number;absoluteTopImpressionPercentage?:string|number}}> }>;
+   const batches=await result.json() as Array<{results?:Array<{segments?:{date?:string};campaign?:{id?:string;name?:string;status?:string};metrics?:{costMicros?:string|number;impressions?:string|number;clicks?:string|number;conversions?:string|number;conversionsValue?:string|number;absoluteTopImpressionPercentage?:string|number;interactions?:string|number}}> }>;
    const results=batches.flatMap(b=>b.results??[]);
    const previous={cost:0,impressions:0,clicks:0,conversions:0,conversionValue:0};
-   const grouped=new Map<string,{id:string;name:string;status:string;cost:number;impressions:number;clicks:number;conversions:number;conversionValue:number;absoluteTopWeighted:number;absoluteTopImpressions:number}>();
+   const grouped=new Map<string,{id:string;name:string;status:string;cost:number;impressions:number;clicks:number;conversions:number;conversionValue:number;interactions:number;absoluteTopWeighted:number;absoluteTopImpressions:number}>();
    const daily=new Map<string,{day:string;current:number;impressions:number;clicks:number;conversions:number}>();
    for(const item of results){
     const id=String(item.campaign?.id??"");if(!id)continue;
@@ -47,10 +47,10 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
       previous.conversionValue+=Number(item.metrics?.conversionsValue??0);
       continue;
     }
-    const campaign=grouped.get(id)??{id,name:item.campaign?.name??"Campanha sem nome",status:item.campaign?.status??"UNKNOWN",cost:0,impressions:0,clicks:0,conversions:0,conversionValue:0,absoluteTopWeighted:0,absoluteTopImpressions:0};
+    const campaign=grouped.get(id)??{id,name:item.campaign?.name??"Campanha sem nome",status:item.campaign?.status??"UNKNOWN",cost:0,impressions:0,clicks:0,conversions:0,conversionValue:0,interactions:0,absoluteTopWeighted:0,absoluteTopImpressions:0};
     const cost=Number(item.metrics?.costMicros??0)/1e6;
     campaign.cost+=cost;campaign.impressions+=Number(item.metrics?.impressions??0);campaign.clicks+=Number(item.metrics?.clicks??0);
-    campaign.conversions+=Number(item.metrics?.conversions??0);campaign.conversionValue+=Number(item.metrics?.conversionsValue??0);
+    campaign.conversions+=Number(item.metrics?.conversions??0);campaign.interactions+=Number(item.metrics?.interactions??0);campaign.conversionValue+=Number(item.metrics?.conversionsValue??0);
     const absoluteTop=item.metrics?.absoluteTopImpressionPercentage;
     if(absoluteTop!==undefined&&absoluteTop!==null&&Number.isFinite(Number(absoluteTop))){const impressions=Number(item.metrics?.impressions??0);campaign.absoluteTopWeighted+=Number(absoluteTop)*impressions;campaign.absoluteTopImpressions+=impressions;}
     grouped.set(id,campaign);
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
     if(day){const current=daily.get(day)??{day,current:0,impressions:0,clicks:0,conversions:0};
       current.current+=cost;current.impressions+=Number(item.metrics?.impressions??0);current.clicks+=Number(item.metrics?.clicks??0);current.conversions+=Number(item.metrics?.conversions??0);daily.set(day,current);}
    }
-   const campaigns=[...grouped.values()].map(c=>({...c,absoluteTopImpressionPercentage:c.absoluteTopImpressions>0?c.absoluteTopWeighted/c.absoluteTopImpressions:null})).sort((a,b)=>b.cost-a.cost);
+   const campaigns=[...grouped.values()].map(c=>({...c,conversionRate:c.interactions>0?c.conversions/c.interactions:null,absoluteTopImpressionPercentage:c.absoluteTopImpressions>0?c.absoluteTopWeighted/c.absoluteTopImpressions:null})).sort((a,b)=>b.cost-a.cost);
    const dailySeries=[...daily.values()].sort((a,b)=>a.day.localeCompare(b.day));
    return Response.json({customerId,days:days==="today"?"today":Number(days),campaigns,dailySeries,previous,period:{start:utcDay(start),end:utcDay(end),previousStart:utcDay(previousStart),previousEnd:utcDay(previousEnd)}},{headers:{"cache-control":"private, no-store"}});
   }catch{return Response.json({error:"Não foi possível consultar campanhas. Confirme as permissões dessa conta."},{status:503})}
