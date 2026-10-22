@@ -7,7 +7,7 @@ export const Route=createFileRoute("/api/integrations/session")({
   if(!(await isAuthenticatedAgencyAdmin(request)))return Response.json({error:NOT_READY},{status:403});
   const jwt=request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   if(!jwt)return Response.json({error:"Sessão não encontrada"},{status:401});
-  const cookie=sessionCookieName()+"="+jwt+"; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations; Max-Age=600";
+  const cookie=sessionCookieName()+"="+jwt+"; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations; Max-Age=3600";
   return Response.json({ok:true},{headers:{"Set-Cookie":cookie,"Cache-Control":"no-store"}});
  }}}
 });
