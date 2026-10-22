@@ -41,7 +41,7 @@ export function LiveCampaignInsights({campaigns,period,previous}:{campaigns:Camp
  <div style={{marginTop:24,paddingTop:19,borderTop:"1px solid #dcebe1"}}>
  <h3 style={{fontSize:19,margin:"0 0 5px",fontWeight:800}}>Prioridades para o próximo período</h3>
  <p style={{fontSize:12,opacity:.7,marginBottom:14}}>Pontos de acompanhamento, não promessas de resultado.</p>
- <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>{priorities.map((item,i)=><div key={item.title} style={{borderRadius:13,border:"1px solid #23694d",background:"linear-gradient(145deg,#103b2b,#09291d)",color:"#f1fff7",padding:16,boxShadow:"0 6px 18px #001e130d"}}><span style={{fontSize:11,fontWeight:800,color:"#50e7a0"}}>{String(i+1).padStart(2,"0")}</span><h4 style={{fontSize:14,margin:"8px 0",color:"#ffffff",fontWeight:800}}>{item.title}</h4><p style={{fontSize:13,lineHeight:1.6,color:"#d4eee0"}}>{item.text}</p></div>)}</div>
+ <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>{priorities.map((item,i)=><div key={item.title} className="scase-priority-card" style={{borderRadius:13,padding:16}}><span className="scase-priority-number" style={{fontSize:11,fontWeight:800}}>{String(i+1).padStart(2,"0")}</span><h4 style={{fontSize:14,margin:"8px 0",fontWeight:800}}>{item.title}</h4><p style={{fontSize:13,lineHeight:1.6}}>{item.text}</p></div>)}</div>
  </div>
  <p style={{fontSize:11,opacity:.65,marginTop:17}}>Dados atribuídos pelo Google Ads. A avaliação de vendas e qualidade dos contatos depende das informações do atendimento comercial.</p>
  </section>;
