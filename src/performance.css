@@ -512,3 +512,9 @@
 .perf .scase-priority-number{color:#08764c}
 .perf.themeDark .scase-priority-card,.perf.dark .scase-priority-card,.perf[data-theme="dark"] .scase-priority-card{background:linear-gradient(145deg,#103b2b,#09291d);color:#f1fff7;border-color:#23694d}
 .perf.themeDark .scase-priority-number,.perf.dark .scase-priority-number,.perf[data-theme="dark"] .scase-priority-number{color:#50e7a0}
+
+/* Readable period comparison cards in both report themes. */
+.perf .scase-compare-card{background:#f7fbf8;color:#173529;border:1px solid #d9e9df}
+.perf.themeDark .scase-compare-card,.perf.dark .scase-compare-card,.perf[data-theme="dark"] .scase-compare-card{background:#103b2b;color:#f2fff7;border-color:#266448}
+.scase-pdf-export.scase-pdf-dark .scase-compare-card{background:#103b2b!important;color:#f2fff7!important;border-color:#266448!important}
+.scase-pdf-export.scase-pdf-light .scase-compare-card{background:#f7fbf8!important;color:#173529!important;border-color:#d9e9df!important}
