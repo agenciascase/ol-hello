@@ -56,14 +56,19 @@ export async function downloadDashboardPdf(selector: string, filename: string) {
   clone.style.maxWidth="none";
   clone.style.padding="24px";
   clone.style.background="#f5f9f6";
-  clone.querySelectorAll("button,input,select,.biDataWarning,.biShareBox,.biExport,.biPrintHeading").forEach(node=>{
-    if(node.matches(".biPrintHeading"))return;
-    if(node.matches(".biShareBox,.biExport,.biDataWarning"))(node as HTMLElement).style.display="none";
+  // Export content only. Never include edit controls, share links, agency navigation,
+  // client selectors, or customization interfaces in client-facing PDFs.
+  clone.querySelectorAll("button,input,select,textarea,.biShareBox,.biExport,.biDataWarning,.metricPicker,.metricPickerWrap,[draggable='true']").forEach(node=>{
+    if(node.matches("[draggable='true']")){node.removeAttribute("draggable");return;}
+    node.remove();
   });
+  clone.querySelectorAll(".panelHead label,.biShareLink,.classicPdfActions,.dashboardModeBar,.filterBar,.sidebar,.topbar,.heading").forEach(node=>node.remove());
   const printHeading=document.createElement("div");
   printHeading.style.cssText="display:flex;align-items:center;gap:22px;background:#09251b;padding:20px 26px;border-radius:12px;color:white;margin-bottom:16px;font:700 22px 'Open Sans',Arial,sans-serif";
   const logo=document.createElement("img");logo.src="/scase-logo-light.svg";logo.style.cssText="width:170px;height:65px;object-fit:contain";
-  const title=document.createElement("div");title.textContent="Relatório SCASE Performance";
+  const title=document.createElement("div");const clientName=element.dataset.reportClient?.trim();
+  const period=element.dataset.reportPeriod?.trim();
+  title.textContent=clientName ? clientName+(period?" · "+period:"") : "Relatório SCASE Performance";
   printHeading.append(logo,title);
   clone.prepend(printHeading);
   const host=document.createElement("div");host.style.cssText="position:fixed;left:-20000px;top:0;z-index:-9999";
