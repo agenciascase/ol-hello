@@ -66,7 +66,7 @@ export async function googleAccounts(accessToken:string){
   const api=process.env["GOOGLE_ADS_API_VERSION"]||"v26";
   const response=await fetch(`https://googleads.googleapis.com/${api}/customers/${MCC_CUSTOMER_ID}/googleAds:searchStream`,{
     method:"POST",headers:{authorization:`Bearer ${accessToken}`,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},
-    body:JSON.stringify({query:"SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.level FROM customer_client WHERE customer_client.level <= 2"}),
+    body:JSON.stringify({query:"SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.level FROM customer_client WHERE customer_client.level = 1 AND customer_client.manager = FALSE"}),
     cache:"no-store"
   });
   if(!response.ok) throw new Error(`Google Ads account discovery failed (${response.status})`);
