@@ -518,3 +518,9 @@
 .perf.themeDark .scase-compare-card,.perf.dark .scase-compare-card,.perf[data-theme="dark"] .scase-compare-card{background:#103b2b;color:#f2fff7;border-color:#266448}
 .scase-pdf-export.scase-pdf-dark .scase-compare-card{background:#103b2b!important;color:#f2fff7!important;border-color:#266448!important}
 .scase-pdf-export.scase-pdf-light .scase-compare-card{background:#f7fbf8!important;color:#173529!important;border-color:#d9e9df!important}
+
+/* Single conversion-action label sits over the card's upper border. */
+.perf .scase-conversion-tag{position:absolute;top:-11px;left:17px;z-index:2;display:block;max-width:calc(100% - 34px);padding:2px 10px;border-radius:999px;font-size:10px;font-weight:800;line-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#e6f9ee;color:#076c41;border:1px solid #9cdfb9}
+.perf.themeDark .scase-conversion-tag,.perf.dark .scase-conversion-tag,.perf[data-theme="dark"] .scase-conversion-tag{background:#124c36;color:#a4ffd0;border-color:#2a9e66}
+.scase-pdf-export.scase-pdf-dark .scase-conversion-tag{background:#124c36!important;color:#a4ffd0!important}
+.scase-pdf-export.scase-pdf-light .scase-conversion-tag{background:#e6f9ee!important;color:#076c41!important}
