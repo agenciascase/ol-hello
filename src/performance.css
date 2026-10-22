@@ -506,3 +506,9 @@
 .shareDemo{background:#fff6e5;color:#826124;padding:12px 16px;border-radius:9px;margin-top:18px}
 .shareFooter{margin-top:30px;line-height:1.8;font-size:12px}
 @media(max-width:620px){.shareMetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.sharePage header{flex-wrap:wrap}.perf .biShareBox{justify-items:stretch}}
+
+/* Priority cards follow the active SCASE theme. */
+.perf .scase-priority-card{background:#fff;color:#142e21;border:1px solid #d9eade;box-shadow:0 5px 18px rgba(0,35,19,.035)}
+.perf .scase-priority-number{color:#08764c}
+.perf.themeDark .scase-priority-card,.perf.dark .scase-priority-card,.perf[data-theme="dark"] .scase-priority-card{background:linear-gradient(145deg,#103b2b,#09291d);color:#f1fff7;border-color:#23694d}
+.perf.themeDark .scase-priority-number,.perf.dark .scase-priority-number,.perf[data-theme="dark"] .scase-priority-number{color:#50e7a0}
