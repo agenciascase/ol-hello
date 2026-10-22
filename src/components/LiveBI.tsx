@@ -13,7 +13,6 @@ const metricValue=(c:{cost:number;impressions:number;clicks:number;conversions:n
 export function LiveBI({campaigns,daily,client,previous,period,periodStart,periodEnd,previousStart,previousEnd,comparePrevious=false}:{campaigns:Campaign[];daily:Daily[];client:string;previous?:Totals;period:string;periodStart?:string;periodEnd?:string;previousStart?:string;previousEnd?:string;comparePrevious?:boolean}){
  const dateLabel=(v?:string)=>v?new Date(v+"T12:00:00Z").toLocaleDateString("pt-BR",{timeZone:"UTC"}):"";
  const currentRange=periodStart&&periodEnd?(periodStart===periodEnd?dateLabel(periodStart):dateLabel(periodStart)+" a "+dateLabel(periodEnd)):"últimos "+period+" dias";
- const priorRange=Number(period)===1?"dia anterior":Number(period)===7?"7 dias anteriores":Number(period)===14?"14 dias anteriores":Number(period)===15?"15 dias anteriores":Number(period)===30?"30 dias anteriores":"período anterior equivalente";
  const comparable=(key:Metric)=>selected==="all"&&!!previous&&["cost","impressions","clicks","conversions","ctr","cpc","cpa","cpm"].includes(key);
  const [metric,setMetric]=useState<Metric>("conversions");
  const [platform,setPlatform]=useState<"google"|"meta">("google");
