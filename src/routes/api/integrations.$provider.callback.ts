@@ -15,7 +15,7 @@ export const Route=createFileRoute("/api/integrations/$provider/callback")({
   if(!userId)return Response.json({error:"Sessão inválida"},{status:403});
   try{
     const tokens=await exchangeCode("google",code);
-    await saveGoogleCredential(userId,tokens);
+    await saveGoogleCredential(request,tokens);
     const origin=process.env["APP_ORIGIN"]?.replace(/\/$/,"")??url.origin;
     const response=Response.redirect(origin+"/dashboard?google_connected=1",302);
     response.headers.append("Set-Cookie","scase_oauth_google=; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations/google; Max-Age=0");
