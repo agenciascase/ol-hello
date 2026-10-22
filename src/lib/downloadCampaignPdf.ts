@@ -35,7 +35,7 @@ export async function downloadCampaignPdf(report:ReportInput) {
  * Export the actual dashboard DOM as a downloadable, multi-page PDF.
  * Charts and typography are captured as rendered, rather than reconstructed.
  */
-export async function downloadDashboardPdf(selector: string, filename: string) {
+export async function downloadDashboardPdf(selector: string, filename: string, options: {theme?: "light"|"dark"; singleA4?: boolean} = {}) {
   const element=document.querySelector<HTMLElement>(selector);
   if(!element)throw new Error("A área do relatório não está disponível.");
   const source="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js";
@@ -55,21 +55,44 @@ export async function downloadDashboardPdf(selector: string, filename: string) {
   clone.style.width=Math.max(1100,element.scrollWidth)+"px";
   clone.style.maxWidth="none";
   clone.style.padding="24px";
-  clone.style.background="#f5f9f6";
+  const dark=options.theme==="dark";
+  const background=dark?"#071b14":"#f5f9f6";
+  clone.style.background=background;
+  clone.style.color=dark?"#f1fff7":"#142e21";
+  clone.classList.add("scase-pdf-export");
+  clone.classList.add(dark?"scase-pdf-dark":"scase-pdf-light");
+  // Reproduce the selected theme without relying on the outer app shell.
+  const exportStyle=document.createElement("style");
+  exportStyle.textContent=`
+  .scase-pdf-export{font-family:"Open Sans",Arial,sans-serif!important;background:${background}!important;color:${dark?"#f1fff7":"#142e21"}!important}
+  .scase-pdf-export .panel,.scase-pdf-export .kpi,.scase-pdf-export .chartPanel{background:${dark?"#102b20":"#ffffff"}!important;color:${dark?"#f4fff8":"#152d21"}!important;border-color:${dark?"#22513a":"#dbe8df"}!important}
+  .scase-pdf-export .panel *, .scase-pdf-export .kpi *{color:inherit}
+  .scase-pdf-export .eyebrow{color:${dark?"#50e7a0":"#078e56"}!important}
+  .scase-pdf-export .dashboardIntro{background:linear-gradient(110deg,#062519,#00552f)!important;color:#ffffff!important}
+  .scase-pdf-export .dashboardIntro *, .scase-pdf-export .dashboardIntro strong{color:#ffffff!important}
+  .scase-pdf-export .dashboardIntro .eyebrow,.scase-pdf-export .dashboardIntro small,.scase-pdf-export .dashboardIntro span{color:#c9f9e1!important}
+  .scase-pdf-export .scase-priority-card{background:${dark?"#103b2b":"#ffffff"}!important;color:${dark?"#f1fff7":"#142e21"}!important;border-color:${dark?"#23694d":"#d9eade"}!important}
+  .scase-pdf-export .scase-priority-card *{color:inherit!important}
+  .scase-pdf-export .scase-priority-number{color:${dark?"#50e7a0":"#08764c"}!important}
+  .scase-pdf-export .kpiTop,.scase-pdf-export .kpiBottom{color:inherit!important}
+  .scase-pdf-export .chart,.scase-pdf-export .recharts-wrapper{background:transparent!important}
+  `;
+  clone.prepend(exportStyle);
   // Export content only. Never include edit controls, share links, agency navigation,
   // client selectors, or customization interfaces in client-facing PDFs.
   clone.querySelectorAll("button,input,select,textarea,.biShareBox,.biExport,.biDataWarning,.metricPicker,.metricPickerWrap,[draggable='true']").forEach(node=>{
     if(node.matches("[draggable='true']")){node.removeAttribute("draggable");return;}
     node.remove();
   });
-  clone.querySelectorAll(".panelHead label,.biShareLink,.classicPdfActions,.dashboardModeBar,.filterBar,.sidebar,.topbar,.heading").forEach(node=>node.remove());
+  clone.querySelectorAll(".panelHead label,.biShareLink,.classicPdfActions,.dashboardModeBar,.filterBar,.sidebar,.topbar,.heading,.eyebrow").forEach(node=>{if(node.classList.contains("eyebrow")&&!(node.textContent||"").includes("PANORAMA EXECUTIVO"))return;node.remove();});
   const printHeading=document.createElement("div");
   printHeading.style.cssText="display:flex;align-items:center;gap:22px;background:#09251b;padding:20px 26px;border-radius:12px;color:white;margin-bottom:16px;font:700 22px 'Open Sans',Arial,sans-serif";
   const logo=document.createElement("img");logo.src="/scase-logo-light.svg";logo.style.cssText="width:170px;height:65px;object-fit:contain";
   const title=document.createElement("div");const clientName=element.dataset.reportClient?.trim();
   const period=element.dataset.reportPeriod?.trim();
-  title.textContent=clientName ? clientName+(period?" · "+period:"") : "Relatório SCASE Performance";
+  title.textContent="Relatório de desempenho";
   printHeading.append(logo,title);
+  // Client name, strategic phrase and selected dates remain in the original report banner.
   clone.prepend(printHeading);
   const host=document.createElement("div");host.style.cssText="position:fixed;left:-20000px;top:0;z-index:-9999";
   host.appendChild(clone);document.body.appendChild(host);
@@ -77,23 +100,24 @@ export async function downloadDashboardPdf(selector: string, filename: string) {
     await document.fonts.ready;
     // Allow ResizeObservers in chart components to settle before capture.
     await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
-    const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.5,cacheBust:true,backgroundColor:"#f5f9f6",width:clone.scrollWidth,height:clone.scrollHeight});
+    const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.6,cacheBust:true,backgroundColor:background,width:clone.scrollWidth,height:clone.scrollHeight});
     if(!canvas.width||!canvas.height)throw new Error("Não foi possível capturar o relatório.");
-    await downloadCanvasPagesPdf(canvas,filename);
+    await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4!==false,background});
   }finally{host.remove();}
 }
-async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string){
+async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,options:{singleA4?:boolean;background?:string}={}){
  const encoder=new TextEncoder();const parts:Uint8Array[]=[];const offsets:number[]=[0];let offset=0;const add=(value:string|Uint8Array)=>{const bytes=typeof value==="string"?encoder.encode(value):value;parts.push(bytes);offset+=bytes.length};
  const object=(n:number,body:string|Uint8Array,prefix="",suffix="")=>{offsets[n]=offset;add(n+" 0 obj\n");if(prefix)add(prefix);add(body);if(suffix)add(suffix);add("\nendobj\n")};
- const pageWidth=842,pageHeight=595,margin=22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
- const sliceHeight=Math.floor(canvas.width*contentHeight/contentWidth);
+ const singleA4=options.singleA4===true;
+ const pageWidth=singleA4?595:842,pageHeight=singleA4?842:595,margin=singleA4?14:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
+ const sliceHeight=singleA4?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
  const count=Math.ceil(canvas.height/sliceHeight);
  const images:Uint8Array[]=[];
  for(let i=0;i<count;i++){
   const y=i*sliceHeight,h=Math.min(sliceHeight,canvas.height-y);
   const tile=document.createElement("canvas");tile.width=canvas.width;tile.height=h;
   const ctx=tile.getContext("2d");if(!ctx)throw new Error("Falha no PDF.");
-  ctx.fillStyle="white";ctx.fillRect(0,0,tile.width,tile.height);
+  ctx.fillStyle=options.background??"white";ctx.fillRect(0,0,tile.width,tile.height);
   ctx.drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);
   const bytes=await new Promise<Uint8Array>((resolve,reject)=>tile.toBlob(async blob=>blob?resolve(new Uint8Array(await blob.arrayBuffer())):reject(new Error("Falha ao criar página.")),"image/jpeg",.94));
   images.push(bytes);
@@ -103,8 +127,8 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string){
  object(2,"<< /Type /Pages /Kids ["+ids.map(id=>id+" 0 R").join(" ")+"] /Count "+count+" >>");
  images.forEach((img,i)=>{
   const pageId=ids[i]! ,imageId=pageId+1,streamId=pageId+2;
-  const height=Math.min(sliceHeight,canvas.height-i*sliceHeight),printedHeight=height/canvas.width*contentWidth;
-  const stream="q\n"+contentWidth+" 0 0 "+printedHeight+" "+margin+" "+(pageHeight-margin-printedHeight)+" cm\n/Im1 Do\nQ\n";
+  const height=Math.min(sliceHeight,canvas.height-i*sliceHeight),scale=singleA4?Math.min(contentWidth/canvas.width,contentHeight/height):contentWidth/canvas.width,printedWidth=canvas.width*scale,printedHeight=height*scale;
+  const stream="q\n"+printedWidth+" 0 0 "+printedHeight+" "+((pageWidth-printedWidth)/2)+" "+(pageHeight-margin-printedHeight)+" cm\n/Im1 Do\nQ\n";
   object(pageId,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pageWidth+" "+pageHeight+"] /Resources << /XObject << /Im1 "+imageId+" 0 R >> >> /Contents "+streamId+" 0 R >>");
   object(imageId,img,"<< /Type /XObject /Subtype /Image /Width "+canvas.width+" /Height "+height+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+img.length+" >>\nstream\n","\nendstream");
   object(streamId,"<< /Length "+encoder.encode(stream).length+" >>\nstream\n"+stream+"endstream");
