@@ -28,7 +28,7 @@ export const Route=createFileRoute("/api/integrations/$provider/callback")({
   try{
     const tokens=await exchangeCode("google",code);
     await saveGoogleCredential(authenticatedRequest,tokens);
-    const origin=process.env["APP_ORIGIN"]?.replace(/\\/$/,"")??url.origin;
+    const origin=process.env["APP_ORIGIN"]?.replace(/\/$/,"")??url.origin;
     const response=Response.redirect(origin+"/dashboard?google_connected=1",302);
     response.headers.append("Set-Cookie","scase_oauth_google=; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations/google; Max-Age=0");
     return response;
