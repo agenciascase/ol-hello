@@ -130,7 +130,7 @@ function Performance(){
   const batches=Array.isArray(payload.data)?payload.data:[];
   return batches.flatMap((batch:{results?:Array<{customerClient?:{id?:string;descriptiveName?:string;manager?:boolean}}>})=>batch.results??[])
    .map((row:{customerClient?:{id?:string;descriptiveName?:string;manager?:boolean}})=>row.customerClient)
-   .filter((c:{id?:string;manager?:boolean}|undefined):c is {id:string;descriptiveName?:string;manager?:boolean}=>!!c&&/^\\d{10}$/.test(String(c.id))&&!c.manager)
+   .filter((c:{id?:string;manager?:boolean}|undefined):c is {id:string;descriptiveName?:string;manager?:boolean}=>!!c&&/^\d{10}$/.test(String(c.id))&&!c.manager)
    .map((c:{id:string;descriptiveName?:string})=>({id:String(c.id),name:c.descriptiveName||"Conta Google Ads"}));
  }});
  const liveCampaignQuery=useQuery({queryKey:["google-live-campaigns",dashboardCustomerId,duration],enabled:!!dashboardCustomerId&&network!=="meta",staleTime:120000,retry:false,queryFn:async()=>{
