@@ -128,7 +128,10 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,o
  images.forEach((img,i)=>{
   const pageId=ids[i]! ,imageId=pageId+1,streamId=pageId+2;
   const height=Math.min(sliceHeight,canvas.height-i*sliceHeight),scale=singleA4?Math.min(contentWidth/canvas.width,contentHeight/height):contentWidth/canvas.width,printedWidth=canvas.width*scale,printedHeight=height*scale;
-  const stream="q\n"+printedWidth+" 0 0 "+printedHeight+" "+((pageWidth-printedWidth)/2)+" "+(pageHeight-margin-printedHeight)+" cm\n/Im1 Do\nQ\n";
+  const bg=(options.background??"#ffffff").replace("#","");
+  const red=parseInt(bg.slice(0,2),16)/255,green=parseInt(bg.slice(2,4),16)/255,blue=parseInt(bg.slice(4,6),16)/255;
+  const backdrop=`${red.toFixed(4)} ${green.toFixed(4)} ${blue.toFixed(4)} rg 0 0 ${pageWidth} ${pageHeight} re f\\n`;
+  const stream=backdrop+"q\n"+printedWidth+" 0 0 "+printedHeight+" "+((pageWidth-printedWidth)/2)+" "+(pageHeight-margin-printedHeight)+" cm\n/Im1 Do\nQ\n";
   object(pageId,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pageWidth+" "+pageHeight+"] /Resources << /XObject << /Im1 "+imageId+" 0 R >> >> /Contents "+streamId+" 0 R >>");
   object(imageId,img,"<< /Type /XObject /Subtype /Image /Width "+canvas.width+" /Height "+height+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+img.length+" >>\nstream\n","\nendstream");
   object(streamId,"<< /Length "+encoder.encode(stream).length+" >>\nstream\n"+stream+"endstream");
