@@ -16,7 +16,7 @@ export function CampaignDatePicker({from,to,label,onApply}:Props){
  const cells=Array.from({length:first.getDay()},(_,i)=>"").concat(Array.from({length:days},(_,i)=>iso(new Date(month.getFullYear(),month.getMonth(),i+1))));
  return <div style={{position:"relative",minWidth:210}}>
  <button type="button" onClick={()=>{setStart(from);setEnd(to);setOpen(o=>!o)}} aria-expanded={open} aria-label="Selecionar período da campanha" style={{background:"#fff",border:"1px solid #d6e4da",color:"#143b2c",padding:"10px 13px",borderRadius:10,display:"flex",alignItems:"center",gap:9,width:"100%",justifyContent:"space-between",fontWeight:600}}>
- <CalendarDays size={16}/><span>{from&&to?textDate(from)+" — "+textDate(to):label||"Últimos 30 dias"}</span><ChevronDown size={15}/>
+ <CalendarDays size={16}/><span>{from&&to?(from===to?textDate(from):textDate(from)+" — "+textDate(to)):label||"Últimos 30 dias"}</span><ChevronDown size={15}/>
  </button>
  {open&&<div style={{position:"absolute",zIndex:80,right:0,top:"calc(100% + 8px)",width:"min(700px,calc(100vw - 32px))",maxHeight:"min(620px,80vh)",overflowY:"auto",background:"#fff",border:"1px solid #dfe7e1",borderRadius:12,boxShadow:"0 18px 50px #082c1c33",display:"grid",gridTemplateColumns:"minmax(135px,180px) minmax(230px,1fr)",color:"#172f26"}}>
  <div style={{borderRight:"1px solid #e0e8e1",padding:"14px 8px",display:"flex",flexDirection:"column",gap:3}}>
