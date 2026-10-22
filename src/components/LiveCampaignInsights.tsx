@@ -1,30 +1,34 @@
-import {TrendingUp,Target,Lightbulb,AlertTriangle} from "lucide-react";
-type C={id:string;name:string;cost:number;impressions:number;clicks:number;conversions:number};
+type Campaign={id:string;name:string;cost:number;impressions:number;clicks:number;conversions:number};
 type Totals={cost:number;impressions:number;clicks:number;conversions:number};
-const cash=(v:number)=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const num=(v:number)=>Math.round(v).toLocaleString("pt-BR");
-const change=(a:number,b:number)=>b>0?(a>=b?"+":"")+((a-b)/b*100).toFixed(1).replace(".",",")+"%":null;
-export function LiveCampaignInsights({campaigns,period,previous}:{campaigns:C[];period:string;previous?:Totals}){
- const total=campaigns.reduce((a,c)=>({cost:a.cost+c.cost,impressions:a.impressions+c.impressions,clicks:a.clicks+c.clicks,conversions:a.conversions+c.conversions}),{cost:0,impressions:0,clicks:0,conversions:0});
- const leading=[...campaigns].filter(c=>c.conversions>0).sort((a,b)=>b.conversions-a.conversions)[0];
- const costly=campaigns.filter(c=>c.cost>0&&c.conversions===0);
- const hasData=total.impressions>0||total.clicks>0||total.cost>0;
- const summary=hasData?`No período, investimos ${cash(total.cost)}, tivemos ${num(total.clicks)} cliques e ${num(total.conversions)} conversões registradas no Google Ads. O CPC ficou em ${cash(total.clicks?total.cost/total.clicks:0)}.`:
- "Não há movimento registrado para esse cliente no período selecionado. Confira outro intervalo antes de tirar conclusões.";
- const positive=leading?`A campanha “${leading.name}” foi a que mais trouxe conversões: ${num(leading.conversions)}. Vale olhar o custo de cada resultado antes de aumentar o orçamento.`:
- total.clicks>0?`O tráfego chegou: foram ${num(total.clicks)} cliques. Agora precisamos conferir se os contatos estão sendo registrados como conversões corretamente.`:
- "Sem dados suficientes para apontar um destaque de campanha.";
- const alert=costly.length?`${costly.length} campanha(s) consumiram orçamento e não registraram conversões. Vamos revisar termos de busca, anúncio, página de destino e medição dos contatos.`:
- total.conversions>0?`O custo médio por conversão ficou em ${cash(total.cost/total.conversions)}. Precisamos comparar isso com a meta comercial para dizer se está bom.`:
- "Ainda não temos conversões suficientes para afirmar que as campanhas estão entregando resultado.";
- const comparison=previous&&previous.clicks>0?change(total.clicks,previous.clicks):null;
- const next=comparison?`Em relação aos ${period} dias anteriores, os cliques variaram ${comparison}. Vamos acompanhar se essa mudança também aparece nas conversões, não só no volume de tráfego.`:
- "Vamos acompanhar cliques, conversões e custo por resultado juntos. Sem uma base comparável, não faz sentido afirmar que melhorou ou piorou.";
- const cards=[{title:"Como foi o período",body:summary,Icon:TrendingUp},{title:"O que funcionou",body:positive,Icon:Target},{title:"O que podemos melhorar",body:alert,Icon:AlertTriangle},{title:"Próximos ajustes",body:next,Icon:Lightbulb}];
- return <section className="panel" style={{padding:24}}>
- <span className="eyebrow">ANÁLISE DA SCASE · GOOGLE ADS</span><h2 style={{fontSize:"clamp(23px,2.4vw,30px)",lineHeight:1.18,fontWeight:800,margin:"8px 0 6px"}}>Como foram as campanhas neste período?</h2>
- <p style={{fontSize:13,opacity:.72,marginBottom:18}}>Leitura prática dos resultados · últimos ${period} dias</p>
- <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12}}>{cards.map(({title,body,Icon})=><article key={title} style={{border:"1px solid #dceae2",background:"#f5fbf7",borderRadius:13,padding:17}}><Icon size={19} color="#069665"/><h3 style={{fontSize:15,margin:"10px 0 8px",fontWeight:750}}>{title}</h3><p style={{fontSize:13,lineHeight:1.55}}>{body}</p></article>)}</div>
- <p style={{fontSize:11,opacity:.7,marginTop:14}}>Conversões são as ações registradas pelo Google Ads; não necessariamente vendas ou leads confirmados. Sem metas de negócio ou dados de CRM, não atribuímos resultados comerciais.</p>
+const money=(v:number)=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const count=(v:number)=>Math.round(v).toLocaleString("pt-BR");
+const delta=(a:number,b:number)=>b>0?(a-b)/b*100:null;
+const changeText=(d:number)=>Math.abs(d).toFixed(1).replace(".",",")+"%";
+export function LiveCampaignInsights({campaigns,period,previous}:{campaigns:Campaign[];period:string;previous?:Totals}){
+ const t=campaigns.reduce((a,c)=>({cost:a.cost+c.cost,clicks:a.clicks+c.clicks,impressions:a.impressions+c.impressions,conversions:a.conversions+c.conversions}),{cost:0,clicks:0,impressions:0,conversions:0});
+ const leader=[...campaigns].filter(c=>c.conversions>0).sort((a,b)=>b.conversions-a.conversions)[0];
+ const without=campaigns.filter(c=>c.cost>0&&c.conversions===0);
+ const changedClicks=previous?delta(t.clicks,previous.clicks):null;
+ const changedConversions=previous?delta(t.conversions,previous.conversions):null;
+ const hasActivity=t.cost>0||t.clicks>0||t.impressions>0;
+ const overview=hasActivity?`Nos últimos ${period} dias, foram ${money(t.cost)} investidos, com ${count(t.clicks)} cliques e ${count(t.conversions)} conversões registradas no Google Ads. O CPC médio ficou em ${money(t.clicks?t.cost/t.clicks:0)}${t.conversions?` e o custo por conversão em ${money(t.cost/t.conversions)}`:""}.`:
+ `Não há movimentação registrada nestes ${period} dias. Antes de avaliar os resultados, precisamos conferir se houve veiculação e se o intervalo está correto.`;
+ const comparison=changedClicks!==null?`Comparando com os ${period} dias anteriores, os cliques ${changedClicks>=0?"subiram":"caíram"} ${changeText(changedClicks)}${changedConversions!==null?` e as conversões ${changedConversions>=0?"subiram":"caíram"} ${changeText(changedConversions)}`:""}. Isso mostra a variação de volume, mas o custo por resultado também precisa entrar na conta.`:
+ "Não há base anterior suficiente para afirmar que o desempenho melhorou ou piorou.";
+ const positive=leader?`O destaque foi a campanha “${leader.name}”, com ${count(leader.conversions)} conversões. É nela que vale aprofundar a análise para entender o que está trazendo resultado.`:
+ t.clicks>0?"Tivemos acessos pelos anúncios. Precisamos conferir se as ações de conversão estão configuradas corretamente e se esses cliques estão gerando contatos.":"Ainda não há resultados suficientes para destacar uma campanha.";
+ const improvement=without.length?`${without.length} campanha(s) tiveram investimento sem conversões registradas. O próximo ajuste é revisar termos de pesquisa, criativos, páginas de destino e mensuração, começando pelas campanhas de maior gasto.`:
+ t.conversions?`Vamos acompanhar o custo por conversão de ${money(t.cost/t.conversions)} e validar com a equipe comercial se esses contatos têm qualidade antes de aumentar a verba.`:
+ "O foco agora é confirmar a mensuração das conversões e entender por que o tráfego não está virando resultado registrado.";
+ return <section className="panel" style={{padding:"clamp(20px,3vw,32px)",width:"100%"}}>
+ <span className="eyebrow">ANÁLISE DA SCASE · RESULTADOS REAIS</span>
+ <h2 style={{fontSize:"clamp(25px,2.6vw,34px)",fontWeight:800,lineHeight:1.18,margin:"9px 0 8px"}}>Como foram as campanhas neste período?</h2>
+ <p style={{fontSize:13,opacity:.7,marginBottom:22}}>Uma leitura direta dos últimos ${period} dias, com os principais números e próximos ajustes.</p>
+ <div style={{maxWidth:1050,display:"grid",gap:16,lineHeight:1.7,fontSize:15}}>
+ <p>{overview} {comparison}</p>
+ <p><strong>O que funcionou: </strong>{positive}</p>
+ <p><strong>O que podemos melhorar: </strong>{improvement}</p>
+ </div>
+ <p style={{marginTop:22,paddingTop:13,borderTop:"1px solid #e0eae4",fontSize:12,opacity:.65}}>Conversões são registros atribuídos pelo Google Ads, não necessariamente vendas ou leads validados pelo comercial.</p>
  </section>;
 }
