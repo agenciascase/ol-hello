@@ -9,12 +9,13 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
   const url=new URL(request.url);
   const customerId=url.searchParams.get("customer_id")??"";
   const days=url.searchParams.get("days")??"30";
-  if(!/^\d{10}$/.test(customerId)||!["7","30"].includes(days))
+  if(!/^\d{10}$/.test(customerId)||!["7","30","today"].includes(days))
    return Response.json({error:"Selecione uma conta Google Ads válida e um período de 7 ou 30 dias."},{status:400});
   try{
    const token=await googleAccessToken(request,refreshGoogleToken);
    const version=process.env["GOOGLE_ADS_API_VERSION"]||"v26";
-   const query=`SELECT campaign.id, campaign.name, campaign.status, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value FROM campaign WHERE segments.date DURING LAST_${days}_DAYS ORDER BY metrics.cost_micros DESC LIMIT 100`;
+   const period=days==="today"?"TODAY":`LAST_${days}_DAYS`;
+   const query=`SELECT campaign.id, campaign.name, campaign.status, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value FROM campaign WHERE segments.date DURING ${period} ORDER BY metrics.cost_micros DESC LIMIT 100`;
    const result=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{
     method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},
     body:JSON.stringify({query}),cache:"no-store"
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
     impressions:Number(x.metrics?.impressions??0),clicks:Number(x.metrics?.clicks??0),
     conversions:Number(x.metrics?.conversions??0),conversionValue:Number(x.metrics?.conversionsValue??0)
    }));
-   return Response.json({customerId,days:Number(days),campaigns},{headers:{"cache-control":"private, no-store"}});
+   return Response.json({customerId,days:days==="today"?"today":Number(days),campaigns},{headers:{"cache-control":"private, no-store"}});
   }catch{return Response.json({error:"Não foi possível consultar campanhas. Confirme as permissões dessa conta."},{status:503})}
  }}}
 });
