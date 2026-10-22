@@ -1,27 +1,28 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
 import {useState} from "react";
+import {LiveBI} from "@/components/LiveBI";
 import "../performance.css";
 export const Route=createFileRoute("/live/$token")({component:GoogleLiveReport});
 function GoogleLiveReport(){
  const {token}=Route.useParams();
- const [days,setDays]=useState<"today"|"7"|"30">("30");
+ const [days,setDays]=useState<"7"|"15"|"30">("30");
  const q=useQuery({queryKey:["scase-public-google-live",token,days],queryFn:async()=>{
-   const r=await fetch("/api/google-live-report?token="+encodeURIComponent(token)+"&days="+days,{cache:"no-store"});
-   const body=await r.json();if(!r.ok)throw new Error(body.error||"Link indisponível");
-   return body as {customerName:string;campaigns:Array<{id:string;name:string;cost:number;impressions:number;clicks:number;conversions:number}>};
+  const r=await fetch("/api/google-live-report?token="+encodeURIComponent(token)+"&days="+days,{cache:"no-store"});
+  const body=await r.json();if(!r.ok)throw new Error(body.error||"Link indisponível");
+  return body as {customerName:string;campaigns:Array<{id:string;name:string;status:string;cost:number;impressions:number;clicks:number;conversions:number;conversionValue:number}>;dailySeries:Array<{day:string;current:number;impressions:number;clicks:number;conversions:number}>;previous:{cost:number;impressions:number;clicks:number;conversions:number;conversionValue:number}};
  },staleTime:60000,refetchInterval:5*60*1000,retry:false});
- const rows=q.data?.campaigns??[];
- const totals=rows.reduce((a,c)=>({cost:a.cost+c.cost,impressions:a.impressions+c.impressions,clicks:a.clicks+c.clicks,conversions:a.conversions+c.conversions}),{cost:0,impressions:0,clicks:0,conversions:0});
- const money=(n:number)=>n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
- const number=(n:number)=>Math.round(n).toLocaleString("pt-BR");
- return <main className="sharePage" style={{minHeight:"100vh"}}><header><img src="/scase-logo-light.svg" alt="SCASE"/><span>Acompanhamento de campanhas · Google Ads</span></header><div className="shareContent">
- <span className="eyebrow">SCASE PERFORMANCE · RESULTADOS REAIS</span><h1>{q.data?.customerName??"Acompanhamento de resultados"}</h1>
- <p>Atualização automática a cada 5 minutos enquanto esta página estiver aberta. Link restrito à conta compartilhada.</p>
- <div style={{display:"flex",gap:8,margin:"20px 0"}}>{(["today","7","30"] as const).map(d=><button key={d} type="button" onClick={()=>setDays(d)} style={{padding:"8px 16px",borderRadius:10,border:"1px solid #aaa"}}>{d==="today"?"Hoje":d==="7"?"7 dias":"30 dias"}</button>)}</div>
- {q.isLoading?<p>Consultando Google Ads…</p>:q.isError?<section className="shareError"><h2>Não foi possível carregar os resultados</h2><p>{q.error instanceof Error?q.error.message:"Erro de consulta."}</p></section>:
- <><div className="shareMetricGrid">{([["Investimento",money(totals.cost)],["Impressões",number(totals.impressions)],["Cliques",number(totals.clicks)],["CTR",(totals.impressions?totals.clicks/totals.impressions*100:0).toFixed(2)+"%"],["CPC",money(totals.clicks?totals.cost/totals.clicks:0)],["Conversões",number(totals.conversions)]] as const).map(([label,value])=><article key={label}><span>{label}</span><strong>{value}</strong></article>)}</div>
- <section style={{marginTop:28}}><h2>Campanhas</h2><div style={{overflowX:"auto"}}><table style={{width:"100%",textAlign:"left"}}><thead><tr><th>Campanha</th><th>Investimento</th><th>Cliques</th><th>Conversões</th></tr></thead><tbody>{rows.map(c=><tr key={c.id}><td>{c.name}</td><td>{money(c.cost)}</td><td>{number(c.clicks)}</td><td>{number(c.conversions)}</td></tr>)}</tbody></table></div></section></>}
- <p className="shareFooter">Somente leitura. Métricas fornecidas pelo Google Ads, sujeitas ao tempo de atualização e às configurações de atribuição da plataforma.</p>
+ return <main className="perf appShell themeLight" style={{minHeight:"100vh",display:"block",background:"#f1f6f3"}}>
+ <header style={{background:"#071b14",padding:"18px clamp(16px,4vw,60px)",display:"flex",alignItems:"center",justifyContent:"space-between",gap:20,flexWrap:"wrap"}}>
+ <img src="/scase-logo-light.svg" alt="SCASE" style={{width:160,maxHeight:55,objectFit:"contain"}}/>
+ <span style={{color:"#e6fff1",fontSize:13}}>SCASE Performance · Painel de acompanhamento</span>
+ </header>
+ <div style={{maxWidth:1480,margin:"0 auto",padding:"30px clamp(14px,3vw,42px)"}}>
+ <div style={{display:"flex",alignItems:"end",justifyContent:"space-between",flexWrap:"wrap",gap:14,marginBottom:24}}>
+ <div><span className="eyebrow">RELATÓRIO DE PERFORMANCE · GOOGLE ADS</span><h1 style={{fontSize:"clamp(25px,3vw,39px)",fontWeight:800,margin:"8px 0"}}>{q.data?.customerName??"Acompanhamento de campanhas"}</h1><p style={{opacity:.72}}>Resultados reais com atualização automática a cada cinco minutos enquanto esta página estiver aberta.</p></div>
+ <div style={{display:"flex",gap:8}}>{(["7","15","30"] as const).map(d=><button key={d} type="button" onClick={()=>setDays(d)} style={{background:days===d?"#06291c":"white",color:days===d?"white":"#12372a",border:"1px solid #d6e5da",borderRadius:10,padding:"10px 17px",fontWeight:700}}>{d} dias</button>)}</div></div>
+ {q.isLoading?<section className="panel" style={{padding:30}}>Consultando os dados da campanha…</section>:q.isError?<section className="panel" style={{padding:30}}><h2>Relatório indisponível</h2><p>{q.error instanceof Error?q.error.message:"Não foi possível carregar os dados."}</p></section>:
+ <LiveBI campaigns={q.data?.campaigns??[]} daily={q.data?.dailySeries??[]} client={q.data?.customerName??""} previous={q.data?.previous} period={days}/>}
+ <footer style={{marginTop:28,textAlign:"center",fontSize:12,color:"#61776a"}}>SCASE Performance · Relatório de consulta · Dados fornecidos pelo Google Ads, sujeitos à atribuição da plataforma. Este link não concede acesso a outras contas.</footer>
  </div></main>;
 }
