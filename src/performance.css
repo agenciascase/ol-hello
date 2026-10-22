@@ -524,3 +524,8 @@
 .perf.themeDark .scase-conversion-tag,.perf.dark .scase-conversion-tag,.perf[data-theme="dark"] .scase-conversion-tag{background:#124c36;color:#a4ffd0;border-color:#2a9e66}
 .scase-pdf-export.scase-pdf-dark .scase-conversion-tag{background:#124c36!important;color:#a4ffd0!important}
 .scase-pdf-export.scase-pdf-light .scase-conversion-tag{background:#e6f9ee!important;color:#076c41!important}
+
+/* Conversion-action chips stay INSIDE the card so parent clipping never hides them. */
+.perf .scase-conversion-tags{position:relative;display:flex;flex-wrap:wrap;gap:5px;margin:0 0 10px;align-items:center;max-width:100%;z-index:1}
+.perf .scase-conversion-tags .scase-conversion-tag{position:static;top:auto;left:auto;max-width:100%;white-space:normal;overflow-wrap:anywhere;overflow:visible;text-overflow:clip;line-height:1.3;font-size:10px;padding:4px 9px}
+.scase-pdf-export .scase-conversion-tags{display:flex!important;flex-wrap:wrap!important;max-width:100%!important}
