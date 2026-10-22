@@ -9,7 +9,11 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
   const url=new URL(request.url);
   const customerId=url.searchParams.get("customer_id")??"";
   const days=url.searchParams.get("days")??"30";
-  if(!/^\d{10}$/.test(customerId)||!["7","15","30","today"].includes(days))
+  const from=url.searchParams.get("from");
+  const to=url.searchParams.get("to");
+  const custom=from!==null||to!==null;
+  if(custom&&(!from||!to||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(from)||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(to)||from>to||!Number.isFinite(Date.parse(from))||!Number.isFinite(Date.parse(to))||(Date.parse(to)-Date.parse(from))/86400000>365||to>new Date().toISOString().slice(0,10)))return Response.json({error:"Intervalo de datas inválido (máximo de 366 dias). "},{status:400});
+  if(!/^\d{10}$/.test(customerId)||(!custom&&!["7","15","30","today"].includes(days)))
    return Response.json({error:"Selecione uma conta Google Ads válida e um período de 7, 15 ou 30 dias."},{status:400});
   try{
    const token=await googleAccessToken(request,refreshGoogleToken);
@@ -20,10 +24,11 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
    const now=new Date();
    const utcDay=(d:Date)=>d.toISOString().slice(0,10);
    const daysCount=days==="today"?1:Number(days);
-   const start=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
-   start.setUTCDate(start.getUTCDate()-(daysCount-1));
-   const previousStart=new Date(start);previousStart.setUTCDate(previousStart.getUTCDate()-daysCount);
-   const end=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
+   const start=custom?new Date(from+"T00:00:00Z"):new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
+   if(!custom)start.setUTCDate(start.getUTCDate()-(daysCount-1));
+   const end=custom?new Date(to+"T00:00:00Z"):new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
+   const actualCount=Math.round((end.getTime()-start.getTime())/86400000)+1;
+   const previousStart=new Date(start);previousStart.setUTCDate(previousStart.getUTCDate()-actualCount);
    const previousEnd=new Date(start);previousEnd.setUTCDate(previousEnd.getUTCDate()-1);
    const query=`SELECT segments.date, campaign.id, campaign.name, campaign.status, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value, metrics.absolute_top_impression_percentage, metrics.interactions, metrics.phone_calls FROM campaign WHERE segments.date BETWEEN "${utcDay(previousStart)}" AND "${utcDay(end)}" ORDER BY segments.date DESC LIMIT 10000`;
    const result=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{
