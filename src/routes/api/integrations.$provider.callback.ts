@@ -25,13 +25,22 @@ export const Route=createFileRoute("/api/integrations/$provider/callback")({
   if(!(await isAuthenticatedAgencyAdmin(authenticatedRequest)))return Response.json({error:NOT_READY,step:"oauth_admin_validation"},{status:403});
   const userId=await adminUserId(authenticatedRequest);
   if(!userId)return Response.json({error:"Sessão administrativa inválida ou expirada. Entre novamente no painel."},{status:403});
-  try{
-    const tokens=await exchangeCode("google",code);
+  let tokens: {access_token:string;refresh_token?:string;expires_in?:number};
+  try { tokens=await exchangeCode("google",code); }
+  catch { return Response.json({error:"O Google não concluiu a troca do código de autorização.",step:"oauth_token_exchange"},{status:502}); }
+  try {
     await saveGoogleCredential(authenticatedRequest,tokens);
+  } catch (error) {
+    const detail=error instanceof Error?error.message:"unknown";
+    const step=detail.includes("lookup")?"oauth_storage_read":detail.includes("refresh token")?"oauth_missing_refresh_token":detail.includes("storage")?"oauth_storage_write":detail.includes("encryption")?"oauth_encryption_config":"oauth_storage_config";
+    console.error("[scase/oauth] secure storage failed",step,detail.replace(/Bearer\\s+\\S+/g,"Bearer [redacted]"));
+    return Response.json({error:"Falha ao armazenar a autorização com segurança.",step},{status:503});
+  }
+  try {
     const origin=process.env["APP_ORIGIN"]?.replace(/\/$/,"")??url.origin;
     const response=Response.redirect(origin+"/dashboard?google_connected=1",302);
     response.headers.append("Set-Cookie","scase_oauth_google=; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations/google; Max-Age=0");
     return response;
-  }catch{return Response.json({error:"Não foi possível salvar a autorização Google com segurança.",step:"oauth_token_storage"},{status:503})}
+  }catch{return Response.json({error:"Falha ao concluir o redirecionamento.",step:"oauth_redirect"},{status:503})}
  }}}
 });
