@@ -17,7 +17,7 @@ export function LiveCampaignInsights({campaigns,period,previous}:{campaigns:Camp
  const clicksChange=previous?variation(total.clicks,previous.clicks):null;
  const convChange=previous?variation(total.conversions,previous.conversions):null;
  const spendChange=previous?variation(total.cost,previous.cost):null;
- const summarize=(value:number|null,metric:string)=>value===null?"":` Na comparação com o período anterior, ${metric} ${value>=0?"aumentou":"recuou"} ${percent(value)}.`;
+ const summarize=(value:number|null,metric:string)=>value===null?"":`${metric} ${value>=0?"aumentou":"recuou"} ${percent(value)}`;
  const opening=total.cost>0||total.impressions>0?
  `No período analisado, foram investidos ${money(total.cost)} para alcançar ${number(total.impressions)} impressões, ${number(total.clicks)} cliques e ${number(total.conversions)} conversões atribuídas pelo Google Ads. As impressões representam as exibições dos anúncios; os cliques indicam os acessos gerados, enquanto as conversões correspondem às ações registradas como resultado no Google Ads.`:
  "O período ainda não apresenta movimentação suficiente para uma avaliação consistente. É importante confirmar a veiculação dos anúncios e acompanhar uma janela com maior volume de dados.";
@@ -35,9 +35,8 @@ export function LiveCampaignInsights({campaigns,period,previous}:{campaigns:Camp
  "O principal ponto de atenção está em entender por que os acessos ainda não se transformaram em conversões registradas. O primeiro passo é verificar a mensuração e, depois, avaliar a adequação entre os anúncios, o público e a página de destino.":
  cpa!==null?`Um ponto importante é acompanhar a sustentabilidade do custo por conversão de ${money(cpa)}. Sem uma meta de custo por oportunidade e retorno comercial, não seria correto classificar esse valor, isoladamente, como alto ou baixo.`:
  "O próximo passo é confirmar o funcionamento da mensuração e acompanhar a evolução quando houver mais dados.";
- const comparison=previous?
- `Na comparação com o período anterior equivalente, os dados indicam:${summarize(spendChange,"o investimento")}${summarize(clicksChange,"o volume de cliques")}${summarize(convChange,"o número de conversões")} Essas variações precisam ser avaliadas em conjunto: mais tráfego não significa necessariamente mais oportunidades de qualidade.`:
- "";
+ const changes=previous?[summarize(spendChange,"o investimento"),summarize(clicksChange,"o volume de cliques"),summarize(convChange,"as conversões")].filter(Boolean):[];
+ const comparison=changes.length?`Em relação ao período anterior equivalente, ${changes.join("; ")}. Os movimentos devem ser analisados em conjunto, pois o aumento de cliques não representa necessariamente mais oportunidades qualificadas.`:"";
  return <section className="panel" style={{padding:"clamp(20px,3vw,32px)",width:"100%"}}>
  <span className="eyebrow">VISÃO DO GESTOR · SCASE PERFORMANCE</span>
  <h2 style={{fontSize:"clamp(24px,2.6vw,34px)",fontWeight:800,lineHeight:1.2,margin:"9px 0 8px"}}>Leitura do desempenho no período</h2>
