@@ -6,10 +6,9 @@ export const Route=createFileRoute("/api/integrations/meta/campaigns")({server:{
  if(!/^act_\d+$/.test(id)||!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)||from>to)return Response.json({error:"Conta ou período inválido."},{status:400});
  try{
   const token=await metaAccessToken(request);
-  const accounts=await fetch("https://graph.facebook.com/v24.0/me/adaccounts?fields=id&limit=250",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
-  if(!accounts.ok)throw Error("Não foi possível validar a conta.");
-  const own=await accounts.json() as {data?:Array<{id:string}>};
-  if(!(own.data||[]).some(x=>x.id===id))return Response.json({error:"Conta de anúncios não autorizada."},{status:403});
+  // Verify account access directly: Business Manager client accounts may not appear in /me/adaccounts.
+  const verify=await fetch("https://graph.facebook.com/v24.0/"+id+"?fields=id,name",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+  if(!verify.ok)return Response.json({error:"Esta conta não está acessível ao perfil autorizado na Meta."},{status:403});
   const items:Array<Record<string,unknown>>=[];
   let next=new URL("https://graph.facebook.com/v24.0/"+id+"/insights");
   next.searchParams.set("level","campaign");
