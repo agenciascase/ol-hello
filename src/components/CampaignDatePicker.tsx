@@ -14,11 +14,11 @@ export function CampaignDatePicker({from,to,label,onApply,comparePrevious,onComp
  const choose=(day:string)=>{if(!start||end||day<start){setStart(day);setEnd("");}else setEnd(day)};
  const first=new Date(month.getFullYear(),month.getMonth(),1),days=new Date(month.getFullYear(),month.getMonth()+1,0).getDate();
  const cells=Array.from({length:first.getDay()},(_,i)=>"").concat(Array.from({length:days},(_,i)=>iso(new Date(month.getFullYear(),month.getMonth(),i+1))));
- return <div style={{position:"relative",minWidth:210}}>
- <button type="button" onClick={()=>{setStart(from);setEnd(to);setOpen(o=>!o)}} aria-expanded={open} aria-label="Selecionar período da campanha" style={{background:"#fff",border:"1px solid #d6e4da",color:"#143b2c",padding:"10px 13px",borderRadius:10,display:"flex",alignItems:"center",gap:9,width:"100%",justifyContent:"space-between",fontWeight:600}}>
+ return <div className="scase-date-picker" style={{position:"relative",minWidth:210}}>
+ <button className="scase-date-trigger" type="button" onClick={()=>{setStart(from);setEnd(to);setOpen(o=>!o)}} aria-expanded={open} aria-label="Selecionar período da campanha" style={{padding:"10px 13px",borderRadius:10,display:"flex",alignItems:"center",gap:9,width:"100%",justifyContent:"space-between",fontWeight:600}}>
  <CalendarDays size={16}/><span>{from&&to?(from===to?textDate(from):textDate(from)+" — "+textDate(to)):label||"Últimos 30 dias"}</span><ChevronDown size={15}/>
  </button>
- {open&&<div style={{position:"absolute",zIndex:80,right:0,top:"calc(100% + 8px)",width:"min(700px,calc(100vw - 32px))",maxHeight:"min(620px,80vh)",overflowY:"auto",background:"#fff",border:"1px solid #dfe7e1",borderRadius:12,boxShadow:"0 18px 50px #082c1c33",display:"grid",gridTemplateColumns:"minmax(135px,180px) minmax(230px,1fr)",color:"#172f26"}}>
+ {open&&<div className="scase-date-popover" style={{position:"absolute",zIndex:80,right:0,top:"calc(100% + 8px)",width:"min(700px,calc(100vw - 32px))",maxHeight:"min(620px,80vh)",overflowY:"auto",borderRadius:12,boxShadow:"0 18px 50px #082c1c33",display:"grid",gridTemplateColumns:"minmax(135px,180px) minmax(230px,1fr)",color:"#172f26"}}>
  <div style={{borderRight:"1px solid #e0e8e1",padding:"14px 8px",display:"flex",flexDirection:"column",gap:3}}>
  <strong style={{padding:"8px 10px",fontSize:13}}>Períodos rápidos</strong>
  {([["Hoje",1,0],["Ontem",1,1],["7 dias atrás",7,0],["14 dias atrás",14,0],["30 dias atrás",30,0]] as const).map(([name,number,offset])=><button key={name} onClick={()=>preset(name,number,offset)} type="button" style={{textAlign:"left",background:label===name?"#e5f5ec":"transparent",border:0,borderRadius:6,padding:"10px",fontSize:13,color:"#193d2f"}}>{name}</button>)}
