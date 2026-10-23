@@ -111,7 +111,17 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
     await document.fonts.ready;
     // Allow ResizeObservers in chart components to settle before capture.
     await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
-    const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.6,cacheBust:true,backgroundColor:background,width:clone.scrollWidth,height:clone.scrollHeight});
+    // A cloned report can retain responsive/max-height styles and clip its last block.
+    // Explicitly expand the export node after the browser has laid it out.
+    clone.style.height="auto";
+    clone.style.maxHeight="none";
+    clone.style.overflow="visible";
+    clone.querySelectorAll<HTMLElement>(".scase-intelligence,.scase-intelligence-grid,.scase-intelligence-tile").forEach(node=>{
+      node.style.height="auto";node.style.maxHeight="none";node.style.overflow="visible";
+    });
+    const measuredHeight=Math.max(clone.scrollHeight,Math.ceil(clone.getBoundingClientRect().height));
+    clone.style.height=measuredHeight+"px";
+    const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.6,cacheBust:true,backgroundColor:background,width:clone.scrollWidth,height:measuredHeight});
     if(!canvas.width||!canvas.height)throw new Error("Não foi possível capturar o relatório.");
     await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4===true,longReport:options.longReport===true,background});
   }finally{host.remove();}
