@@ -35,7 +35,7 @@ export async function downloadCampaignPdf(report:ReportInput) {
  * Export the actual dashboard DOM as a downloadable, multi-page PDF.
  * Charts and typography are captured as rendered, rather than reconstructed.
  */
-export async function downloadDashboardPdf(selector: string, filename: string, options: {theme?: "light"|"dark"; singleA4?: boolean} = {}) {
+export async function downloadDashboardPdf(selector: string, filename: string, options: {theme?: "light"|"dark"; singleA4?: boolean; longReport?: boolean} = {}) {
   const element=document.querySelector<HTMLElement>(selector);
   if(!element)throw new Error("A área do relatório não está disponível.");
   const source="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.js";
@@ -113,15 +113,16 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
     await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
     const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.6,cacheBust:true,backgroundColor:background,width:clone.scrollWidth,height:clone.scrollHeight});
     if(!canvas.width||!canvas.height)throw new Error("Não foi possível capturar o relatório.");
-    await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4!==false,background});
+    await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4===true,longReport:options.longReport===true,background});
   }finally{host.remove();}
 }
-async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,options:{singleA4?:boolean;background?:string}={}){
+async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,options:{singleA4?:boolean;longReport?:boolean;background?:string}={}){
  const encoder=new TextEncoder();const parts:Uint8Array[]=[];const offsets:number[]=[0];let offset=0;const add=(value:string|Uint8Array)=>{const bytes=typeof value==="string"?encoder.encode(value):value;parts.push(bytes);offset+=bytes.length};
  const object=(n:number,body:string|Uint8Array,prefix="",suffix="")=>{offsets[n]=offset;add(n+" 0 obj\n");if(prefix)add(prefix);add(body);if(suffix)add(suffix);add("\nendobj\n")};
  const singleA4=options.singleA4===true;
- const pageWidth=842,pageHeight=595,margin=singleA4?0:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
- const sliceHeight=singleA4?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
+ const longReport=options.longReport===true;
+ const pageWidth=longReport?595:842,pageHeight=longReport?Math.min(14000,Math.max(842,Math.ceil(canvas.height*595/canvas.width))):595,margin=longReport||singleA4?0:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
+ const sliceHeight=singleA4||longReport?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
  const count=Math.ceil(canvas.height/sliceHeight);
  const images:Uint8Array[]=[];
  for(let i=0;i<count;i++){
