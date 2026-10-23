@@ -19,24 +19,24 @@ export function LiveCampaignInsights({campaigns,period,previous}:{campaigns:Camp
  const spendChange=previous?variation(total.cost,previous.cost):null;
  const summarize=(value:number|null,metric:string)=>value===null?"":` Na comparação com o período anterior, ${metric} ${value>=0?"aumentou":"recuou"} ${percent(value)}.`;
  const opening=total.cost>0||total.impressions>0?
- `Minha leitura deste período é que investimos ${money(total.cost)} para alcançar ${number(total.impressions)} impressões, ${number(total.clicks)} cliques e ${number(total.conversions)} conversões atribuídas pelo Google Ads. As impressões indicam quantas vezes os anúncios foram exibidos; os cliques representam os acessos gerados e as conversões mostram as ações que o Google Ads contabilizou como resultados.`:
- "Minha avaliação é que ainda não há movimentação suficiente neste período para concluir sobre o desempenho. Precisamos confirmar a veiculação e observar uma janela com dados consistentes.";
+ `No período analisado, foram investidos ${money(total.cost)} para alcançar ${number(total.impressions)} impressões, ${number(total.clicks)} cliques e ${number(total.conversions)} conversões atribuídas pelo Google Ads. As impressões representam as exibições dos anúncios; os cliques indicam os acessos gerados, enquanto as conversões correspondem às ações registradas como resultado no Google Ads.`:
+ "O período ainda não apresenta movimentação suficiente para uma avaliação consistente. É importante confirmar a veiculação dos anúncios e acompanhar uma janela com maior volume de dados.";
  const metrics=total.impressions>0||total.clicks>0?
- `Ao olhar a eficiência, o CTR (percentual de exibições que viraram cliques) ficou em ${ctr!==null?number(ctr)+"%":"—"} e o CPC médio (valor investido por clique) em ${cpc!==null?money(cpc):"—"}. ${cpa!==null?`O custo por conversão ficou em ${money(cpa)}, ou seja, o investimento médio necessário para cada ação registrada.`:"Como não houve conversões registradas, ainda não é possível calcular um custo por conversão representativo."} ${rate!==null?`A relação entre conversões e cliques foi de ${number(rate)}%; essa é uma referência calculada sobre os cliques, não necessariamente a taxa de conversão oficial do Google Ads.`:""}`:
+ `Em relação à eficiência, o CTR (percentual de exibições que viraram cliques) ficou em ${ctr!==null?number(ctr)+"%":"—"} e o CPC médio (valor investido por clique) em ${cpc!==null?money(cpc):"—"}. ${cpa!==null?`O custo por conversão ficou em ${money(cpa)}, ou seja, o investimento médio necessário para cada ação registrada.`:"Como não houve conversões registradas, ainda não é possível calcular um custo por conversão representativo."} ${rate!==null?`A relação entre conversões e cliques foi de ${number(rate)}%; essa é uma referência calculada sobre os cliques, não necessariamente a taxa de conversão oficial do Google Ads.`:""}`:
  "Com a ausência de volume, indicadores como CTR, CPC e custo por conversão ainda não permitem uma interpretação útil.";
  const positive=best?
- `Entre os pontos positivos, destaco a campanha “${best.name}”, que registrou ${number(best.conversions)} conversões. Ela liderou em volume de ações atribuídas no período${leaders.length>1?", embora seja necessário avaliar também o custo e a qualidade de cada oportunidade para definir a melhor campanha.":"."}`:
+ `Entre os pontos positivos, a campanha “${best.name}”, que registrou ${number(best.conversions)} conversões. Ela liderou em volume de ações atribuídas no período${leaders.length>1?", embora seja necessário avaliar também o custo e a qualidade de cada oportunidade para definir a melhor campanha.":"."}`:
  total.conversions>0?`Como ponto positivo, houve ${number(total.conversions)} conversões registradas. Vale cruzar essas ações com os contatos recebidos para entender sua qualidade.`:
- total.clicks>0?`O ponto positivo foi a geração de ${number(total.clicks)} cliques. Isso mostra que houve acessos aos anúncios, mas ainda precisamos confirmar se esse tráfego está chegando às ações desejadas.`:
- "Ainda não identifico um destaque positivo sustentado pelos dados desta janela.";
+ total.clicks>0?`Como resultado positivo, houve a geração de ${number(total.clicks)} cliques. Isso mostra que houve acessos aos anúncios, mas ainda precisamos confirmar se esse tráfego está chegando às ações desejadas.`:
+ "Os dados disponíveis ainda não permitem identificar um destaque consistente neste período.";
  const improvement=without.length>0?
- `Vejo espaço para melhoria nas ${number(without.length)} campanhas que receberam investimento sem registrar conversões. Minha recomendação é investigar segmentação, qualidade do tráfego, mensagens dos anúncios e experiência na página de destino, respeitando o tipo de cada campanha.`:
+ `Há oportunidades de melhoria nas ${number(without.length)} campanhas que receberam investimento sem registrar conversões. Vale investigar segmentação, qualidade do tráfego, mensagens dos anúncios e experiência na página de destino, respeitando o tipo de cada campanha.`:
  total.clicks>0&&total.conversions===0?
- "O principal ponto de atenção é entender por que os acessos ainda não se transformaram em conversões registradas. Eu começaria verificando a mensuração e, depois, a adequação entre anúncios, público e destino do clique.":
- cpa!==null?`O ponto de melhoria é acompanhar a sustentabilidade do custo por conversão de ${money(cpa)}. Sem uma meta de custo por oportunidade e retorno comercial, não seria correto classificar esse valor, isoladamente, como alto ou baixo.`:
- "Meu próximo foco seria confirmar o funcionamento da mensuração e acompanhar a evolução quando houver mais dados.";
+ "O principal ponto de atenção está em entender por que os acessos ainda não se transformaram em conversões registradas. O primeiro passo é verificar a mensuração e, depois, avaliar a adequação entre os anúncios, o público e a página de destino.":
+ cpa!==null?`Um ponto importante é acompanhar a sustentabilidade do custo por conversão de ${money(cpa)}. Sem uma meta de custo por oportunidade e retorno comercial, não seria correto classificar esse valor, isoladamente, como alto ou baixo.`:
+ "O próximo passo é confirmar o funcionamento da mensuração e acompanhar a evolução quando houver mais dados.";
  const comparison=previous?
- `Na evolução frente ao período anterior equivalente, observo o seguinte:${summarize(spendChange,"o investimento")}${summarize(clicksChange,"o volume de cliques")}${summarize(convChange,"o número de conversões")} Essas variações precisam ser avaliadas em conjunto: mais tráfego não significa necessariamente mais oportunidades de qualidade.`:
+ `Na comparação com o período anterior equivalente, os dados indicam:${summarize(spendChange,"o investimento")}${summarize(clicksChange,"o volume de cliques")}${summarize(convChange,"o número de conversões")} Essas variações precisam ser avaliadas em conjunto: mais tráfego não significa necessariamente mais oportunidades de qualidade.`:
  "";
  return <section className="panel" style={{padding:"clamp(20px,3vw,32px)",width:"100%"}}>
  <span className="eyebrow">VISÃO DO GESTOR · SCASE PERFORMANCE</span>
