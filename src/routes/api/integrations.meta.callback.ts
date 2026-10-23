@@ -31,5 +31,5 @@ export const Route=createFileRoute("/api/integrations/meta/callback")({server:{h
   const long=longRes.ok?await longRes.json() as {access_token?:string;expires_in?:number}:null;
   await saveMetaCredential(request,long?.access_token||short.access_token,long?.expires_in||short.expires_in||3600);
   return response("/dashboard?meta_connected=1");
- }catch{return fail("Não foi possível concluir a autorização da Meta. Confira as permissões e o aplicativo.");}
+ }catch(e){const message=e instanceof Error?e.message:"Erro desconhecido";return fail(message.includes("banco")||message.includes("credencial")?"A autorização ocorreu, mas o armazenamento da Meta no Supabase precisa ser configurado.":"Não foi possível concluir a autorização da Meta. Confira as permissões e o aplicativo.");}
 }}}});
