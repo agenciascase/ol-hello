@@ -87,8 +87,8 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
     }
    }catch(error){ console.warn("[scase/google] Conversion-action breakdown failed",error instanceof Error?error.message:"unknown"); }
    // Optional diagnostic segments; never block the main report if unavailable.
-   const devices:Array<{device:string;cost:number;clicks:number;conversions:number}>=[];
-   const searchTerms:Array<{term:string;cost:number;conversions:number}>=[];
+   const devices:Array<{campaignId:string;device:string;cost:number;clicks:number;conversions:number}>=[];
+   const searchTerms:Array<{campaignId:string;term:string;cost:number;conversions:number}>=[];
    const fetchSegment=async(query:string)=>{
     const response=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},body:JSON.stringify({query}),cache:"no-store"});
     if(!response.ok)return [];
@@ -117,7 +117,7 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
      const campaign=row.campaign as {id?:string|number}|undefined;
      const term=(row.searchTermView as {searchTerm?:string}|undefined)?.searchTerm;
      const m=row.metrics as {costMicros?:string|number;conversions?:string|number}|undefined;
-     if(term&&campaign?.id)searchTerms.push({term,campaignId:String(campaign.id),cost:Number(m?.costMicros??0)/1e6,conversions:Number(m?.conversions??0)} as {term:string;cost:number;conversions:number});
+     if(term&&campaign?.id)searchTerms.push({term,campaignId:String(campaign.id),cost:Number(m?.costMicros??0)/1e6,conversions:Number(m?.conversions??0)});
     }
    }catch{}
    const dailySeries=[...daily.values()].sort((a,b)=>a.day.localeCompare(b.day));
