@@ -1,10 +1,10 @@
 import {useState} from "react";
 import {CalendarDays,ChevronLeft,ChevronRight,ChevronDown} from "lucide-react";
-type Props={from:string;to:string;label:string;onApply:(from:string,to:string,label:string)=>void};
+type Props={from:string;to:string;label:string;onApply:(from:string,to:string,label:string)=>void;comparePrevious:boolean;onCompareChange:(checked:boolean)=>void};
 const iso=(d:Date)=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 const local=(s:string)=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const textDate=(s:string)=>s?local(s).toLocaleDateString("pt-BR",{day:"2-digit",month:"short",year:"numeric"}):"Escolha uma data";
-export function CampaignDatePicker({from,to,label,onApply}:Props){
+export function CampaignDatePicker({from,to,label,onApply,comparePrevious,onCompareChange}:Props){
  const [open,setOpen]=useState(false);
  const [start,setStart]=useState(from);
  const [end,setEnd]=useState(to);
@@ -29,6 +29,7 @@ export function CampaignDatePicker({from,to,label,onApply}:Props){
  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:13}}><label style={{fontSize:12}}>Data inicial<input aria-label="Data inicial" type="date" max={iso(today)} value={start} onChange={e=>setStart(e.target.value)} style={{width:"100%",display:"block",padding:8,border:"1px solid #cbdcd1",borderRadius:7}}/></label><label style={{fontSize:12}}>Data final<input aria-label="Data final" type="date" max={iso(today)} min={start||undefined} value={end} onChange={e=>setEnd(e.target.value)} style={{width:"100%",display:"block",padding:8,border:"1px solid #cbdcd1",borderRadius:7}}/></label></div>
  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><strong style={{fontSize:13,textTransform:"capitalize"}}>{month.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})}</strong><div style={{display:"flex",gap:5}}><button aria-label="Mês anterior" type="button" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()-1,1))}><ChevronLeft size={18}/></button><button aria-label="Próximo mês" type="button" onClick={()=>setMonth(new Date(month.getFullYear(),month.getMonth()+1,1))}><ChevronRight size={18}/></button></div></div>
  <div style={{display:"grid",gridTemplateColumns:"repeat(7,minmax(0,1fr))",gap:3}}>{["D","S","T","Q","Q","S","S"].map((d,i)=><span key={i} style={{textAlign:"center",fontSize:11,color:"#72877a",padding:5}}>{d}</span>)}{cells.map((d,i)=>d?<button key={d} type="button" disabled={d>iso(today)} onClick={()=>choose(d)} style={{border:"none",borderRadius:8,minHeight:35,padding:"5px 0",background:d===start||d===end?"#00b869":start&&end&&d>start&&d<end?"#e2f8eb":"transparent",color:d===start||d===end?"white":"#203c2d",cursor:"pointer"}}>{Number(d.slice(-2))}</button>:<span key={"empty"+i}/>)}</div>
+ <label style={{display:"flex",alignItems:"center",gap:9,marginTop:18,padding:"11px 0",borderTop:"1px solid #e0e8e1",fontSize:13,fontWeight:700,cursor:"pointer"}}><input type="checkbox" checked={comparePrevious} onChange={e=>onCompareChange(e.target.checked)} style={{width:17,height:17,accentColor:"#00b969"}}/>Comparar com período anterior equivalente</label>
  <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:17}}><button type="button" onClick={()=>setOpen(false)} style={{padding:"9px 12px",border:"1px solid #dbe6dd",borderRadius:8}}>Cancelar</button><button type="button" disabled={!start||!end||start>end||end>iso(today)||((Date.parse(end)-Date.parse(start))/86400000)>365} onClick={()=>{onApply(start,end,"Personalizado");setOpen(false)}} style={{padding:"9px 16px",border:0,borderRadius:8,color:"white",background:"#06af65",fontWeight:700}}>Aplicar</button></div>
  </div></div>}
  </div>;
