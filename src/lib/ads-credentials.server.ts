@@ -16,7 +16,13 @@ type StoredRow={access_token_ciphertext:string;refresh_token_ciphertext:string|n
 async function getStored(request:Request,provider:"google"|"meta"="google"):Promise<StoredRow|null>{
  const {headers}=await authorized(request);
  const res=await fetch(base()+"/rest/v1/rpc/scase_ads_connection_get",{method:"POST",headers,body:JSON.stringify({p_provider:provider}),cache:"no-store"});
- if(!res.ok)throw new Error("Secure credential lookup unavailable: "+res.status);
+ if(!res.ok){
+  if(provider==="meta"){
+   const failure=await res.json().catch(()=>({})) as {code?:string;message?:string};
+   throw new Error("O armazenamento da integração Meta no Supabase não está pronto (HTTP "+res.status+(failure.code?", código "+failure.code:"")+"). A conexão precisa ser habilitada no banco.");
+  }
+  throw new Error("Secure credential lookup unavailable: "+res.status);
+ }
  const data=await res.json() as StoredRow[];
  return data[0]??null;
 }
@@ -57,7 +63,7 @@ export async function saveMetaCredential(request:Request,token:string,expiresIn:
  p_provider:"meta",p_access_token_ciphertext:encryptToken(token),p_refresh_token_ciphertext:null,
  p_expires_at:new Date(Date.now()+Math.max(60,expiresIn)*1000).toISOString()
  }),cache:"no-store"});
- if(!res.ok)throw new Error("Não foi possível salvar a conexão Meta com segurança.");
+ if(!res.ok){const failure=await res.json().catch(()=>({})) as {code?:string};throw new Error("O banco não aceitou a credencial Meta (HTTP "+res.status+(failure.code?", código "+failure.code:"")+").");}
 }
 export async function metaAccessToken(request:Request):Promise<string>{
  const row=await getStored(request,"meta");
