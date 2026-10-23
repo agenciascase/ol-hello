@@ -39,6 +39,7 @@ export function authUrl(provider: Provider, state: string): string {
     url.searchParams.set("prompt", "consent");
   } else {
     url.searchParams.set("scope", "ads_read,business_management");
+    url.searchParams.set("config_id",process.env["META_LOGIN_CONFIG_ID"]||"1187718967540061");
   }
   return url.toString();
 }
