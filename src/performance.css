@@ -567,3 +567,18 @@
 .perf.themeDark .biShareLink input,.perf.themeDark .biShareLink button{background:#143728!important;color:#ecfff4!important;border:1px solid #37664d!important}
 .perf.themeDark .biShareLink input::selection{background:#08764c;color:#fff}
 .perf.themeDark .biShareBox input:not([type="checkbox"]),.perf.themeDark .biShareBox textarea{background:#143728!important;color:#ecfff4!important;border:1px solid #37664d!important}
+
+/* Intelligence section: clean report detail in light and dark themes. */
+.perf .scase-intelligence-tile{background:#f7fcf9;color:#17392a;border:1px solid #d9e9df;border-radius:14px;padding:17px;min-width:0}
+.perf .scase-intelligence-tile h3{font-size:15px;margin:0 0 12px;font-weight:800}
+.perf .scase-intelligence-line{display:flex;justify-content:space-between;align-items:start;gap:10px;padding:9px 0;border-top:1px solid #dceae0;font-size:12px}
+.perf .scase-intelligence-line:first-of-type{border-top:0}
+.perf .scase-intelligence-line span{min-width:0;overflow-wrap:anywhere}
+.perf .scase-intelligence-line strong{text-align:right;white-space:nowrap}
+.perf .scase-intelligence-line small{display:block;font-weight:400;font-size:10px;opacity:.7;margin-top:3px}
+.perf .scase-intelligence-empty{font-size:12px;opacity:.7;line-height:1.6}
+.perf.themeDark .scase-intelligence-tile{background:#103528;color:#edfef3;border-color:#286247}
+.perf.themeDark .scase-intelligence-line{border-color:#28533c}
+.scase-pdf-dark .scase-intelligence-tile{background:#103528!important;color:#edfef3!important;border-color:#286247!important}
+.scase-pdf-dark .scase-intelligence-line{border-color:#28533c!important}
+.scase-pdf-light .scase-intelligence-tile{background:#f7fcf9!important;color:#17392a!important;border-color:#d9e9df!important}
