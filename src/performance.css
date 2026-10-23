@@ -554,3 +554,16 @@
 .perf.themeDark .scase-bi-visuals-heading,.perf.dark .scase-bi-visuals-heading,.perf[data-theme="dark"] .scase-bi-visuals-heading{background:#123a2b;color:#edfff3}
 @media(max-width:1050px){.perf .scase-bi-executive{grid-template-columns:minmax(0,1fr)}.perf .scase-bi-rail .biKpiGrid{grid-template-columns:repeat(auto-fit,minmax(175px,1fr))}}
 @media(max-width:700px){.perf .scase-bi-chart-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Theme-aware reporting controls: calendar and BI live share link. */
+.perf .scase-date-trigger{background:#fff;border:1px solid #d6e4da;color:#143b2c;border-radius:10px;display:flex;align-items:center;gap:9px;width:100%;justify-content:space-between;font-weight:600}
+.perf .scase-date-popover{background:#fff;color:#172f26;border:1px solid #dfe7e1;box-shadow:0 18px 50px #082c1c33}
+.perf.themeDark .scase-date-trigger{background:#173a2a!important;color:#f0fff5!important;border-color:#367455!important}
+.perf.themeDark .scase-date-popover{background:#102b20!important;color:#effff4!important;border-color:#35674d!important;box-shadow:0 18px 50px #0007}
+.perf.themeDark .scase-date-popover strong,.perf.themeDark .scase-date-popover label{color:#effff4!important}
+.perf.themeDark .scase-date-popover input[type="date"]{background:#173a2a!important;color:#f0fff5!important;border-color:#367455!important;color-scheme:dark}
+.perf.themeDark .scase-date-popover button:not([disabled]){color:inherit}
+.perf.themeDark .scase-date-popover button[style*="background: transparent"]{color:#f0fff5!important}
+.perf.themeDark .biShareLink input,.perf.themeDark .biShareLink button{background:#143728!important;color:#ecfff4!important;border:1px solid #37664d!important}
+.perf.themeDark .biShareLink input::selection{background:#08764c;color:#fff}
+.perf.themeDark .biShareBox input:not([type="checkbox"]),.perf.themeDark .biShareBox textarea{background:#143728!important;color:#ecfff4!important;border:1px solid #37664d!important}
