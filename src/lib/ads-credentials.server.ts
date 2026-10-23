@@ -13,9 +13,9 @@ async function authorized(request:Request){
   return {jwt,headers:{"apikey":publishableKey(),"authorization":"Bearer "+jwt,"content-type":"application/json"}};
 }
 type StoredRow={access_token_ciphertext:string;refresh_token_ciphertext:string|null;expires_at:string};
-async function getStored(request:Request):Promise<StoredRow|null>{
+async function getStored(request:Request,provider:"google"|"meta"="google"):Promise<StoredRow|null>{
  const {headers}=await authorized(request);
- const res=await fetch(base()+"/rest/v1/rpc/scase_ads_connection_get",{method:"POST",headers,body:JSON.stringify({p_provider:"google"}),cache:"no-store"});
+ const res=await fetch(base()+"/rest/v1/rpc/scase_ads_connection_get",{method:"POST",headers,body:JSON.stringify({p_provider:provider}),cache:"no-store"});
  if(!res.ok)throw new Error("Secure credential lookup unavailable: "+res.status);
  const data=await res.json() as StoredRow[];
  return data[0]??null;
@@ -49,4 +49,18 @@ export async function googleAccessToken(request:Request,refresh:(refreshToken:st
  const token=await refresh(decryptToken(row.refresh_token_ciphertext));
  await saveGoogleCredential(request,token);
  return token.access_token;
+}
+
+export async function saveMetaCredential(request:Request,token:string,expiresIn:number){
+ const {headers}=await authorized(request);
+ const res=await fetch(base()+"/rest/v1/rpc/scase_ads_connection_put",{method:"POST",headers,body:JSON.stringify({
+ p_provider:"meta",p_access_token_ciphertext:encryptToken(token),p_refresh_token_ciphertext:null,
+ p_expires_at:new Date(Date.now()+Math.max(60,expiresIn)*1000).toISOString()
+ }),cache:"no-store"});
+ if(!res.ok)throw new Error("Não foi possível salvar a conexão Meta com segurança.");
+}
+export async function metaAccessToken(request:Request):Promise<string>{
+ const row=await getStored(request,"meta");
+ if(!row||Date.parse(row.expires_at)<=Date.now()+60000)throw new Error("Meta Ads não conectado ou autorização expirada.");
+ return decryptToken(row.access_token_ciphertext);
 }
