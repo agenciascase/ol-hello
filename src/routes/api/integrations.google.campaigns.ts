@@ -86,8 +86,42 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
      conversionActions.push(...byKey.values().sort((a,b)=>b.conversions-a.conversions));
     }
    }catch(error){ console.warn("[scase/google] Conversion-action breakdown failed",error instanceof Error?error.message:"unknown"); }
+   // Optional diagnostic segments; never block the main report if unavailable.
+   const devices:Array<{device:string;cost:number;clicks:number;conversions:number}>=[];
+   const searchTerms:Array<{term:string;cost:number;conversions:number}>=[];
+   const fetchSegment=async(query:string)=>{
+    const response=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},body:JSON.stringify({query}),cache:"no-store"});
+    if(!response.ok)return [];
+    const batches=await response.json() as Array<{results?:Array<Record<string,unknown>>}>;
+    return batches.flatMap(batch=>batch.results??[]);
+   };
+   try{
+    const rows=await fetchSegment(`SELECT campaign.id, segments.device, metrics.cost_micros, metrics.clicks, metrics.conversions FROM campaign WHERE segments.date BETWEEN "${utcDay(start)}" AND "${utcDay(end)}" LIMIT 10000`);
+    const byDevice=new Map<string,{device:string;cost:number;clicks:number;conversions:number}>();
+    for(const row of rows){
+     const campaign= row.campaign as {id?:string|number}|undefined;
+     const seg=row.segments as {device?:string}|undefined;
+     const m=row.metrics as {costMicros?:string|number;clicks?:string|number;conversions?:string|number}|undefined;
+     const id=String(campaign?.id??"");
+     if(!id||!seg?.device)continue;
+     const key=id+"::"+seg.device;
+     const item=byDevice.get(key)??{device:seg.device,cost:0,clicks:0,conversions:0};
+     item.cost+=Number(m?.costMicros??0)/1e6;item.clicks+=Number(m?.clicks??0);item.conversions+=Number(m?.conversions??0);
+     byDevice.set(key,item);
+    }
+    devices.push(...[...byDevice].map(([key,value])=>({...value,campaignId:key.split("::")[0]})));
+   }catch{}
+   try{
+    const rows=await fetchSegment(`SELECT campaign.id, search_term_view.search_term, metrics.cost_micros, metrics.conversions FROM search_term_view WHERE segments.date BETWEEN "${utcDay(start)}" AND "${utcDay(end)}" AND metrics.conversions > 0 ORDER BY metrics.conversions DESC LIMIT 100`);
+    for(const row of rows){
+     const campaign=row.campaign as {id?:string|number}|undefined;
+     const term=(row.searchTermView as {searchTerm?:string}|undefined)?.searchTerm;
+     const m=row.metrics as {costMicros?:string|number;conversions?:string|number}|undefined;
+     if(term&&campaign?.id)searchTerms.push({term,campaignId:String(campaign.id),cost:Number(m?.costMicros??0)/1e6,conversions:Number(m?.conversions??0)} as {term:string;cost:number;conversions:number});
+    }
+   }catch{}
    const dailySeries=[...daily.values()].sort((a,b)=>a.day.localeCompare(b.day));
-   return Response.json({customerId,days:days==="today"?"today":Number(days),campaigns,conversionActions,dailySeries,previous,period:{start:utcDay(start),end:utcDay(end),previousStart:utcDay(previousStart),previousEnd:utcDay(previousEnd)}},{headers:{"cache-control":"private, no-store"}});
+   return Response.json({customerId,days:days==="today"?"today":Number(days),campaigns,conversionActions,devices,searchTerms,dailySeries,previous,period:{start:utcDay(start),end:utcDay(end),previousStart:utcDay(previousStart),previousEnd:utcDay(previousEnd)}},{headers:{"cache-control":"private, no-store"}});
   }catch{return Response.json({error:"Não foi possível consultar campanhas. Confirme as permissões dessa conta."},{status:503})}
  }}}
 });
