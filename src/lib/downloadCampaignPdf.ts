@@ -52,7 +52,7 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
   }
   if(!current.htmlToImage)throw new Error("Gerador visual indisponível.");
   const clone=element.cloneNode(true) as HTMLElement;
-  clone.style.width=Math.max(1100,element.scrollWidth)+"px";
+  clone.style.width=Math.max(980,Math.min(1100,element.scrollWidth))+"px";
   clone.style.maxWidth="none";
   clone.style.padding="24px";
   const dark=options.theme==="dark";
@@ -121,8 +121,8 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,o
  const object=(n:number,body:string|Uint8Array,prefix="",suffix="")=>{offsets[n]=offset;add(n+" 0 obj\n");if(prefix)add(prefix);add(body);if(suffix)add(suffix);add("\nendobj\n")};
  const singleA4=options.singleA4===true;
  const longReport=options.longReport===true;
- const pageWidth=longReport?595:842,pageHeight=longReport?Math.min(14000,Math.max(842,Math.ceil(canvas.height*595/canvas.width))):595,margin=longReport||singleA4?0:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
- const sliceHeight=singleA4||longReport?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
+ const pageWidth=842,pageHeight=longReport?1191:595,margin=longReport?24:singleA4?0:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
+ const sliceHeight=singleA4?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
  const count=Math.ceil(canvas.height/sliceHeight);
  const images:Uint8Array[]=[];
  for(let i=0;i<count;i++){
