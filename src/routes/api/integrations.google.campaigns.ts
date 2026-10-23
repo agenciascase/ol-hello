@@ -120,6 +120,22 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
      if(term&&campaign?.id)searchTerms.push({term,campaignId:String(campaign.id),cost:Number(m?.costMicros??0)/1e6,conversions:Number(m?.conversions??0)});
     }
    }catch{}
+   // Performance Max does not use the ordinary Search campaign search_term_view.
+   // Request campaign-level search insights when normal terms are unavailable.
+   if(searchTerms.length===0){
+    try{
+     const rows=await fetchSegment(`SELECT campaign_search_term_insight.campaign_id, campaign_search_term_insight.category_label, metrics.conversions, metrics.clicks FROM campaign_search_term_insight WHERE segments.date BETWEEN "${utcDay(start)}" AND "${utcDay(end)}" AND metrics.conversions > 0 ORDER BY metrics.conversions DESC LIMIT 100`);
+     for(const row of rows){
+      const insight=row.campaignSearchTermInsight as {campaignId?:string|number;categoryLabel?:string}|undefined;
+      const metrics=row.metrics as {conversions?:string|number}|undefined;
+      const name=insight?.categoryLabel?.trim();
+      if(!name||!insight?.campaignId)continue;
+      const id=String(insight.campaignId);
+      if(!grouped.has(id))continue;
+      searchTerms.push({campaignId:id,term:name,cost:0,conversions:Number(metrics?.conversions??0)});
+     }
+    }catch{}
+   }
    const dailySeries=[...daily.values()].sort((a,b)=>a.day.localeCompare(b.day));
    return Response.json({customerId,days:days==="today"?"today":Number(days),campaigns,conversionActions,devices,searchTerms,dailySeries,previous,period:{start:utcDay(start),end:utcDay(end),previousStart:utcDay(previousStart),previousEnd:utcDay(previousEnd)}},{headers:{"cache-control":"private, no-store"}});
   }catch{return Response.json({error:"Não foi possível consultar campanhas. Confirme as permissões dessa conta."},{status:503})}
