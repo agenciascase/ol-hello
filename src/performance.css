@@ -582,3 +582,14 @@
 .scase-pdf-dark .scase-intelligence-tile{background:#103528!important;color:#edfef3!important;border-color:#286247!important}
 .scase-pdf-dark .scase-intelligence-line{border-color:#28533c!important}
 .scase-pdf-light .scase-intelligence-tile{background:#f7fcf9!important;color:#17392a!important;border-color:#d9e9df!important}
+
+/* Distinct searchable client lists by advertising platform. */
+.perf .scase-client-platforms{display:grid;gap:20px}
+.perf .scase-client-platform-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.perf .scase-client-platform-head h2{margin:0 0 4px;font-size:20px}
+.perf .scase-client-platform-head p{margin:0;font-size:12px;opacity:.72}
+.perf .scase-client-search{display:flex;align-items:center;gap:8px;border:1px solid #d1e1d6;border-radius:10px;padding:10px 12px;background:#fff;color:#4c6a59;min-width:min(100%,280px)}
+.perf .scase-client-search input{border:0!important;background:transparent!important;color:#19362a!important;outline:0!important;box-shadow:none!important;width:100%;min-width:0;font-size:13px}
+.perf.themeDark .scase-client-search{background:#19392b;color:#a4c8b5;border-color:#355c45}
+.perf.themeDark .scase-client-search input{color:#eefcf3!important}
+.perf .scase-client-platform-section .clientsGrid{margin:0}
