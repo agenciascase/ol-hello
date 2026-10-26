@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads_connections: {
+        Row: {
+          access_token_ciphertext: string
+          created_at: string
+          expires_at: string | null
+          owner_id: string
+          provider: string
+          refresh_token_ciphertext: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_ciphertext: string
+          created_at?: string
+          expires_at?: string | null
+          owner_id: string
+          provider: string
+          refresh_token_ciphertext?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_ciphertext?: string
+          created_at?: string
+          expires_at?: string | null
+          owner_id?: string
+          provider?: string
+          refresh_token_ciphertext?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null
@@ -32,6 +62,39 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      scase_live_google_shares: {
+        Row: {
+          created_at: string
+          customer_id: string
+          customer_name: string
+          expires_at: string
+          id: string
+          owner_id: string
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          expires_at?: string
+          id?: string
+          owner_id: string
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          revoked_at?: string | null
+          token_hash?: string
         }
         Relationships: []
       }
@@ -63,6 +126,41 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      scase_ads_connection_get: {
+        Args: { p_provider: string }
+        Returns: {
+          access_token_ciphertext: string
+          expires_at: string
+          refresh_token_ciphertext: string
+        }[]
+      }
+      scase_ads_connection_put: {
+        Args: {
+          p_access_token_ciphertext: string
+          p_expires_at: string
+          p_provider: string
+          p_refresh_token_ciphertext: string
+        }
+        Returns: undefined
+      }
+      scase_create_live_google_share: {
+        Args: { p_customer_id: string; p_customer_name: string }
+        Returns: string
+      }
+      scase_read_live_google_share: {
+        Args: { p_token: string }
+        Returns: {
+          access_token_ciphertext: string
+          customer_id: string
+          customer_name: string
+          expires_at: string
+          refresh_token_ciphertext: string
+        }[]
+      }
+      scase_revoke_live_google_share: {
+        Args: { p_token: string }
         Returns: boolean
       }
     }
