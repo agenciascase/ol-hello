@@ -169,10 +169,10 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,o
  // ratio and use PDF points (maximum dimension 14,400pt per ISO 32000).
  const singlePage=options.singlePage===true;
  const baseWidth=842,margin=singlePage?24:longReport?24:singleA4?0:22;
- const naturalHeight=singlePage?canvas.height*(baseWidth-2*margin)/canvas.width+2*margin:longReport?1191:595;
- const ratio=singlePage?Math.min(1,14400/naturalHeight):1;
- const pageWidth=baseWidth*ratio,pageHeight=naturalHeight*ratio;
- const pageMargin=margin*ratio,contentWidth=pageWidth-2*pageMargin,contentHeight=pageHeight-2*pageMargin;
+ // Every dashboard export follows the supplied reference: one A3 portrait page.
+ // Fit the entire captured image within the printable area; never crop its bottom.
+ const pageWidth=842,pageHeight=singlePage?1191:longReport?1191:595;
+ const pageMargin=margin,contentWidth=pageWidth-2*pageMargin,contentHeight=pageHeight-2*pageMargin;
  const sliceHeight=singlePage||singleA4?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
  // Use section-aware page boundaries. When a section cannot fit on one page,
  // split only that oversized section, rather than truncating or scaling it away.
@@ -203,7 +203,10 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,o
  object(2,"<< /Type /Pages /Kids ["+ids.map(id=>id+" 0 R").join(" ")+"] /Count "+count+" >>");
  images.forEach((img,i)=>{
   const pageId=ids[i]! ,imageId=pageId+1,streamId=pageId+2;
-  const height=pageSlices[i]!.h,scale=contentWidth/canvas.width,printedWidth=singleA4&&!singlePage?contentWidth:canvas.width*scale,printedHeight=singleA4&&!singlePage?contentHeight:height*scale;
+  const height=pageSlices[i]!.h;
+  const scale=singlePage?Math.min(contentWidth/canvas.width,contentHeight/height):contentWidth/canvas.width;
+  const printedWidth=singleA4&&!singlePage?contentWidth:canvas.width*scale;
+  const printedHeight=singleA4&&!singlePage?contentHeight:height*scale;
   const bg=(options.background??"#ffffff").replace("#","");
   const red=parseInt(bg.slice(0,2),16)/255,green=parseInt(bg.slice(2,4),16)/255,blue=parseInt(bg.slice(4,6),16)/255;
   const backdrop=`${red.toFixed(4)} ${green.toFixed(4)} ${blue.toFixed(4)} rg 0 0 ${pageWidth} ${pageHeight} re f\n`;
