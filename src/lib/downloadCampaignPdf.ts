@@ -91,7 +91,7 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
   .scase-pdf-export .scase-intelligence-line{display:flex!important;flex-wrap:wrap!important;align-items:flex-start!important;justify-content:space-between!important;gap:3px 8px!important;padding:6px 0!important;line-height:1.45!important;white-space:normal!important}
   .scase-pdf-export .scase-intelligence-line span{flex:1 1 130px!important;min-width:0!important;white-space:normal!important;overflow-wrap:anywhere!important}
   .scase-pdf-export .scase-intelligence-line strong{flex:0 0 auto!important;white-space:normal!important;text-align:right!important}
-  .scase-pdf-export .scase-intelligence-line small{display:block!important;white-space:normal!important}
+  .scase-pdf-export .scase-intelligence-line small{display:block!important;white-space:normal!important}\n  .scase-pdf-export .scase-intelligence-tile h3{display:block!important;margin:0 0 10px!important;font-size:15px!important}\n  .scase-pdf-export .scase-intelligence-tile p{white-space:normal!important;line-height:1.5!important}
   .scase-pdf-export .panel{overflow:visible!important}
 
   .scase-pdf-export .chart,.scase-pdf-export .recharts-wrapper{background:transparent!important}
@@ -114,9 +114,9 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
   // Client name, strategic phrase and selected dates remain in the original report banner.
   clone.prepend(printHeading);
   const host=document.createElement("div");host.style.cssText="position:fixed;left:-20000px;top:0;z-index:-9999";
-  host.appendChild(clone);document.body.appendChild(host);
+  // Restore the .perf ancestor required by performance.css selectors.\n  // Without it, the detached report loses its grid and row styles during capture.\n  host.className="perf"+(dark?" themeDark":"");\n  host.style.width=clone.style.width;\n  host.appendChild(clone);document.body.appendChild(host);
   try{
-    await document.fonts.ready;
+    await document.fonts.ready;\n    await Promise.all(Array.from(clone.querySelectorAll("img")).map(img=>img.decode().catch(()=>undefined)));
     // Allow ResizeObservers in chart components to settle before capture.
     await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
     // A cloned report can retain responsive/max-height styles and clip its last block.
