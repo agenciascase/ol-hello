@@ -1,18 +1,14 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { AgencySidebar } from "./AgencySidebar";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { LayoutDashboard, Link2, LogOut, Menu, Users, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserIsAdmin } from "@/lib/agency-client";
 import "../../performance.css";
 import "../../reports.css";
 import "../../agency.css";
 
-const NAV = [
-  { to: "/dashboard", label: "Visão geral", icon: <LayoutDashboard size={18} /> },
-  { to: "/clientes", label: "Clientes e relatórios", icon: <Users size={18} /> },
-  { to: "/integracoes", label: "Integrações", icon: <Link2 size={18} /> },
-] as const;
 
 export type MastStat = { value: string; label: string };
 
@@ -51,40 +47,22 @@ export function AgencyShell({
 }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (st) => st.location.pathname });
   const admin = useQuery({ queryKey: ["agency-is-admin"], queryFn: currentUserIsAdmin, staleTime: 5 * 60_000 });
 
   return (
     <div className="perf ag">
       {open && <div className="agShade" onClick={() => setOpen(false)} />}
-      <aside className={"agSide" + (open ? " open" : "")}>
-        <div className="agBrand">
-          <img src="/scase-logo-light.svg" alt="SCASE · Branding, design e performance" />
-          <button className="agIcon agMobile" onClick={() => setOpen(false)} aria-label="Fechar menu">
-            <X size={18} />
-          </button>
-        </div>
-        <nav className="agNav" aria-label="Menu principal">
-          {NAV.map((item) => (
-            <Link key={item.to} to={item.to} className="agNavItem" activeProps={{ className: "agNavItem active" }} onClick={() => setOpen(false)}>
-              {item.icon}
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
-        <button
-          className="agSignOut"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            navigate({ to: "/auth", search: { redirect: undefined, mode: undefined } as never });
-          }}
-        >
-          <span>
-            <strong>Agência SCASE</strong>
-            <small>Sair da conta</small>
-          </span>
-          <LogOut size={17} />
-        </button>
-      </aside>
+      <AgencySidebar
+        active={pathname.startsWith("/integracoes") ? "integrations" : pathname.startsWith("/clientes") ? "clients" : "dashboard"}
+        open={open}
+        onClose={() => setOpen(false)}
+        user={{ name: "Agência SCASE", subtitle: "Sair da conta", initials: "SC" }}
+        onSignOut={async () => {
+          await supabase.auth.signOut();
+          navigate({ to: "/auth", search: { redirect: undefined, mode: undefined } as never });
+        }}
+      />
 
       <div className="agMain">
         <header className="agMast">
