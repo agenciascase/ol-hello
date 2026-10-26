@@ -15,6 +15,7 @@ import {CampaignPicker} from "@/components/CampaignPicker";
 import {ClientIdentityPicker} from "@/components/ClientIdentityPicker";
 import {IntegrationsCompact} from "@/components/agency/IntegrationsOverview";
 import {AgencySidebar} from "@/components/agency/AgencySidebar";
+import {AccountFilterBar,PERIOD_PRESETS} from "@/components/agency/AccountFilterBar";
 import "../../agency.css";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -110,7 +111,8 @@ function Performance(){
  const [googleConnected,setGoogleConnected]=useState(false);
  const [googleAccounts,setGoogleAccounts]=useState<Array<{id:string;name:string}>>([]);
  const [metaAccounts,setMetaAccounts]=useState<Array<{id:string;name:string;currency?:string}>>([]);
- const [metaAccountId,setMetaAccountId]=useState("");
+ const savedSelection=useMemo(()=>{try{return JSON.parse(window.localStorage.getItem("scase-dash-selection")||"{}") as {platform?:"google"|"meta";google?:string;meta?:string}}catch{return {}}},[]);
+ const [metaAccountId,setMetaAccountId]=useState(savedSelection.meta??"");
  const [googleClientSearch,setGoogleClientSearch]=useState("");
  const [metaClientSearch,setMetaClientSearch]=useState("");
  const [metaError,setMetaError]=useState("");
@@ -118,7 +120,7 @@ function Performance(){
   const [metaLoading,setMetaLoading]=useState(false);
 
  const [googleCustomerId,setGoogleCustomerId]=useState("");
- const [dashboardCustomerId,setDashboardCustomerId]=useState("");
+ const [dashboardCustomerId,setDashboardCustomerId]=useState(savedSelection.google??"");
  const [clientIdentity,setClientIdentity]=useState<{name?:string;logo?:string}>({});
  const [monthlyCampaignId,setMonthlyCampaignId]=useState("all");
  const [reportCampaignId,setReportCampaignId]=useState("all");
@@ -127,9 +129,9 @@ function Performance(){
  const [liveSharing,setLiveSharing]=useState(false);
  const [googleCampaignReport,setGoogleCampaignReport]=useState("");
  const [googleReportLoading,setGoogleReportLoading]=useState(false);
- const [view,setView]=useState<View>(()=>{try{const v=new URLSearchParams(window.location.search).get("view");return v==="campaigns"||v==="settings"?v:"dashboard";}catch{return "dashboard";}});
+ const [view,setView]=useState<View>(()=>{try{const v=new URLSearchParams(window.location.search).get("view");return v==="settings"?v:"dashboard";}catch{return "dashboard";}});
  const [client,setClient]=useState(0);
- const [network,setNetwork]=useState<Network>("google");
+ const [network,setNetwork]=useState<Network>(savedSelection.platform??"google");
  const [selectedClientKey,setSelectedClientKey]=useState("");
  const [duration,setDuration]=useState<Duration>("30");
  const [dateMenuOpen,setDateMenuOpen]=useState(false);
@@ -200,13 +202,18 @@ function Performance(){
  const metaClientCount=(metaConnectionQuery.data?.length?metaConnectionQuery.data:metaAccounts).length;
  const activeClient=clientGroups.get(selectedClientKey)||[...clientGroups.values()].find(c=>c.googleId===dashboardCustomerId||c.metaId===metaAccountId)||[...clientGroups.values()][0];
  const clientPlatforms={google:!!activeClient?.googleId,meta:!!activeClient?.metaId};
- useEffect(()=>{if(!activeClient)return;
-  if(selectedClientKey!==activeClient.id)setSelectedClientKey(activeClient.id);
-  const available=activeClient.googleId&&activeClient.metaId?network:activeClient.metaId?"meta":"google";
-  if(network!==available)setNetwork(available);
-  if(activeClient.googleId&&dashboardCustomerId!==activeClient.googleId)setDashboardCustomerId(activeClient.googleId);
-  if(activeClient.metaId&&metaAccountId!==activeClient.metaId)setMetaAccountId(activeClient.metaId);
- },[activeClient?.id,activeClient?.googleId,activeClient?.metaId,network,dashboardCustomerId,metaAccountId,selectedClientKey]);
+ // Google and Meta accounts are chosen separately (no automatic pairing by name).
+ useEffect(()=>{if(network==="meta"&&!metaAccountId&&metaAccounts.length)setMetaAccountId(metaAccounts[0]!.id);},[network,metaAccountId,metaAccounts]);
+ useEffect(()=>{try{window.localStorage.setItem("scase-dash-selection",JSON.stringify({platform:network==="meta"?"meta":"google",google:dashboardCustomerId,meta:metaAccountId}))}catch{}},[network,dashboardCustomerId,metaAccountId]);
+ const linkedQuery=useQuery({queryKey:["dashboard-linked-clients"],enabled:!!account?.isAdmin,staleTime:300000,queryFn:async()=>{
+  const {data,error}=await supabase.from("client_ad_accounts").select("provider,account_id,clients(name,logo_url)");
+  if(error)throw new Error(error.message);
+  const out:Record<"google"|"meta",Record<string,{name:string;logo:string|null}>>={google:{},meta:{}};
+  for(const r of (data??[]) as unknown as Array<{provider:string;account_id:string;clients:{name:string;logo_url:string|null}|null}>){if(!r.clients)continue;const p=r.provider==="meta"?"meta":"google";out[p][p==="meta"?r.account_id.replace(/^act_/,""):r.account_id]={name:r.clients.name,logo:r.clients.logo_url};}
+  return out;
+ }});
+ const linkedClients=linkedQuery.data??{google:{},meta:{}};
+ useEffect(()=>{const p=network==="meta"?"meta":"google";const id=p==="meta"?metaAccountId:dashboardCustomerId;const c=linkedClients[p][id];setClientIdentity(c?{name:c.name,...(c.logo?{logo:c.logo}:{})}:{});},[network,metaAccountId,dashboardCustomerId,linkedQuery.data]);
 
  const liveCampaignQuery=useQuery({queryKey:["google-live-campaigns",dashboardCustomerId,duration,appliedFrom,appliedTo],enabled:!!dashboardCustomerId&&network!=="meta",staleTime:120000,retry:false,queryFn:async()=>{
   const {data}=await supabase.auth.getSession();if(!data.session?.access_token)throw new Error("Faça login novamente.");
@@ -257,14 +264,14 @@ function Performance(){
  const initials=(account.name||account.email||"SC").split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase();
  return <div className={"perf appShell "+(theme==="dark"?"themeDark":"themeLight")}>
   {mobile&&<div className="mobileShade" onClick={()=>setMobile(false)} />}
-  <AgencySidebar active={view==="campaigns"?"campaigns":view==="settings"?"settings":"dashboard"} isAdmin={isAdmin} open={mobile} onClose={()=>setMobile(false)} onSelect={(k)=>{if(k==="dashboard"||k==="campaigns"||k==="settings")selectPage(k);}} user={{name:displayName||"SCASE",subtitle:isAdmin?"Agência · Administrador":account.company||"Cliente",initials}} onSignOut={handleSignOut}/>
+  <AgencySidebar active={view==="settings"?"settings":"dashboard"} isAdmin={isAdmin} open={mobile} onClose={()=>setMobile(false)} onSelect={(k)=>{if(k==="dashboard"||k==="settings")selectPage(k);}} user={{name:displayName||"SCASE",subtitle:isAdmin?"Agência · Administrador":account.company||"Cliente",initials}} onSignOut={handleSignOut}/>
   <div className="body"><header className="topbar"><button className="iconButton mobileOnly" onClick={()=>setMobile(true)}><span>☰</span></button><div className="breadcrumb">SCASE Performance <span>/</span> {menu.find(([v])=>v===view)?.[1]}</div><div className="topRight"><button className="themeToggle" type="button" onClick={()=>setTheme(theme==="dark"?"light":"dark")} aria-label={theme==="dark"?"Ativar tema claro":"Ativar tema escuro"}>{theme==="dark"?<Sun size={17}/>:<Moon size={17}/>}<span>{theme==="dark"?"Claro":"Escuro"}</span></button><span className="demoChip"><span className="signal"/> {selectedAccountId?(selectedPlatform==="meta"?"Meta Ads · dados reais":"Google Ads · dados reais"):"Sem conta selecionada"}</span><button className="iconButton" title="Notificações demonstrativas"><Bell size={19}/></button><span className="miniAvatar">{initials}</span></div></header>
   <main className="main"><div className="heading"><div><span className="eyebrow">CENTRAL DE RESULTADOS</span><h1>{view==="dashboard"?"Visão geral":view==="campaigns"?"Campanhas":view==="clients"?"Gestão de clientes":"Configurações"}</h1><p>{view==="dashboard"?"Acompanhe a performance e descubra onde estão as oportunidades.":view==="campaigns"?"Desempenho detalhado das campanhas de mídia paga.":view==="clients"?"Visão centralizada das contas atendidas pela agência.":"Preferências de monitoramento e notificações."}</p></div><div className="headingActions"></div></div>
-  {view!=="settings"&&<div className="filters"><div className="filterLeft"><div className="selectWrap"><span>Cliente</span><button type="button" className="secondary" style={{fontSize:11,padding:"7px 10px"}} disabled={metaLoading} title="Atualizar clientes Meta Ads" onClick={async()=>{setMetaLoading(true);setMetaError("");try{const {data}=await supabase.auth.getSession();if(!data.session?.access_token)throw Error("Entre novamente.");const response=await fetch("/api/integrations/meta/accounts",{headers:{authorization:"Bearer "+data.session.access_token},cache:"no-store"});const body=await response.json();if(!response.ok)throw Error(body.error||"Falha ao carregar clientes Meta Ads.");setMetaAccounts(Array.isArray(body.accounts)?body.accounts:[]);void queryClient.invalidateQueries({queryKey:["meta-ads-customer-accounts"]});setMetaConnected(true);if(!(body.accounts??[]).length)setMetaError("Nenhuma conta Meta retornada para este usuário.");}catch(e){setMetaError(e instanceof Error?e.message:"Falha ao carregar clientes Meta Ads.");}finally{setMetaLoading(false)}}}>{metaLoading?"Carregando Meta…":"Atualizar Meta ("+metaClientCount+")"}</button>{metaClientsLoading&&<small style={{fontSize:11,opacity:.75}}>Carregando contas Meta…</small>}<ClientIdentityPicker accounts={clientAccounts} selected={activeClient?.id??""} onSelect={id=>{const group=clientGroups.get(id);if(!group)return;setSelectedClientKey(id);if(group.googleId)setDashboardCustomerId(group.googleId);if(group.metaId)setMetaAccountId(group.metaId);setNetwork(group.googleId?"google":"meta");setMonthlyCampaignId("all");setReportCampaignId("all");setLiveShareLink("");setLiveShareStatus("");}} onProfileChange={setClientIdentity}/>{metaError&&<small role="alert" style={{color:"#b91c1c",display:"block",fontSize:11,maxWidth:330}}>{metaError}</small>}</div><div className="selectWrap"><span>Campanha</span><CampaignPicker campaigns={allLiveCampaigns} value={reportCampaignId} disabled={!selectedAccountId||(selectedPlatform==="meta"?metaCampaignQuery.isLoading:liveCampaignQuery.isLoading)} loading={selectedPlatform==="meta"?metaCampaignQuery.isLoading:liveCampaignQuery.isLoading} onChange={id=>{setReportCampaignId(id);setMonthlyCampaignId(id);}}/></div><div className="selectWrap"><span>Plataforma</span><select value={network} onChange={e=>{setNetwork(e.target.value as Network);setReportCampaignId("all")}}>{clientPlatforms.google&&<option value="google">Google Ads</option>}{clientPlatforms.meta&&<option value="meta">Meta Ads</option>}</select><ChevronDown size={15}/></div></div><div className="periods"><CampaignDatePicker from={appliedFrom} to={appliedTo} label={datePreset} comparePrevious={comparePrevious} onCompareChange={setComparePrevious} onApply={(from,to,label)=>{setAppliedFrom(from);setAppliedTo(to);setCustomFrom(from);setCustomTo(to);setDatePreset(label);}}/></div></div>}
+  {view!=="settings"&&<AccountFilterBar platform={network==="meta"?"meta":"google"} onPlatform={p=>{setNetwork(p);setReportCampaignId("all");setMonthlyCampaignId("all");setLiveShareLink("");setLiveShareStatus("");}} google={{accounts:liveAccountsQuery.data??[],value:dashboardCustomerId,onChange:id=>{setDashboardCustomerId(id);setReportCampaignId("all");setMonthlyCampaignId("all");setLiveShareLink("");setLiveShareStatus("");},loading:liveAccountsQuery.isLoading,error:liveAccountsQuery.error instanceof Error?liveAccountsQuery.error.message:undefined}} meta={{accounts:metaConnectionQuery.data?.length?metaConnectionQuery.data:metaAccounts,value:metaAccountId,onChange:id=>{setMetaAccountId(id);setReportCampaignId("all");setMonthlyCampaignId("all");setLiveShareLink("");setLiveShareStatus("");},loading:metaConnectionQuery.isLoading,error:metaError||undefined}} linked={linkedClients} periodLabel={datePreset} periodRange={appliedFrom&&appliedTo?(appliedFrom===appliedTo?appliedFrom.split("-").reverse().join("/"):appliedFrom.split("-").reverse().join("/")+" a "+appliedTo.split("-").reverse().join("/")):"Últimos 30 dias"} onPeriod={(from,to,label)=>{setAppliedFrom(from);setAppliedTo(to);setCustomFrom(from);setCustomTo(to);setDatePreset(label);}} customPicker={<CampaignDatePicker from={appliedFrom} to={appliedTo} label={PERIOD_PRESETS.some(p=>p.label===datePreset)?"Personalizado":datePreset} comparePrevious={comparePrevious} onCompareChange={setComparePrevious} onApply={(from,to,label)=>{setAppliedFrom(from);setAppliedTo(to);setCustomFrom(from);setCustomTo(to);setDatePreset(label);}}/>} campaignPicker={<CampaignPicker campaigns={allLiveCampaigns} value={reportCampaignId} disabled={!selectedAccountId||(selectedPlatform==="meta"?metaCampaignQuery.isLoading:liveCampaignQuery.isLoading)} loading={selectedPlatform==="meta"?metaCampaignQuery.isLoading:liveCampaignQuery.isLoading} onChange={id=>{setReportCampaignId(id);setMonthlyCampaignId(id);}}/>}/>}
   {view==="dashboard"&&!selectedAccountId&&<div className="panel" role="status" style={{padding:20,marginTop:16}}><strong>Nenhuma conta selecionada</strong><p>{metaConnectionQuery.isLoading||liveAccountsQuery.isLoading?"Buscando contas conectadas…":metaError||"Nenhuma conta de anúncios foi encontrada. Verifique a conexão e as permissões do Google Ads ou Meta Ads."}</p></div>}
  {view==="dashboard"&&metaError&&<div className="panel" role="alert" style={{padding:14,marginTop:12,border:"1px solid #d97706"}}><strong>Meta Ads: contas não carregadas</strong><p style={{fontSize:13}}>{metaError}</p><button type="button" className="secondary" onClick={()=>void metaConnectionQuery.refetch()}>Tentar novamente</button></div>}
  {view==="dashboard"&&selectedAccountId&&<section className="panel" style={{padding:24,marginTop:18,marginBottom:18}}>
-  <div className="panelHead"><div><span className="eyebrow">RESUMO EXECUTIVO</span><h2>Panorama de resultados</h2><p>Resumo da conta selecionada. Para análise individual, acesse Campanhas.</p></div><button className="secondary" type="button" onClick={()=>setView("campaigns")}>Analisar campanhas <ArrowUpRight size={16}/></button></div>
+  <div className="panelHead"><div><span className="eyebrow">RESUMO EXECUTIVO</span><h2>Panorama de resultados</h2><p>Resumo da conta selecionada no período escolhido.</p></div></div>
   {(selectedPlatform==="meta"?metaCampaignQuery.isLoading:liveCampaignQuery.isLoading)?<p>Carregando resultados…</p>:(selectedPlatform==="meta"?metaCampaignQuery.isError:liveCampaignQuery.isError)?<p role="alert">Não foi possível carregar os resultados desta conta.</p>:<div className="kpiGrid">{([["Investimento",cash(allLiveCampaigns.reduce((sum,c)=>sum+c.cost,0))],["Impressões",int(allLiveCampaigns.reduce((sum,c)=>sum+c.impressions,0))],["Cliques",int(allLiveCampaigns.reduce((sum,c)=>sum+c.clicks,0))],["Conversões",int(allLiveCampaigns.reduce((sum,c)=>sum+c.conversions,0))]] as const).map(([label,value])=><div className="kpi" key={label}><div className="kpiTop"><span>{label}</span></div><strong>{value}</strong></div>)}</div>}
  </section>}
  {selectedAccountId&&view==="campaigns"&&<div className="dashboardModeBar"><div><strong>Como deseja acompanhar os resultados?</strong><span>Campanhas reais do {selectedPlatform==="meta"?"Meta Ads":"Google Ads"} · {selectedLiveName}</span></div><div className="dashboardModeSwitch" role="group" aria-label="Modo de visualização"><button type="button" aria-pressed={dashboardMode==="classic"} className={dashboardMode==="classic"?"active":""} onClick={()=>setDashboardMode("classic")}><LayoutDashboard size={16}/> Visão atual</button><button type="button" aria-pressed={dashboardMode==="bi"} className={dashboardMode==="bi"?"active":""} onClick={()=>setDashboardMode("bi")}><BarChart3 size={16}/> Modo BI</button></div></div>}

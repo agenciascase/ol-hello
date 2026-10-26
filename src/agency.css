@@ -165,3 +165,54 @@
 .intAccountsModal .free{color:#5c6f64}
 .intAccountsModal .linked{color:#0a7a45;font-weight:700;text-decoration:none}
 @media(max-width:600px){.ag .intItemLines{grid-template-columns:1fr}.ag .intGrid{grid-template-columns:1fr}}
+
+/* Dashboard filter bar: platform → account → campaign, then period */
+.afBar{--pine:#062419;--sprout:#1fbf75;--ink:#0e2619;--slate:#5c6f64;--hair:#e1eae4;background:#fff;border:1px solid var(--hair);border-radius:16px;margin-bottom:24px;font-family:"Manrope","DM Sans",Arial,sans-serif;color:var(--ink)}
+.afBar *{box-sizing:border-box}
+.afBar .afRow{display:flex;align-items:flex-end;gap:18px;padding:16px 18px;flex-wrap:wrap}
+.afBar .afRow+.afRow{border-top:1px solid var(--hair);background:#fafcfb;border-radius:0 0 16px 16px}
+.afBar .afLabel{display:block;font-size:11.5px;font-weight:700;color:var(--slate);margin-bottom:6px}
+.afBar .afSegment{display:inline-flex;background:#eef3f0;border-radius:12px;padding:4px;gap:4px;flex:none}
+.afBar .afSeg{display:inline-flex;align-items:center;gap:8px;border:0;background:transparent;border-radius:9px;padding:10px 14px;font:inherit;font-weight:700;font-size:13px;color:var(--slate);cursor:pointer}
+.afBar .afSeg i{width:9px;height:9px;border-radius:3px;background:#b9c6be}
+.afBar .afSeg.google i{background:#2f6fd6}.afBar .afSeg.meta i{background:#6d4fd1}
+.afBar .afSeg span{font-size:11px;font-weight:700;background:#fff;border-radius:999px;padding:2px 7px;color:var(--slate)}
+.afBar .afSeg[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px #0e261915}
+.afBar .afSeg[aria-selected="true"] span{background:#e5f8ee;color:#0a7a45}
+.afBar .afField{display:flex;flex-direction:column;min-width:0}
+.afBar .afGrow{flex:1 1 320px}
+.afBar .afCampaign{flex:0 1 300px;min-width:220px}
+.afBar .afCampaign>*:not(.afLabel){border:1px solid var(--hair);border-radius:10px;padding:2px 10px;min-height:46px;display:flex;align-items:center}
+.afBar .afError{color:#b91c1c;font-size:11.5px;margin-top:4px}
+.afBar .afPicker{position:relative}
+.afBar .afPickerBtn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--hair);background:#fff;border-radius:10px;padding:8px 12px;min-height:46px;text-align:left;font:inherit;cursor:pointer;color:var(--ink)}
+.afBar .afPickerBtn:hover{border-color:#a7cdb7}
+.afBar .afPickerBtn:focus-visible,.afBar .afSeg:focus-visible,.afBar .afChip:focus-visible,.afBar .afOption:focus-visible{outline:2px solid var(--sprout);outline-offset:2px}
+.afBar .afPickerText{display:grid;gap:1px;min-width:0}
+.afBar .afPickerText strong{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.afBar .afPickerText small{font-size:11.5px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.afBar .afMenu{position:absolute;top:calc(100% + 6px);left:0;right:0;min-width:320px;z-index:60;background:#fff;border:1px solid var(--hair);border-radius:14px;box-shadow:0 18px 50px #0e26192b;padding:10px}
+.afBar .afSearch{display:flex;align-items:center;gap:8px;border:1px solid var(--hair);border-radius:10px;padding:9px 11px;color:var(--slate)}
+.afBar .afSearch input{border:0;outline:none;flex:1;font:inherit;color:var(--ink);min-width:0}
+.afBar .afOnly{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--slate);padding:9px 4px 2px}
+.afBar .afOnly input{accent-color:#0eae5b}
+.afBar .afList{max-height:320px;overflow:auto;margin-top:6px}
+.afBar .afOption{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;background:transparent;border-radius:9px;padding:9px 10px;text-align:left;font:inherit;cursor:pointer;color:var(--ink)}
+.afBar .afOption:hover{background:#f2f7f4}
+.afBar .afOption[aria-selected="true"]{background:#e9f8f0}
+.afBar .afOption span{display:grid;gap:2px;min-width:0}
+.afBar .afOption strong{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.afBar .afOption small{font-size:11.5px;color:var(--slate);display:flex;gap:8px;align-items:center}
+.afBar .afOption em{font-style:normal;font-weight:700;color:#0a7a45;background:#e5f8ee;border-radius:5px;padding:1px 6px}
+.afBar .afOption svg{color:#0a7a45;flex:none}
+.afBar .afEmpty{padding:14px;color:var(--slate);margin:0}
+.afBar .afPeriodRow{align-items:center;gap:12px}
+.afBar .afPeriodRow .afLabel{margin:0}
+.afBar .afChips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:1}
+.afBar .afChip{border:1px solid var(--hair);background:#fff;border-radius:999px;padding:7px 13px;font:inherit;font-size:12.5px;font-weight:700;color:var(--slate);cursor:pointer}
+.afBar .afChip:hover{border-color:#a7cdb7;color:var(--ink)}
+.afBar .afChip[aria-pressed="true"]{background:var(--pine);border-color:var(--pine);color:#fff}
+.afBar .afCustom{display:inline-flex}
+.afBar .afRange{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap}
+.perf.themeDark .afBar{background:#0f1f18;border-color:#284536;color:#eafff3}
+@media(max-width:780px){.afBar .afSegment{width:100%}.afBar .afSeg{flex:1;justify-content:center}.afBar .afCampaign{flex:1 1 100%}.afBar .afRange{width:100%}}

@@ -1,14 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { LayoutDashboard, Link2, LogOut, Megaphone, Settings, Users, X } from "lucide-react";
+import { LayoutDashboard, Link2, LogOut, Settings, Users, X } from "lucide-react";
 import "../../agency.css";
 
-export type SideKey = "dashboard" | "campaigns" | "clients" | "integrations" | "settings";
+export type SideKey = "dashboard" | "clients" | "integrations" | "settings";
 
-type Item = { key: SideKey; label: string; icon: ReactNode; adminOnly?: boolean; to: "/dashboard" | "/clientes" | "/integracoes"; view?: "campaigns" | "settings" };
+type Item = { key: SideKey; label: string; icon: ReactNode; adminOnly?: boolean; to: "/dashboard" | "/clientes" | "/integracoes"; view?: "settings" };
 const ITEMS: Item[] = [
   { key: "dashboard", label: "Visão geral", icon: <LayoutDashboard size={18} />, to: "/dashboard" },
-  { key: "campaigns", label: "Campanhas", icon: <Megaphone size={18} />, to: "/dashboard", view: "campaigns" },
   { key: "clients", label: "Clientes e relatórios", icon: <Users size={18} />, to: "/clientes", adminOnly: true },
   { key: "integrations", label: "Integrações", icon: <Link2 size={18} />, to: "/integracoes", adminOnly: true },
   { key: "settings", label: "Configurações", icon: <Settings size={18} />, to: "/dashboard", view: "settings", adminOnly: true },
