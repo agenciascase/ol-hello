@@ -1,126 +1,245 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { CheckCircle2, KeyRound, Link2, Mail, MessageCircle, RefreshCw, Timer } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Mail, MessageCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
+import { ASSET_LABEL, PROVIDER_NAME, fmtDate, useIntegrationStatus, type ProviderStatus } from "@/components/agency/IntegrationsOverview";
 import { agencyApi, connectProvider } from "@/lib/agency-client";
 
 export const Route = createFileRoute("/_authenticated/integracoes")({ component: IntegrationsPage });
 
-type Status = {
-  providers: Array<{ provider: "meta" | "google"; connected: boolean; expiresAt: string | null; authorizedAt: string | null; accounts: number; lastSync: string | null }>;
-  config: { googleDeveloperToken: boolean; appOrigin: boolean; email: boolean; whatsapp: boolean; whatsappProvider: string; cron: boolean };
-};
 type SyncResult = { syncedAt: string; result: Record<"meta" | "google", { count: number; error: string | null }> };
+type AccountRow = { provider: "meta" | "google"; account_id: string; name: string; currency: string | null; status: string | null; clients: Array<{ id: string; name: string }> };
 
-const LABEL = {
-  meta: { name: "Meta Ads", sub: "Business Manager 1914217738639420" },
-  google: { name: "Google Ads", sub: "MCC 226-294-0733" },
-} as const;
-const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—");
+const fmtId = (provider: string, id: string) => (provider === "google" ? id.replace(/^(\d{3})(\d{3})(\d{4})$/, "$1-$2-$3") : id.replace(/^act_/, ""));
+const int = (n: number) => n.toLocaleString("pt-BR");
+
+function useAccounts() {
+  return useQuery({
+    queryKey: ["ad-accounts-catalog-with-clients"],
+    queryFn: async () => {
+      const [catalog, links] = await Promise.all([
+        supabase.from("ad_accounts_catalog").select("provider,account_id,name,currency,status").order("name"),
+        supabase.from("client_ad_accounts").select("provider,account_id,client_id,clients(name)"),
+      ]);
+      if (catalog.error) throw new Error(catalog.error.message);
+      const byKey = new Map<string, Array<{ id: string; name: string }>>();
+      for (const l of (links.data ?? []) as unknown as Array<{ provider: string; account_id: string; client_id: string; clients: { name: string } | null }>) {
+        const k = l.provider + "|" + l.account_id;
+        byKey.set(k, [...(byKey.get(k) ?? []), { id: l.client_id, name: l.clients?.name ?? "Cliente" }]);
+      }
+      return (catalog.data ?? []).map((a) => ({ ...a, clients: byKey.get(a.provider + "|" + a.account_id) ?? [] })) as AccountRow[];
+    },
+  });
+}
 
 function IntegrationsPage() {
   const qc = useQueryClient();
-  const [connecting, setConnecting] = useState<"meta" | "google" | null>(null);
-  const status = useQuery({ queryKey: ["integrations-status"], queryFn: () => agencyApi<Status>("/api/integrations/status") });
+  const status = useIntegrationStatus();
+  const accounts = useAccounts();
   const sync = useMutation({
     mutationFn: () => agencyApi<SyncResult>("/api/integrations/sync-accounts", { method: "POST", body: {} }),
     onSuccess: (r) => {
       for (const p of ["meta", "google"] as const) {
         const item = r.result[p];
-        if (item.error) toast.error(`${LABEL[p].name}: ${item.error}`);
-        else toast.success(`${LABEL[p].name}: ${item.count} contas sincronizadas`);
+        if (item.error) toast.error(`${PROVIDER_NAME[p]}: ${item.error}`);
+        else toast.success(`${PROVIDER_NAME[p]}: ${int(item.count)} contas atualizadas`);
       }
       qc.invalidateQueries({ queryKey: ["integrations-status"] });
+      qc.invalidateQueries({ queryKey: ["ad-accounts-catalog-with-clients"] });
       qc.invalidateQueries({ queryKey: ["ad-accounts-catalog"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha na sincronização"),
   });
 
+  const providers = status.data?.providers ?? [];
+  const connected = providers.filter((p) => p.connected);
+  const missing = providers.filter((p) => !p.connected);
+  const linkedAccounts = (accounts.data ?? []).filter((a) => a.clients.length > 0).length;
+  const lastSync = providers.reduce<string | null>((m, p) => (p.lastSync && (!m || p.lastSync > m) ? p.lastSync : m), null);
+
   return (
     <AgencyShell
-      eyebrow="CONEXÕES DA AGÊNCIA"
       title="Integrações"
-      description="Conecte a BM e a MCC da agência e sincronize as contas de anúncio que poderão ser vinculadas aos clientes."
+      description="As contas que alimentam os relatórios dos clientes e os perfis por onde a agência está conectada."
       actions={
-        <button className="primary" type="button" disabled={sync.isPending} onClick={() => sync.mutate()}>
-          <RefreshCw size={16} className={sync.isPending ? "animate-spin" : ""} /> {sync.isPending ? "Sincronizando…" : "Sincronizar contas"}
-        </button>
+        connected.length > 0 && (
+          <button className="primary" type="button" disabled={sync.isPending} onClick={() => sync.mutate()}>
+            <RefreshCw size={16} className={sync.isPending ? "animate-spin" : ""} /> {sync.isPending ? "Atualizando contas…" : "Atualizar contas"}
+          </button>
+        )
+      }
+      stats={
+        status.data
+          ? [
+              { value: `${connected.length} de 2`, label: "plataformas conectadas" },
+              ...connected.map((p) => ({ value: int(p.accounts), label: `contas ${PROVIDER_NAME[p.provider]}` })),
+              { value: int(linkedAccounts), label: "contas vinculadas a clientes" },
+              { value: lastSync ? fmtDate(lastSync) : "—", label: "última atualização" },
+            ]
+          : []
       }
     >
-      {status.isError && <section className="panel rpEmpty"><p className="rpError">{(status.error as Error).message}</p></section>}
-      <div className="rpTwo" style={{ marginBottom: 16 }}>
-        {(["meta", "google"] as const).map((p) => {
-          const s = status.data?.providers.find((x) => x.provider === p);
-          return (
-            <section key={p} className="panel rpCard">
-              <h2>
-                <Link2 size={18} /> {LABEL[p].name}
-              </h2>
-              <p className="rpHint">{LABEL[p].sub}</p>
-              <div className="rpRow">
-                <span>Status</span>
-                {status.isLoading ? <span className="rpBadge">Verificando…</span> : s?.connected ? <span className="rpBadge ok"><CheckCircle2 size={12} /> Conectado</span> : <span className="rpBadge bad">Não conectado</span>}
-              </div>
-              <div className="rpRow"><span>Autorizado em</span><strong>{when(s?.authorizedAt ?? null)}</strong></div>
-              {p === "meta" && <div className="rpRow"><span>Autorização expira em</span><strong>{when(s?.expiresAt ?? null)}</strong></div>}
-              <div className="rpRow"><span>Contas no catálogo</span><strong>{s?.accounts ?? 0}</strong></div>
-              <div className="rpRow"><span>Última sincronização</span><strong>{when(s?.lastSync ?? null)}</strong></div>
-              <div className="rpRow">
-                <span />
-                <button
-                  className="secondary"
-                  type="button"
-                  disabled={connecting !== null}
-                  onClick={async () => {
-                    setConnecting(p);
-                    try {
-                      await connectProvider(p);
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Não foi possível conectar.");
-                      setConnecting(null);
-                    }
-                  }}
-                >
-                  {connecting === p ? "Abrindo…" : s?.connected ? "Reconectar" : "Conectar"}
-                </button>
-              </div>
-            </section>
-          );
-        })}
+      {status.isError && <section className="agEmpty">{(status.error as Error).message}</section>}
+
+      <div className="intList">
+        {status.isLoading && (
+          <>
+            <div className="intSkeleton" />
+            <div className="intSkeleton" />
+          </>
+        )}
+        {connected.map((p) => (
+          <ProviderCard key={p.provider} status={p} accounts={(accounts.data ?? []).filter((a) => a.provider === p.provider)} />
+        ))}
+        {missing.map((p) => (
+          <div key={p.provider} className="intMissing">
+            <span>{PROVIDER_NAME[p.provider]} não está conectado à plataforma.</span>
+            <button className="intLink" type="button" onClick={() => connectProvider(p.provider).catch((e: Error) => toast.error(e.message))}>
+              Conectar {PROVIDER_NAME[p.provider]}
+            </button>
+          </div>
+        ))}
       </div>
 
-      <section className="panel rpCard">
-        <h2>
-          <KeyRound size={18} /> Configuração de envio
-        </h2>
-        <p className="rpHint">Valores ficam nos Secrets do projeto (Lovable Cloud). Aqui só mostramos se estão preenchidos.</p>
-        <ConfigRow icon={<KeyRound size={15} />} label="Developer token do Google Ads (opcional)" ok={status.data?.config.googleDeveloperToken} optional hint="Desde set/2026 o acesso à API vem do projeto no Google Cloud; o token não é mais exigido." />
-        <ConfigRow icon={<Link2 size={15} />} label="Endereço público do app" ok={status.data?.config.appOrigin} hint="APP_ORIGIN" />
-        <ConfigRow icon={<Mail size={15} />} label="E-mail (Resend)" ok={status.data?.config.email} hint="RESEND_API_KEY, REPORT_EMAIL_FROM" />
-        <ConfigRow
-          icon={<MessageCircle size={15} />}
-          label={`WhatsApp (${status.data?.config.whatsappProvider === "zapi" ? "Z-API" : "API oficial da Meta"})`}
-          ok={status.data?.config.whatsapp}
-          hint={status.data?.config.whatsappProvider === "zapi" ? "ZAPI_INSTANCE_ID, ZAPI_TOKEN" : "WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TEMPLATE_NAME"}
-        />
-        <ConfigRow icon={<Timer size={15} />} label="Senha do agendador automático" ok={status.data?.config.cron} hint="LOVABLE_CRON_SECRET. Também é preciso um serviço chamando /api/cron/reports a cada 15 min." />
+      <section className="intSection">
+        <h2>Próximas integrações</h2>
+        <p>Canais de envio automático dos relatórios. Ficam ativos quando as chaves forem cadastradas.</p>
+        <div className="intFuture">
+          <div className="intFutureItem">
+            <Mail size={20} />
+            <div>
+              <strong>E-mail</strong>
+              <p>Relatório com resumo no corpo do e-mail, PDF anexado e link do painel ao vivo.</p>
+            </div>
+            <span className={"intTag" + (status.data?.channels.email ? " ready" : "")}>{status.data?.channels.email ? "Pronto para usar" : "Em breve"}</span>
+          </div>
+          <div className="intFutureItem">
+            <MessageCircle size={20} />
+            <div>
+              <strong>WhatsApp</strong>
+              <p>Envio do PDF e do link do painel para o número ou grupo de cada cliente.</p>
+            </div>
+            <span className={"intTag" + (status.data?.channels.whatsapp ? " ready" : "")}>{status.data?.channels.whatsapp ? "Pronto para usar" : "Em breve"}</span>
+          </div>
+        </div>
       </section>
     </AgencyShell>
   );
 }
 
-function ConfigRow({ icon, label, ok, hint, optional }: { icon: React.ReactNode; label: string; ok: boolean | undefined; hint: string; optional?: boolean }) {
+function ProviderCard({ status: p, accounts }: { status: ProviderStatus; accounts: AccountRow[] }) {
+  const [query, setQuery] = useState("");
+  const expiresSoon = p.provider === "meta" && p.expiresAt && Date.parse(p.expiresAt) - Date.now() < 10 * 86_400_000;
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase().replace(/-/g, "");
+    return accounts.filter((a) => !q || a.name.toLowerCase().includes(q) || a.account_id.replace(/-/g, "").includes(q) || a.clients.some((c) => c.name.toLowerCase().includes(q)));
+  }, [accounts, query]);
+  const linked = accounts.filter((a) => a.clients.length).length;
+
   return (
-    <div className="rpRow">
-      <div className="rpRowMain">
-        <strong style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {icon} {label}
-        </strong>
-        <small>{hint}</small>
+    <article className="intCard">
+      <div className="intTop">
+        <div className="intId">
+          <div className="intName">
+            <span className={"intDot " + p.provider} />
+            {PROVIDER_NAME[p.provider]}
+          </div>
+          <div className="intAsset">
+            <strong>{p.asset.name ?? `${ASSET_LABEL[p.provider]} da agência`}</strong>
+            {ASSET_LABEL[p.provider]} {p.asset.id}
+          </div>
+          <span className={"intOk" + (expiresSoon ? " intWarn" : "")}>{expiresSoon ? "Conectado · renovar em breve" : "Conectado"}</span>
+        </div>
+        <dl className="intFacts">
+          <div>
+            <dt>{p.provider === "meta" ? "Perfil do Facebook vinculado" : "Conta Google vinculada"}</dt>
+            <dd>
+              {p.profile ?? "Não identificado"}
+              {(p.profileHint || !p.profile) && <small>{p.profileHint ?? "Não foi possível consultar o perfil agora."}</small>}
+            </dd>
+          </div>
+          <div>
+            <dt>Conectado na plataforma por</dt>
+            <dd>
+              {p.connectedBy ?? "—"}
+              <small>em {fmtDate(p.authorizedAt)}</small>
+            </dd>
+          </div>
+          <div>
+            <dt>Contas de anúncio</dt>
+            <dd>
+              {int(p.accounts)} disponíveis
+              <small>
+                {int(linked)} vinculadas a clientes · atualizado {fmtDate(p.lastSync)}
+              </small>
+            </dd>
+          </div>
+          {p.provider === "meta" && (
+            <div>
+              <dt>Autorização válida até</dt>
+              <dd>
+                {fmtDate(p.expiresAt, false)}
+                <small>A Meta pede nova autorização a cada 60 dias</small>
+              </dd>
+            </div>
+          )}
+        </dl>
+        <div className="intActions">
+          <button className={"intLink" + (expiresSoon ? "" : " muted")} type="button" onClick={() => connectProvider(p.provider).catch((e: Error) => toast.error(e.message))}>
+            Reconectar
+          </button>
+        </div>
       </div>
-      {ok === undefined ? <span className="rpBadge">—</span> : ok ? <span className="rpBadge ok">Configurado</span> : optional ? <span className="rpBadge">Não necessário</span> : <span className="rpBadge warn">Pendente</span>}
-    </div>
+      <details className="intAccounts">
+        <summary>
+          Contas da {ASSET_LABEL[p.provider] === "MCC" ? "MCC" : "BM"} <span>{int(accounts.length)} contas · ver lista</span>
+        </summary>
+        {accounts.length === 0 ? (
+          <p className="intSearch">Nenhuma conta importada ainda. Use “Atualizar contas” no topo da página.</p>
+        ) : (
+          <>
+            <div className="intSearch">
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por conta, ID ou cliente" aria-label="Buscar contas" />
+            </div>
+            <div className="intTableWrap">
+              <table className="intTable">
+                <thead>
+                  <tr>
+                    <th>Conta</th>
+                    <th>ID</th>
+                    <th>Cliente na SCASE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.slice(0, 300).map((a) => (
+                    <tr key={a.account_id}>
+                      <td>{a.name}</td>
+                      <td>{fmtId(a.provider, a.account_id)}</td>
+                      <td>
+                        {a.clients.length ? (
+                          a.clients.map((c, i) => (
+                            <span key={c.id}>
+                              {i > 0 && ", "}
+                              <Link className="linked" to="/clientes/$clientId" params={{ clientId: c.id }}>
+                                {c.name}
+                              </Link>
+                            </span>
+                          ))
+                        ) : (
+                          <span className="free">Sem cliente</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </details>
+    </article>
   );
 }

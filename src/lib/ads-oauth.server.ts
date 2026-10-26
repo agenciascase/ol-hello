@@ -46,7 +46,8 @@ export function authUrl(provider: Provider, state: string): string {
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", state);
   if(provider==="google"){
-    url.searchParams.set("scope", "https://www.googleapis.com/auth/adwords");
+    // "openid email" lets the platform show which Google profile authorised the MCC.
+    url.searchParams.set("scope", "https://www.googleapis.com/auth/adwords openid email");
     url.searchParams.set("access_type", "offline");
     url.searchParams.set("prompt", "consent");
   } else {
