@@ -1,0 +1,61 @@
+/* Agency reporting platform: clients, report configs, schedules and the public report panel. */
+.perf .rpEmpty{padding:28px;display:grid;gap:8px}
+.perf .rpEmpty p{color:var(--muted)}
+.perf .rpActions{display:flex;gap:10px;flex-wrap:wrap}
+.perf .rpGrid{display:grid;gap:16px}
+.perf .rpTwo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.perf .rpCard{padding:22px}
+.perf .rpCard>h2{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.perf .rpCard>h2 svg{color:#0baa59}
+.perf .rpCard>p.rpHint{color:var(--muted);margin-bottom:16px}
+.perf .rpField{display:grid;gap:7px;margin-bottom:14px}
+.perf .rpField>span{font-weight:800;font-size:11px;color:#485260}
+.perf .rpField small{color:var(--muted);font-size:10px}
+.perf .rpInput,.perf .rpField input,.perf .rpField select,.perf .rpField textarea{width:100%;border:1px solid #dfe4e9;border-radius:9px;padding:11px 13px;background:white;outline:none;color:#18212d}
+.perf .rpField textarea{min-height:84px;resize:vertical}
+.perf .rpField input:focus,.perf .rpField select:focus,.perf .rpField textarea:focus{border-color:#36d17a}
+.perf .rpChips{display:flex;gap:7px;flex-wrap:wrap}
+.perf .rpChip{border:1px solid #dfe4e9;background:white;border-radius:999px;padding:7px 12px;font-weight:750;font-size:11px;color:#586576}
+.perf .rpChip[aria-pressed="true"]{background:#131a16;border-color:#131a16;color:white}
+.perf .rpRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.perf .rpRow:first-of-type{border-top:0}
+.perf .rpRowMain{display:grid;gap:4px;min-width:0}
+.perf .rpRowMain strong{font-size:13px}
+.perf .rpRowMain small{color:var(--muted)}
+.perf .rpList{display:grid}
+.perf .rpBadge{display:inline-flex;align-items:center;gap:6px;border-radius:6px;padding:5px 8px;font-size:10px;font-weight:800;background:#f1f4f7;color:#586576;white-space:nowrap}
+.perf .rpBadge.ok{background:#e8fff0;color:#0b8a48}
+.perf .rpBadge.warn{background:#fff6e5;color:#a45b00}
+.perf .rpBadge.bad{background:#fdecec;color:#b91c1c}
+.perf .rpClientCard{padding:20px;display:grid;gap:12px;text-decoration:none;color:inherit;transition:border-color .15s}
+.perf .rpClientCard:hover{border-color:#a7cdb7}
+.perf .rpClientTop{display:flex;gap:12px;align-items:center}
+.perf .rpAvatar{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#e6fff0;color:#00a759;font-weight:900;overflow:hidden;flex:none}
+.perf .rpAvatar img{width:100%;height:100%;object-fit:contain;background:white}
+.perf .rpMeta{display:flex;gap:8px;flex-wrap:wrap}
+.perf .rpToolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+.perf .rpSearch{flex:1;min-width:220px;max-width:420px}
+.perf .rpModalBack{position:fixed;inset:0;background:#0b1410a8;z-index:50;display:grid;place-items:center;padding:18px}
+.perf .rpModal{width:min(720px,100%);max-height:calc(100vh - 36px);overflow:auto;background:white;border-radius:16px;padding:24px;box-shadow:0 30px 90px #0005}
+.perf .rpModalHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.perf .rpModalFoot{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;padding-top:16px;border-top:1px solid var(--line)}
+.perf .rpCheck{display:flex;align-items:center;gap:8px;font-weight:700}
+.perf .rpCheck input{accent-color:#0eae5b;width:17px;height:17px}
+.perf .rpReport{padding:20px;display:grid;gap:14px}
+.perf .rpReportHead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.perf .rpSchedule{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#f6faf8;border:1px solid #e3efe7;border-radius:10px;padding:12px 14px}
+.perf .rpNext{color:#0b8a48;font-weight:800}
+.perf .danger{color:#b91c1c!important}
+.perf .rpSmallBtn{padding:8px 12px;font-size:11px}
+.perf .rpTable{width:100%;border-collapse:collapse;font-size:11px}
+.perf .rpTable th{text-align:left;color:#8c99a5;font-size:10px;padding:10px 8px;background:#f8fafb}
+.perf .rpTable td{padding:11px 8px;border-top:1px solid #f0f2f4;color:#4d5967}
+.perf .rpError{color:#b91c1c;font-size:11px}
+/* Public report panel */
+.perf .rpKpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+.perf .rpDelta{font-size:11px;font-weight:800}
+.perf .rpDelta.up{color:#0b8a48}
+.perf .rpDelta.down{color:#b91c1c}
+.perf .rpDelta.flat{color:var(--muted)}
+.perf .rpPlatforms{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+@media(max-width:780px){.perf .rpTwo{grid-template-columns:1fr}.perf .rpModal{padding:18px}}

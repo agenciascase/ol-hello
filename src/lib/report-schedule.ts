@@ -19,7 +19,7 @@ export const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 function localParts(date: Date, tz: string) {
   const f = new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
   const p = Object.fromEntries(f.formatToParts(date).map((x) => [x.type, x.value]));
-  return { y: +p.year!, m: +p.month!, d: +p.day!, h: +p.hour!, min: +p.minute!, s: +p.second! };
+  return { y: +p["year"]!, m: +p["month"]!, d: +p["day"]!, h: +p["hour"]!, min: +p["minute"]!, s: +p["second"]! };
 }
 function offsetMs(date: Date, tz: string) {
   const p = localParts(date, tz);
@@ -86,7 +86,7 @@ export function formatNextRun(date: Date | null, tz: string) {
   if (!date) return "Sem próximo envio";
   const f = new Intl.DateTimeFormat("pt-BR", { timeZone: tz, weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
   const p = Object.fromEntries(f.formatToParts(date).map((x) => [x.type, x.value]));
-  return `${p.weekday}, ${p.day} de ${p.month}, ${p.hour}:${p.minute}`;
+  return `${p["weekday"]}, ${p["day"]} de ${p["month"]}, ${p["hour"]}:${p["minute"]}`;
 }
 
 export const E164 = /^\+[1-9]\d{7,14}$/;

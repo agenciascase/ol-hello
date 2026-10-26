@@ -21,6 +21,18 @@ export function config(provider: Provider) {
         authUrl: "https://www.facebook.com/v24.0/dialog/oauth",
         tokenUrl: "https://graph.facebook.com/v24.0/oauth/access_token" };
 }
+/** Headers for every Google Ads API call: OAuth token, MCC login-customer-id and the developer token. */
+export function googleHeaders(accessToken: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    authorization: `Bearer ${accessToken}`,
+    "login-customer-id": MCC_CUSTOMER_ID,
+    "content-type": "application/json",
+  };
+  const developerToken = process.env["GOOGLE_ADS_DEVELOPER_TOKEN"];
+  if (developerToken) headers["developer-token"] = developerToken;
+  return headers;
+}
+export const googleAdsVersion = () => process.env["GOOGLE_ADS_API_VERSION"] || "v26";
 function required(key: string): string {
   const value = process.env[key];
   if (!value) throw new Error(`Missing server environment variable: ${key}`);
@@ -66,7 +78,7 @@ export async function refreshGoogleToken(refreshToken:string){
 export async function googleAccounts(accessToken:string){
   const api=process.env["GOOGLE_ADS_API_VERSION"]||"v26";
   const response=await fetch(`https://googleads.googleapis.com/${api}/customers/${MCC_CUSTOMER_ID}/googleAds:searchStream`,{
-    method:"POST",headers:{authorization:`Bearer ${accessToken}`,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},
+    method:"POST",headers:googleHeaders(accessToken),
     body:JSON.stringify({query:"SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.status, customer_client.level FROM customer_client WHERE customer_client.level = 1 AND customer_client.manager = FALSE"}),
     cache:"no-store"
   });
