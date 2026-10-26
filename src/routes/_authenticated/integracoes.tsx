@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Megaphone, RefreshCw, Search, X } from "lucide-react";
+import { IntegrationCard } from "@/components/agency/IntegrationCard";
 import { DeliveryChannels } from "@/components/agency/ChannelConnect";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +58,6 @@ function IntegrationsPage() {
 
   const providers = status.data?.providers ?? [];
   const connected = providers.filter((p) => p.connected);
-  const missing = providers.filter((p) => !p.connected);
   const linkedAccounts = (accounts.data ?? []).filter((a) => a.clients.length > 0).length;
   const lastSync = providers.reduce<string | null>((m, p) => (p.lastSync && (!m || p.lastSync > m) ? p.lastSync : m), null);
 
@@ -85,25 +85,21 @@ function IntegrationsPage() {
     >
       {status.isError && <section className="agEmpty">{(status.error as Error).message}</section>}
 
-      <div className="intList">
-        {status.isLoading && (
-          <>
-            <div className="intSkeleton" />
-            <div className="intSkeleton" />
-          </>
-        )}
-        {connected.map((p) => (
-          <ProviderCard key={p.provider} status={p} accounts={(accounts.data ?? []).filter((a) => a.provider === p.provider)} />
-        ))}
-        {missing.map((p) => (
-          <div key={p.provider} className="intMissing">
-            <span>{PROVIDER_NAME[p.provider]} não está conectado à plataforma.</span>
-            <button className="intLink" type="button" onClick={() => connectProvider(p.provider).catch((e: Error) => toast.error(e.message))}>
-              Conectar {PROVIDER_NAME[p.provider]}
-            </button>
-          </div>
-        ))}
-      </div>
+      <section className="intSection first">
+        <h2>Plataformas de anúncio</h2>
+        <p>Contas de onde vêm os números dos relatórios.</p>
+        <div className="intGrid">
+          {status.isLoading && (
+            <>
+              <div className="intSkeleton" />
+              <div className="intSkeleton" />
+            </>
+          )}
+          {providers.map((p) => (
+            <ProviderCard key={p.provider} status={p} accounts={(accounts.data ?? []).filter((a) => a.provider === p.provider)} />
+          ))}
+        </div>
+      </section>
 
       <DeliveryChannels channels={status.data?.channels} />
     </AgencyShell>
@@ -111,78 +107,87 @@ function IntegrationsPage() {
 }
 
 function ProviderCard({ status: p, accounts }: { status: ProviderStatus; accounts: AccountRow[] }) {
+  const [showAccounts, setShowAccounts] = useState(false);
+  const expiresSoon = p.connected && p.provider === "meta" && p.expiresAt !== null && Date.parse(p.expiresAt) - Date.now() < 10 * 86_400_000;
+  const linked = accounts.filter((a) => a.clients.length).length;
+  const connect = () => connectProvider(p.provider).catch((e: Error) => toast.error(e.message));
+  const asset = `${ASSET_LABEL[p.provider]} ${p.asset.id}`;
+  return (
+    <>
+      <IntegrationCard
+        icon={p.provider === "meta" ? <Megaphone size={19} /> : <Search size={19} />}
+        tone={p.provider}
+        name={PROVIDER_NAME[p.provider]}
+        subtitle={p.asset.name ? `${p.asset.name} · ${asset}` : asset}
+        connected={p.connected}
+        warn={expiresSoon}
+        statusLabel={expiresSoon ? "Renovar em breve" : undefined}
+        description={p.connected ? undefined : `Conecte o ${ASSET_LABEL[p.provider]} da agência para usar as contas de ${PROVIDER_NAME[p.provider]} nos relatórios.`}
+        lines={
+          p.connected
+            ? [
+                {
+                  label: p.provider === "meta" ? "Perfil do Facebook" : "Conta Google",
+                  value: p.profile ?? "Não identificado",
+                  hint: p.profileHint ?? (p.profile ? undefined : "Não foi possível consultar o perfil agora."),
+                },
+                { label: "Conectado por", value: p.connectedBy ?? "—", hint: `em ${fmtDate(p.authorizedAt)}` },
+                { label: "Contas de anúncio", value: `${int(p.accounts)} disponíveis`, hint: `${int(linked)} vinculadas a clientes` },
+                ...(p.provider === "meta" ? [{ label: "Autorização válida até", value: fmtDate(p.expiresAt, false), hint: "Renovada a cada 60 dias" }] : []),
+              ]
+            : []
+        }
+        actions={
+          p.connected ? (
+            <>
+              <button type="button" className="intLink" onClick={() => setShowAccounts(true)}>
+                Ver contas ({int(accounts.length)})
+              </button>
+              <button type="button" className={"intLink" + (expiresSoon ? "" : " muted")} onClick={connect}>
+                Reconectar
+              </button>
+            </>
+          ) : (
+            <button type="button" className="intConnect" onClick={connect}>
+              Conectar {PROVIDER_NAME[p.provider]}
+            </button>
+          )
+        }
+      />
+      {showAccounts && <AccountsModal provider={p.provider} accounts={accounts} onClose={() => setShowAccounts(false)} />}
+    </>
+  );
+}
+
+function AccountsModal({ provider, accounts, onClose }: { provider: "meta" | "google"; accounts: AccountRow[]; onClose: () => void }) {
   const [query, setQuery] = useState("");
-  const expiresSoon = p.provider === "meta" && p.expiresAt && Date.parse(p.expiresAt) - Date.now() < 10 * 86_400_000;
+  const [onlyFree, setOnlyFree] = useState(false);
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase().replace(/-/g, "");
-    return accounts.filter((a) => !q || a.name.toLowerCase().includes(q) || a.account_id.replace(/-/g, "").includes(q) || a.clients.some((c) => c.name.toLowerCase().includes(q)));
-  }, [accounts, query]);
-  const linked = accounts.filter((a) => a.clients.length).length;
-
+    return accounts
+      .filter((a) => !onlyFree || a.clients.length === 0)
+      .filter((a) => !q || a.name.toLowerCase().includes(q) || a.account_id.replace(/-/g, "").includes(q) || a.clients.some((c) => c.name.toLowerCase().includes(q)));
+  }, [accounts, query, onlyFree]);
   return (
-    <article className="intCard">
-      <div className="intTop">
-        <div className="intId">
-          <div className="intName">
-            <span className={"intDot " + p.provider} />
-            {PROVIDER_NAME[p.provider]}
-          </div>
-          <div className="intAsset">
-            <strong>{p.asset.name ?? `${ASSET_LABEL[p.provider]} da agência`}</strong>
-            {ASSET_LABEL[p.provider]} {p.asset.id}
-          </div>
-          <span className={"intOk" + (expiresSoon ? " intWarn" : "")}>{expiresSoon ? "Conectado · renovar em breve" : "Conectado"}</span>
-        </div>
-        <dl className="intFacts">
-          <div>
-            <dt>{p.provider === "meta" ? "Perfil do Facebook vinculado" : "Conta Google vinculada"}</dt>
-            <dd>
-              {p.profile ?? "Não identificado"}
-              {(p.profileHint || !p.profile) && <small>{p.profileHint ?? "Não foi possível consultar o perfil agora."}</small>}
-            </dd>
-          </div>
-          <div>
-            <dt>Conectado na plataforma por</dt>
-            <dd>
-              {p.connectedBy ?? "—"}
-              <small>em {fmtDate(p.authorizedAt)}</small>
-            </dd>
-          </div>
-          <div>
-            <dt>Contas de anúncio</dt>
-            <dd>
-              {int(p.accounts)} disponíveis
-              <small>
-                {int(linked)} vinculadas a clientes · atualizado {fmtDate(p.lastSync)}
-              </small>
-            </dd>
-          </div>
-          {p.provider === "meta" && (
-            <div>
-              <dt>Autorização válida até</dt>
-              <dd>
-                {fmtDate(p.expiresAt, false)}
-                <small>A Meta pede nova autorização a cada 60 dias</small>
-              </dd>
-            </div>
-          )}
-        </dl>
-        <div className="intActions">
-          <button className={"intLink" + (expiresSoon ? "" : " muted")} type="button" onClick={() => connectProvider(p.provider).catch((e: Error) => toast.error(e.message))}>
-            Reconectar
+    <div className="rpModalBack" onClick={onClose}>
+      <div className="rpModal intAccountsModal" role="dialog" aria-modal="true" aria-label={`Contas ${PROVIDER_NAME[provider]}`} onClick={(e) => e.stopPropagation()}>
+        <div className="rpModalHead">
+          <h2>
+            Contas {PROVIDER_NAME[provider]} <small>{int(accounts.length)}</small>
+          </h2>
+          <button className="iconButton" onClick={onClose} aria-label="Fechar">
+            <X size={18} />
           </button>
         </div>
-      </div>
-      <details className="intAccounts">
-        <summary>
-          Contas da {ASSET_LABEL[p.provider] === "MCC" ? "MCC" : "BM"} <span>{int(accounts.length)} contas · ver lista</span>
-        </summary>
         {accounts.length === 0 ? (
-          <p className="intSearch">Nenhuma conta importada ainda. Use “Atualizar contas” no topo da página.</p>
+          <p className="rpFormHint">Nenhuma conta importada ainda. Use “Atualizar contas” no topo da página.</p>
         ) : (
           <>
-            <div className="intSearch">
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por conta, ID ou cliente" aria-label="Buscar contas" />
+            <div className="intModalTools">
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por conta, ID ou cliente" aria-label="Buscar contas" autoFocus />
+              <label className="rpCheck">
+                <input type="checkbox" checked={onlyFree} onChange={(e) => setOnlyFree(e.target.checked)} /> Só contas sem cliente
+              </label>
             </div>
             <div className="intTableWrap">
               <table className="intTable">
@@ -194,7 +199,7 @@ function ProviderCard({ status: p, accounts }: { status: ProviderStatus; account
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.slice(0, 300).map((a) => (
+                  {rows.slice(0, 400).map((a) => (
                     <tr key={a.account_id}>
                       <td>{a.name}</td>
                       <td>{fmtId(a.provider, a.account_id)}</td>
@@ -214,12 +219,19 @@ function ProviderCard({ status: p, accounts }: { status: ProviderStatus; account
                       </td>
                     </tr>
                   ))}
+                  {rows.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="free">
+                        Nenhuma conta encontrada.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </>
         )}
-      </details>
-    </article>
+      </div>
+    </div>
   );
 }
