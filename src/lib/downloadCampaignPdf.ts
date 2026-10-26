@@ -114,9 +114,14 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
   // Client name, strategic phrase and selected dates remain in the original report banner.
   clone.prepend(printHeading);
   const host=document.createElement("div");host.style.cssText="position:fixed;left:-20000px;top:0;z-index:-9999";
-  // Restore the .perf ancestor required by performance.css selectors.\n  // Without it, the detached report loses its grid and row styles during capture.\n  host.className="perf"+(dark?" themeDark":"");\n  host.style.width=clone.style.width;\n  host.appendChild(clone);document.body.appendChild(host);
+  // Restore the .perf ancestor required by performance.css selectors.
+  // Without it, the detached report loses its grid and row styles during capture.
+  host.className="perf"+(dark?" themeDark":"");
+  host.style.width=clone.style.width;
+  host.appendChild(clone);document.body.appendChild(host);
   try{
-    await document.fonts.ready;\n    await Promise.all(Array.from(clone.querySelectorAll("img")).map(img=>img.decode().catch(()=>undefined)));
+    await document.fonts.ready;
+    await Promise.all(Array.from(clone.querySelectorAll("img")).map(img=>img.decode().catch(()=>undefined)));
     // Allow ResizeObservers in chart components to settle before capture.
     await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
     // A cloned report can retain responsive/max-height styles and clip its last block.
@@ -129,7 +134,17 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
     });
     const measuredHeight=Math.max(clone.scrollHeight,Math.ceil(clone.getBoundingClientRect().height),...Array.from(clone.querySelectorAll<HTMLElement>("*")).map(node=>Math.ceil(node.getBoundingClientRect().bottom-clone.getBoundingClientRect().top+24)));
     clone.style.height=measuredHeight+"px";
-    const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.6,cacheBust:true,backgroundColor:background,width:clone.scrollWidth,height:measuredHeight});
+    // Browser canvas implementations have finite image-size limits. html-to-image
+    // silently rescales large captures unless explicitly configured, which can
+    // crop the bottom of an unusually tall report.
+    const captureWidth=clone.scrollWidth;
+    const captureScale=Math.min(1.25,14000/measuredHeight,14000/captureWidth);
+    const canvas=await current.htmlToImage.toCanvas(clone,{
+      pixelRatio:captureScale,skipAutoScale:true,cacheBust:true,
+      backgroundColor:background,width:captureWidth,height:measuredHeight
+    });
+    const expectedHeight=Math.round(measuredHeight*captureScale);
+    if(canvas.height<expectedHeight-3)throw new Error("O relatório excedeu o limite de captura do navegador. Tente novamente.");
     if(!canvas.width||!canvas.height)throw new Error("Não foi possível capturar o relatório.");
     // Identify visual sections before converting DOM coordinates to canvas pixels.
     // Prefer page breaks between report cards/panels, never through their text.
