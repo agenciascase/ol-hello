@@ -116,10 +116,10 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
     clone.style.height="auto";
     clone.style.maxHeight="none";
     clone.style.overflow="visible";
-    clone.querySelectorAll<HTMLElement>(".scase-intelligence,.scase-intelligence-grid,.scase-intelligence-tile").forEach(node=>{
+    clone.querySelectorAll<HTMLElement>(".scase-intelligence,.scase-intelligence-grid,.scase-intelligence-tile,.panel,.chartPanel,.biView,.scase-client-report").forEach(node=>{
       node.style.height="auto";node.style.maxHeight="none";node.style.overflow="visible";
     });
-    const measuredHeight=Math.max(clone.scrollHeight,Math.ceil(clone.getBoundingClientRect().height));
+    const measuredHeight=Math.max(clone.scrollHeight,Math.ceil(clone.getBoundingClientRect().height),...Array.from(clone.querySelectorAll<HTMLElement>("*")).map(node=>Math.ceil(node.getBoundingClientRect().bottom-clone.getBoundingClientRect().top+24)));
     clone.style.height=measuredHeight+"px";
     const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.6,cacheBust:true,backgroundColor:background,width:clone.scrollWidth,height:measuredHeight});
     if(!canvas.width||!canvas.height)throw new Error("Não foi possível capturar o relatório.");
@@ -134,23 +134,30 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
       return {top:Math.max(0,Math.round((rect.top-rootRect.top)*pixelScale)),
         bottom:Math.min(canvas.height,Math.ceil((rect.bottom-rootRect.top)*pixelScale))};
     }).filter(rect=>rect.bottom>rect.top&&rect.top<canvas.height);
-    await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4===true,longReport:options.longReport===true,background,sections});
+    await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4===true,longReport:options.longReport===true,background,sections,singlePage:true});
   }finally{host.remove();}
 }
-async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,options:{singleA4?:boolean;longReport?:boolean;background?:string;sections?:{top:number;bottom:number}[]}={}){
+async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,options:{singleA4?:boolean;longReport?:boolean;background?:string;sections?:{top:number;bottom:number}[];singlePage?:boolean}={}){
  const encoder=new TextEncoder();const parts:Uint8Array[]=[];const offsets:number[]=[0];let offset=0;const add=(value:string|Uint8Array)=>{const bytes=typeof value==="string"?encoder.encode(value):value;parts.push(bytes);offset+=bytes.length};
  const object=(n:number,body:string|Uint8Array,prefix="",suffix="")=>{offsets[n]=offset;add(n+" 0 obj\n");if(prefix)add(prefix);add(body);if(suffix)add(suffix);add("\nendobj\n")};
  const singleA4=options.singleA4===true;
  const longReport=options.longReport===true;
- const pageWidth=842,pageHeight=longReport?1191:595,margin=longReport?24:singleA4?0:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
- const sliceHeight=singleA4?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
+ // The dashboard is exported as one continuous portrait page. Preserve its aspect
+ // ratio and use PDF points (maximum dimension 14,400pt per ISO 32000).
+ const singlePage=options.singlePage===true;
+ const baseWidth=842,margin=singlePage?24:longReport?24:singleA4?0:22;
+ const naturalHeight=singlePage?canvas.height*(baseWidth-2*margin)/canvas.width+2*margin:longReport?1191:595;
+ const ratio=singlePage?Math.min(1,14400/naturalHeight):1;
+ const pageWidth=baseWidth*ratio,pageHeight=naturalHeight*ratio;
+ const pageMargin=margin*ratio,contentWidth=pageWidth-2*pageMargin,contentHeight=pageHeight-2*pageMargin;
+ const sliceHeight=singlePage||singleA4?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
  // Use section-aware page boundaries. When a section cannot fit on one page,
  // split only that oversized section, rather than truncating or scaling it away.
  const pageSlices:{y:number;h:number}[]=[];
  let y=0;
  while(y<canvas.height){
   let end=Math.min(canvas.height,y+sliceHeight);
-  if(!singleA4&&end<canvas.height){
+  if(!singlePage&&!singleA4&&end<canvas.height){
    const crossing=(options.sections??[]).filter(s=>s.top<end-2&&s.bottom>end+2&&s.top>y+4);
    const safeBreaks=crossing.map(s=>s.top).filter(top=>top-y>=sliceHeight*0.40);
    if(safeBreaks.length)end=Math.min(...safeBreaks);
@@ -173,11 +180,11 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,o
  object(2,"<< /Type /Pages /Kids ["+ids.map(id=>id+" 0 R").join(" ")+"] /Count "+count+" >>");
  images.forEach((img,i)=>{
   const pageId=ids[i]! ,imageId=pageId+1,streamId=pageId+2;
-  const height=pageSlices[i]!.h,scale=contentWidth/canvas.width,printedWidth=singleA4?contentWidth:canvas.width*scale,printedHeight=singleA4?contentHeight:height*scale;
+  const height=pageSlices[i]!.h,scale=contentWidth/canvas.width,printedWidth=singleA4&&!singlePage?contentWidth:canvas.width*scale,printedHeight=singleA4&&!singlePage?contentHeight:height*scale;
   const bg=(options.background??"#ffffff").replace("#","");
   const red=parseInt(bg.slice(0,2),16)/255,green=parseInt(bg.slice(2,4),16)/255,blue=parseInt(bg.slice(4,6),16)/255;
   const backdrop=`${red.toFixed(4)} ${green.toFixed(4)} ${blue.toFixed(4)} rg 0 0 ${pageWidth} ${pageHeight} re f\n`;
-  const stream=backdrop+"q\n"+printedWidth+" 0 0 "+printedHeight+" "+((pageWidth-printedWidth)/2)+" "+(pageHeight-margin-printedHeight)+" cm\n/Im1 Do\nQ\n";
+  const stream=backdrop+"q\n"+printedWidth+" 0 0 "+printedHeight+" "+((pageWidth-printedWidth)/2)+" "+(pageHeight-pageMargin-printedHeight)+" cm\n/Im1 Do\nQ\n";
   object(pageId,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pageWidth+" "+pageHeight+"] /Resources << /XObject << /Im1 "+imageId+" 0 R >> >> /Contents "+streamId+" 0 R >>");
   object(imageId,img,"<< /Type /XObject /Subtype /Image /Width "+canvas.width+" /Height "+height+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+img.length+" >>\nstream\n","\nendstream");
   object(streamId,"<< /Length "+encoder.encode(stream).length+" >>\nstream\n"+stream+"endstream");
