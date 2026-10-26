@@ -4,7 +4,7 @@ import {adminUserId,saveMetaCredential} from "../../lib/ads-credentials.server";
 import {config,metaTokenLifetime} from "../../lib/ads-oauth.server";
 const response=(url:string)=>new Response(null,{status:302,headers:{"Location":url,"Cache-Control":"no-store","Set-Cookie":"scase_meta_oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations/meta; Max-Age=0"}});
 export const Route=createFileRoute("/api/integrations/meta/callback")({server:{handlers:{GET:async({request})=>{
- const fail=(message:string)=>response("/dashboard?meta_error="+encodeURIComponent(message));
+ const fail=(message:string)=>response("/integracoes?erro_meta="+encodeURIComponent(message));
  if(!(await adminUserId(request)))return fail("Sessão administrativa expirada. Entre novamente.");
  const url=new URL(request.url),state=url.searchParams.get("state")||"",code=url.searchParams.get("code")||"";
  const cookie=request.headers.get("cookie")?.split(";").map(c=>c.trim()).find(c=>c.startsWith("scase_meta_oauth_state="))?.split("=")[1]||"";
@@ -33,6 +33,6 @@ export const Route=createFileRoute("/api/integrations/meta/callback")({server:{h
   // Ask Meta how long the token really lasts; long-lived tokens often come without expires_in.
   const lifetime=await metaTokenLifetime(token).catch(()=>null);
   await saveMetaCredential(request,token,lifetime??long?.expires_in??(long?.access_token?60*86400:short.expires_in??3600));
-  return response("/dashboard?meta_connected=1");
+  return response("/integracoes?conectado=meta");
  }catch(e){const message=e instanceof Error?e.message:"Erro desconhecido";return fail(message.includes("banco")||message.includes("credencial")?"A autorização ocorreu, mas o armazenamento da Meta no Supabase precisa ser configurado.":"Não foi possível concluir a autorização da Meta. Confira as permissões e o aplicativo.");}
 }}}});
