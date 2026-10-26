@@ -123,20 +123,44 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
     clone.style.height=measuredHeight+"px";
     const canvas=await current.htmlToImage.toCanvas(clone,{pixelRatio:1.6,cacheBust:true,backgroundColor:background,width:clone.scrollWidth,height:measuredHeight});
     if(!canvas.width||!canvas.height)throw new Error("Não foi possível capturar o relatório.");
-    await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4===true,longReport:options.longReport===true,background});
+    // Identify visual sections before converting DOM coordinates to canvas pixels.
+    // Prefer page breaks between report cards/panels, never through their text.
+    const rootRect=clone.getBoundingClientRect();
+    const pixelScale=canvas.height/measuredHeight;
+    const sections=Array.from(clone.querySelectorAll<HTMLElement>(
+      ".panel,.chartPanel,.kpi,.scase-intelligence-tile,.scase-priority-card,.dashboardIntro,.scase-intelligence-grid"
+    )).map(node=>{
+      const rect=node.getBoundingClientRect();
+      return {top:Math.max(0,Math.round((rect.top-rootRect.top)*pixelScale)),
+        bottom:Math.min(canvas.height,Math.ceil((rect.bottom-rootRect.top)*pixelScale))};
+    }).filter(rect=>rect.bottom>rect.top&&rect.top<canvas.height);
+    await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4===true,longReport:options.longReport===true,background,sections});
   }finally{host.remove();}
 }
-async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,options:{singleA4?:boolean;longReport?:boolean;background?:string}={}){
+async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,options:{singleA4?:boolean;longReport?:boolean;background?:string;sections?:{top:number;bottom:number}[]}={}){
  const encoder=new TextEncoder();const parts:Uint8Array[]=[];const offsets:number[]=[0];let offset=0;const add=(value:string|Uint8Array)=>{const bytes=typeof value==="string"?encoder.encode(value):value;parts.push(bytes);offset+=bytes.length};
  const object=(n:number,body:string|Uint8Array,prefix="",suffix="")=>{offsets[n]=offset;add(n+" 0 obj\n");if(prefix)add(prefix);add(body);if(suffix)add(suffix);add("\nendobj\n")};
  const singleA4=options.singleA4===true;
  const longReport=options.longReport===true;
  const pageWidth=842,pageHeight=longReport?1191:595,margin=longReport?24:singleA4?0:22,contentWidth=pageWidth-2*margin,contentHeight=pageHeight-2*margin;
  const sliceHeight=singleA4?canvas.height:Math.floor(canvas.width*contentHeight/contentWidth);
- const count=Math.ceil(canvas.height/sliceHeight);
+ // Use section-aware page boundaries. When a section cannot fit on one page,
+ // split only that oversized section, rather than truncating or scaling it away.
+ const pageSlices:{y:number;h:number}[]=[];
+ let y=0;
+ while(y<canvas.height){
+  let end=Math.min(canvas.height,y+sliceHeight);
+  if(!singleA4&&end<canvas.height){
+   const crossing=(options.sections??[]).filter(s=>s.top<end-2&&s.bottom>end+2&&s.top>y+4);
+   const safeBreaks=crossing.map(s=>s.top).filter(top=>top-y>=sliceHeight*0.40);
+   if(safeBreaks.length)end=Math.min(...safeBreaks);
+  }
+  if(end<=y)end=Math.min(canvas.height,y+sliceHeight);
+  pageSlices.push({y,h:end-y});y=end;
+ }
+ const count=pageSlices.length;
  const images:Uint8Array[]=[];
- for(let i=0;i<count;i++){
-  const y=i*sliceHeight,h=Math.min(sliceHeight,canvas.height-y);
+ for(const {y,h} of pageSlices){
   const tile=document.createElement("canvas");tile.width=canvas.width;tile.height=h;
   const ctx=tile.getContext("2d");if(!ctx)throw new Error("Falha no PDF.");
   ctx.fillStyle=options.background??"white";ctx.fillRect(0,0,tile.width,tile.height);
@@ -149,10 +173,10 @@ async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,o
  object(2,"<< /Type /Pages /Kids ["+ids.map(id=>id+" 0 R").join(" ")+"] /Count "+count+" >>");
  images.forEach((img,i)=>{
   const pageId=ids[i]! ,imageId=pageId+1,streamId=pageId+2;
-  const height=Math.min(sliceHeight,canvas.height-i*sliceHeight),scale=contentWidth/canvas.width,printedWidth=singleA4?contentWidth:canvas.width*scale,printedHeight=singleA4?contentHeight:height*scale;
+  const height=pageSlices[i]!.h,scale=contentWidth/canvas.width,printedWidth=singleA4?contentWidth:canvas.width*scale,printedHeight=singleA4?contentHeight:height*scale;
   const bg=(options.background??"#ffffff").replace("#","");
   const red=parseInt(bg.slice(0,2),16)/255,green=parseInt(bg.slice(2,4),16)/255,blue=parseInt(bg.slice(4,6),16)/255;
-  const backdrop=`${red.toFixed(4)} ${green.toFixed(4)} ${blue.toFixed(4)} rg 0 0 ${pageWidth} ${pageHeight} re f\\n`;
+  const backdrop=`${red.toFixed(4)} ${green.toFixed(4)} ${blue.toFixed(4)} rg 0 0 ${pageWidth} ${pageHeight} re f\n`;
   const stream=backdrop+"q\n"+printedWidth+" 0 0 "+printedHeight+" "+((pageWidth-printedWidth)/2)+" "+(pageHeight-margin-printedHeight)+" cm\n/Im1 Do\nQ\n";
   object(pageId,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+pageWidth+" "+pageHeight+"] /Resources << /XObject << /Im1 "+imageId+" 0 R >> >> /Contents "+streamId+" 0 R >>");
   object(imageId,img,"<< /Type /XObject /Subtype /Image /Width "+canvas.width+" /Height "+height+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+img.length+" >>\nstream\n","\nendstream");
