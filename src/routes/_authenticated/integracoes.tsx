@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Megaphone, RefreshCw, Search, X } from "lucide-react";
 import { IntegrationCard } from "@/components/agency/IntegrationCard";
 import { DeliveryChannels } from "@/components/agency/ChannelConnect";
@@ -55,6 +55,19 @@ function IntegrationsPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha na sincronização"),
   });
+
+  // Feedback after returning from the Google/Meta consent screens, then clean the address bar.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ok = params.get("conectado");
+    const metaError = params.get("erro_meta");
+    if (ok === "meta" || ok === "google") toast.success(`${PROVIDER_NAME[ok]} conectado`);
+    if (metaError) toast.error(`Meta Ads: ${metaError}`);
+    if (ok || metaError) {
+      window.history.replaceState(null, "", window.location.pathname);
+      qc.invalidateQueries({ queryKey: ["integrations-status"] });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const providers = status.data?.providers ?? [];
   const connected = providers.filter((p) => p.connected);

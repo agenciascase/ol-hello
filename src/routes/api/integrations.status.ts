@@ -63,10 +63,11 @@ export const Route = createFileRoute("/api/integrations/status")({
         const denied = await requireAgencyAdmin(request);
         if (denied) return denied;
         const db = await supabaseAdmin();
-        const [{ data: conns }, { data: catalog }, tokens] = await Promise.all([
+        // Tokens first: this refreshes Google and repairs a wrong Meta expiry before we read the records.
+        const tokens = await agencyTokens().catch(() => ({}) as { meta?: string; google?: string });
+        const [{ data: conns }, { data: catalog }] = await Promise.all([
           db.from("ads_connections").select("provider,owner_id,expires_at,updated_at,refresh_token_ciphertext").order("updated_at", { ascending: false }),
           db.from("ad_accounts_catalog").select("provider,synced_at"),
-          agencyTokens().catch(() => ({}) as { meta?: string; google?: string }),
         ]);
         const rows = (conns ?? []) as unknown as Conn[];
         const providers: ProviderStatus[] = await Promise.all(
@@ -74,8 +75,9 @@ export const Route = createFileRoute("/api/integrations/status")({
             const c = rows.find((r) => r.provider === provider);
             const accounts = (catalog ?? []).filter((a) => a.provider === provider);
             const lastSync = accounts.reduce<string | null>((max, a) => (!max || a.synced_at > max ? a.synced_at : max), null);
-            const expired = c ? Date.parse(c.expires_at) <= Date.now() && !(provider === "google" && c.refresh_token_ciphertext) : true;
             const token = provider === "meta" ? tokens.meta : tokens.google;
+            // agencyTokens() refreshes Google and re-checks Meta with Meta itself, so a usable token means connected.
+            const expired = !token;
             const [owner, ext] = await Promise.all([
               c ? db.auth.admin.getUserById(c.owner_id).then((r) => r.data.user?.email ?? null).catch(() => null) : Promise.resolve(null),
               token ? (provider === "meta" ? metaProfile(token) : googleProfile(token)) : Promise.resolve({ profile: null, profileHint: null, assetName: null }),

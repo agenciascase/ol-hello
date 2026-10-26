@@ -39,7 +39,7 @@ export const Route=createFileRoute("/api/integrations/$provider/callback")({
   // Credentials have already been stored successfully; never fail OAuth because
   // of a cosmetic redirect. Use a same-origin relative Location header.
   const response=new Response(null,{status:303,headers:{
-    "Location":"/dashboard?google_connected=1",
+    "Location":"/integracoes?conectado=google",
     "Cache-Control":"no-store"
   }});
   response.headers.append("Set-Cookie","scase_oauth_google=; HttpOnly; Secure; SameSite=Lax; Path=/api/integrations/google; Max-Age=0");

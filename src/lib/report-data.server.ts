@@ -1,6 +1,6 @@
 /** Server-only: fetches real Meta/Google data for report configurations. Tokens never leave the server. */
 import { decryptToken, encryptToken } from "./ads-credentials.server";
-import { googleAdsVersion, googleHeaders, MCC_CUSTOMER_ID, META_BUSINESS_ID, refreshGoogleToken } from "./ads-oauth.server";
+import { googleAdsVersion, googleHeaders, MCC_CUSTOMER_ID, META_BUSINESS_ID, metaTokenLifetime, refreshGoogleToken } from "./ads-oauth.server";
 import { resolvePeriod, type ReportPeriod } from "./report-schedule";
 import type { ReportTotals } from "./report-metrics";
 import {
@@ -47,7 +47,22 @@ export async function agencyTokens() {
   const rows = (data ?? []) as unknown as Array<{ provider: string; owner_id: string; access_token_ciphertext: string; refresh_token_ciphertext: string | null; expires_at: string }>;
   const out: { meta?: string; google?: string } = {};
   const meta = rows.find((r) => r.provider === "meta");
-  if (meta && Date.parse(meta.expires_at) > Date.now() + 60000) out.meta = decryptToken(meta.access_token_ciphertext);
+  if (meta) {
+    const token = decryptToken(meta.access_token_ciphertext);
+    if (Date.parse(meta.expires_at) > Date.now() + 60000) out.meta = token;
+    else {
+      // Stored expiry may be wrong for long-lived tokens: confirm with Meta and repair the record.
+      const lifetime = await metaTokenLifetime(token).catch(() => null);
+      if (lifetime) {
+        out.meta = token;
+        await db
+          .from("ads_connections")
+          .update({ expires_at: new Date(Date.now() + lifetime * 1000).toISOString() } as never)
+          .eq("provider", "meta")
+          .eq("owner_id", meta.owner_id);
+      }
+    }
+  }
   const g = rows.find((r) => r.provider === "google");
   if (g) {
     if (Date.parse(g.expires_at) > Date.now() + 60000) out.google = decryptToken(g.access_token_ciphertext);
