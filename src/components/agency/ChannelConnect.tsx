@@ -4,6 +4,7 @@ import { Mail, MessageCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { agencyApi } from "@/lib/agency-client";
 import { fmtDate, type ChannelState } from "./IntegrationsOverview";
+import { IntegrationCard } from "./IntegrationCard";
 
 type Channel = "email" | "whatsapp";
 const META = {
@@ -32,40 +33,49 @@ export function DeliveryChannels({ channels }: { channels: Record<Channel, Chann
     <section className="intSection">
       <h2>Canais de envio</h2>
       <p>Por onde os relatórios automáticos chegam aos clientes.</p>
-      <div className="intFuture">
+      <div className="intGrid">
         {(["email", "whatsapp"] as Channel[]).map((c) => {
           const st = channels?.[c];
           const Icon = META[c].icon;
-          const detail = c === "email" ? st?.info["from"] : [st?.info["provider"], st?.info["number"]].filter(Boolean).join(" · ");
+          const lines =
+            st?.connected
+              ? c === "email"
+                ? [{ label: "Remetente", value: st.info["from"] ?? "—", hint: st.source === "secrets" ? "Configurado pelos Secrets do projeto" : st.updatedAt ? `Conectado em ${fmtDate(st.updatedAt)}` : undefined }]
+                : [
+                    { label: "Envio por", value: st.info["provider"] ?? "—", hint: st.info["template"] ? `Modelo ${st.info["template"]}` : undefined },
+                    ...(st.info["number"] ? [{ label: "Número", value: st.info["number"] }] : []),
+                    ...(st.updatedAt ? [{ label: "Conectado em", value: fmtDate(st.updatedAt) }] : st.source === "secrets" ? [{ label: "Origem", value: "Secrets do projeto" }] : []),
+                  ]
+              : [];
           return (
-            <div key={c} className={"intFutureItem" + (st?.connected ? " connected" : "")}>
-              <Icon size={20} />
-              <div className="intChannelBody">
-                <strong>{META[c].name}</strong>
-                <p>{st?.connected ? detail || "Conectado" : META[c].text}</p>
-                {st?.connected && st.updatedAt && <small>Conectado em {fmtDate(st.updatedAt)}</small>}
-                {st?.connected && st.source === "secrets" && <small>Configurado pelos Secrets do projeto</small>}
-                <div className="intChannelActions">
-                  {st?.connected ? (
-                    <>
-                      <button type="button" className="intLink" onClick={() => setOpen(c)}>
-                        Alterar
-                      </button>
-                      {st.source === "plataforma" && (
-                        <button type="button" className="intLink muted" onClick={() => disconnect(c)}>
-                          Desconectar
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <button type="button" className="intConnect" onClick={() => setOpen(c)}>
-                      Conectar {META[c].name}
+            <IntegrationCard
+              key={c}
+              icon={<Icon size={19} />}
+              tone="channel"
+              name={META[c].name}
+              subtitle={c === "email" ? "Resend" : "API oficial da Meta ou Z-API"}
+              connected={Boolean(st?.connected)}
+              description={st?.connected ? undefined : META[c].text}
+              lines={lines}
+              actions={
+                st?.connected ? (
+                  <>
+                    <button type="button" className="intLink" onClick={() => setOpen(c)}>
+                      Alterar
                     </button>
-                  )}
-                </div>
-              </div>
-              <span className={"intTag" + (st?.connected ? " ready" : "")}>{st?.connected ? "Conectado" : "Não conectado"}</span>
-            </div>
+                    {st.source === "plataforma" && (
+                      <button type="button" className="intLink muted" onClick={() => disconnect(c)}>
+                        Desconectar
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button type="button" className="intConnect" onClick={() => setOpen(c)}>
+                    Conectar {META[c].name}
+                  </button>
+                )
+              }
+            />
           );
         })}
       </div>
