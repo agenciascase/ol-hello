@@ -58,3 +58,6 @@ Migrações: `drizzle/migrations/0001_reporting_platform_stage1.sql` e `0002_rep
 - **Cache de 30 min** (`report_cache`) para o painel público não consumir a cota diária das APIs; envios e PDF do admin usam dados atualizados.
 - Conversões da Meta = leads + conversas iniciadas + compras.
 - Migração: `drizzle/migrations/0003_relatorio_completo.sql` (já aplicada).
+
+## Canais de envio pela tela de Integrações
+E-mail (Resend) e WhatsApp (API oficial da Meta ou Z-API) podem ser conectados direto em **Integrações → Canais de envio**, sem mexer nos Secrets. As credenciais são conferidas com o provedor (o e-mail envia um teste para o administrador) e guardadas criptografadas na tabela `delivery_channels` (migração `0004_canais_envio.sql`, já aplicada). Os Secrets antigos continuam valendo como alternativa.

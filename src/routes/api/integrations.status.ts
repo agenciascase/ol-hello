@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { noStore, requireAgencyAdmin, supabaseAdmin } from "../../lib/agency-api.server";
 import { googleAdsVersion, googleHeaders, MCC_CUSTOMER_ID, META_BUSINESS_ID } from "../../lib/ads-oauth.server";
 import { agencyTokens } from "../../lib/report-data.server";
+import { channelsPublic } from "../../lib/delivery-channels.server";
 
 type Conn = { provider: string; owner_id: string; expires_at: string; updated_at: string; refresh_token_ciphertext: string | null };
 export type ProviderStatus = {
@@ -93,17 +94,8 @@ export const Route = createFileRoute("/api/integrations/status")({
             };
           }),
         );
-        const has = (k: string) => Boolean(process.env[k]);
-        const waProvider = process.env["WHATSAPP_PROVIDER"] || "meta";
         return Response.json(
-          {
-            providers,
-            channels: {
-              email: has("RESEND_API_KEY") && has("REPORT_EMAIL_FROM"),
-              whatsapp: waProvider === "zapi" ? has("ZAPI_INSTANCE_ID") && has("ZAPI_TOKEN") : has("WHATSAPP_TOKEN") && has("WHATSAPP_PHONE_NUMBER_ID") && has("WHATSAPP_TEMPLATE_NAME"),
-              whatsappProvider: waProvider,
-            },
-          },
+          { providers, channels: await channelsPublic() },
           { headers: noStore },
         );
       },

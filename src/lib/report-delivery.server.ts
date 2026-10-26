@@ -15,12 +15,12 @@ import { renderReportPdf, reportPdfFilename } from "./report-pdf.server";
 import { PERIOD_LABELS, type ReportPeriod } from "./report-schedule";
 import { METRIC_LABELS, formatDateBR, formatMetric, formatVariation, isPositiveChange, metricValue, variation } from "./report-metrics";
 import { STATUS_COLORS, orderedMetrics } from "./report-insights";
+import { loadChannels, sendEmailWith, type WhatsAppConfig } from "./delivery-channels.server";
 
 async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 }
 
-const env = (key: string) => process.env[key] ?? "";
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
 const periodText = (r: BuiltReport) =>
   `${PERIOD_LABELS[r.period as ReportPeriod] ?? "Período"} (${formatDateBR(r.range.since)} a ${formatDateBR(r.range.until)})`;
@@ -83,51 +83,27 @@ ${goals}${analysis}${next}
 </table></td></tr></table></body></html>`;
 }
 
-async function sendEmail(to: string[], subject: string, html: string, pdf: Uint8Array, filename: string) {
-  const key = env("RESEND_API_KEY");
-  const from = env("REPORT_EMAIL_FROM");
-  if (!key || !from) throw new Error("E-mail não configurado (RESEND_API_KEY e REPORT_EMAIL_FROM).");
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { authorization: "Bearer " + key, "content-type": "application/json" },
-    body: JSON.stringify({ from, to, subject, html, attachments: [{ filename, content: Buffer.from(pdf).toString("base64") }] }),
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error("Resend recusou o envio (" + res.status + ")" + (body.message ? ": " + body.message : ""));
-  }
-}
-
-async function sendWhatsApp(phone: string, r: BuiltReport, panelUrl: string, pdfUrl: string, filename: string) {
+async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, panelUrl: string, pdfUrl: string, filename: string) {
   const digits = phone.replace(/\D/g, "");
-  const provider = env("WHATSAPP_PROVIDER") || "meta";
-  if (provider === "zapi") {
-    const id = env("ZAPI_INSTANCE_ID");
-    const token = env("ZAPI_TOKEN");
-    if (!id || !token) throw new Error("WhatsApp (Z-API) não configurado.");
+  if (cfg.provider === "zapi") {
     const caption = `*${r.clientName}* · ${r.reportName}\n${periodText(r)}\n\nPainel ao vivo: ${panelUrl}`;
-    const res = await fetch(`https://api.z-api.io/instances/${encodeURIComponent(id)}/token/${encodeURIComponent(token)}/send-document/pdf`, {
+    const res = await fetch(`https://api.z-api.io/instances/${encodeURIComponent(cfg.instanceId)}/token/${encodeURIComponent(cfg.token)}/send-document/pdf`, {
       method: "POST",
-      headers: { "content-type": "application/json", ...(env("ZAPI_CLIENT_TOKEN") ? { "Client-Token": env("ZAPI_CLIENT_TOKEN") } : {}) },
+      headers: { "content-type": "application/json", ...(cfg.clientToken ? { "Client-Token": cfg.clientToken } : {}) },
       body: JSON.stringify({ phone: digits, document: pdfUrl, fileName: filename.replace(/\.pdf$/, ""), caption }),
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Z-API recusou o envio (" + res.status + ").");
     return;
   }
-  const token = env("WHATSAPP_TOKEN");
-  const phoneId = env("WHATSAPP_PHONE_NUMBER_ID");
-  const template = env("WHATSAPP_TEMPLATE_NAME");
-  if (!token || !phoneId || !template) throw new Error("WhatsApp não configurado (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TEMPLATE_NAME).");
   // Business-initiated messages must use an approved template. Body variables: {{1}} cliente, {{2}} período, {{3}} link do painel.
   const components: unknown[] = [];
-  if (env("WHATSAPP_TEMPLATE_DOCUMENT_HEADER") === "true") components.push({ type: "header", parameters: [{ type: "document", document: { link: pdfUrl, filename } }] });
+  if (cfg.documentHeader) components.push({ type: "header", parameters: [{ type: "document", document: { link: pdfUrl, filename } }] });
   components.push({ type: "body", parameters: [{ type: "text", text: r.clientName }, { type: "text", text: periodText(r) }, { type: "text", text: panelUrl }] });
-  const res = await fetch(`https://graph.facebook.com/v24.0/${encodeURIComponent(phoneId)}/messages`, {
+  const res = await fetch(`https://graph.facebook.com/v24.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`, {
     method: "POST",
-    headers: { authorization: "Bearer " + token, "content-type": "application/json" },
-    body: JSON.stringify({ messaging_product: "whatsapp", to: digits, type: "template", template: { name: template, language: { code: env("WHATSAPP_TEMPLATE_LANGUAGE") || "pt_BR" }, components } }),
+    headers: { authorization: "Bearer " + cfg.token, "content-type": "application/json" },
+    body: JSON.stringify({ messaging_product: "whatsapp", to: digits, type: "template", template: { name: cfg.templateName, language: { code: cfg.language || "pt_BR" }, components } }),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -151,6 +127,7 @@ export async function deliverReport(configId: string, opts: { trigger: "schedule
   const filename = reportPdfFilename(report);
   const channels = (config.channels ?? []).filter((c) => c === "email" || c === "whatsapp");
   const results: DeliveryResult[] = [];
+  const delivery = await loadChannels();
 
   if (!client.active) throw new Error("Cliente inativo.");
   if (report.errors.length && report.campaigns.length === 0 && report.total.current.spend === 0)
@@ -160,7 +137,8 @@ export async function deliverReport(configId: string, opts: { trigger: "schedule
     const emails = (clientRow?.emails ?? []).filter(Boolean);
     if (emails.length) {
       try {
-        await sendEmail(emails, `Relatório ${client.name} · ${periodText(report)}`, reportEmailHtml(report, panelUrl), pdf, filename);
+        if (!delivery.email) throw new Error("E-mail ainda não conectado. Conecte em Integrações.");
+        await sendEmailWith(delivery.email, emails, `Relatório ${client.name} · ${periodText(report)}`, reportEmailHtml(report, panelUrl), { filename, content: pdf });
         for (const e of emails) results.push({ channel: "email", recipient: e, status: "sent", error: null });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Falha no envio";
@@ -171,7 +149,8 @@ export async function deliverReport(configId: string, opts: { trigger: "schedule
   if (channels.includes("whatsapp")) {
     for (const phone of (clientRow?.whatsapp_numbers ?? []).filter(Boolean)) {
       try {
-        await sendWhatsApp(phone, report, panelUrl, reportPdfUrl(token), filename);
+        if (!delivery.whatsapp) throw new Error("WhatsApp ainda não conectado. Conecte em Integrações.");
+        await sendWhatsApp(delivery.whatsapp, phone, report, panelUrl, reportPdfUrl(token), filename);
         results.push({ channel: "whatsapp", recipient: phone, status: "sent", error: null });
       } catch (e) {
         results.push({ channel: "whatsapp", recipient: phone, status: "failed", error: e instanceof Error ? e.message : "Falha no envio" });
