@@ -111,6 +111,48 @@ function AccountPicker({
   );
 }
 
+/** Last N full days ending today, as YYYY-MM-DD. */
+export function lastDays(n: number): [string, string] {
+  const iso = (d: Date) => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
+  const end = new Date();
+  end.setHours(12, 0, 0, 0);
+  const start = new Date(end);
+  start.setDate(start.getDate() - (n - 1));
+  return [iso(start), iso(end)];
+}
+
+/** "Últimos [ N ] dias": any number of days, from 1 to 365. */
+function DaysInput({ active, onApply }: { active: string; onApply: (from: string, to: string, label: string) => void }) {
+  const current = /^(\d+) dias$/.exec(active)?.[1] ?? "";
+  const [value, setValue] = useState(current);
+  const n = Number(value);
+  const valid = Number.isInteger(n) && n >= 1 && n <= 365;
+  const isActive = Boolean(current) && !PERIOD_PRESETS.some((p) => p.label === active);
+  const apply = () => {
+    if (!valid) return;
+    const [from, to] = lastDays(n);
+    onApply(from, to, n === 1 ? "1 dia" : `${n} dias`);
+  };
+  return (
+    <form
+      className={"afDays" + (isActive ? " active" : "")}
+      onSubmit={(e) => {
+        e.preventDefault();
+        apply();
+      }}
+    >
+      <label>
+        Últimos
+        <input type="number" inputMode="numeric" min={1} max={365} value={value} onChange={(e) => setValue(e.target.value)} placeholder="5" aria-label="Quantidade de dias" />
+        dias
+      </label>
+      <button type="submit" disabled={!valid}>
+        Aplicar
+      </button>
+    </form>
+  );
+}
+
 export const PERIOD_PRESETS: Array<{ label: string; range: () => [string, string] }> = (() => {
   const iso = (d: Date) => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
   const day = (offset: number) => {
@@ -123,9 +165,11 @@ export const PERIOD_PRESETS: Array<{ label: string; range: () => [string, string
   return [
     { label: "Hoje", range: () => [iso(day(0)), iso(day(0))] },
     { label: "Ontem", range: () => [iso(day(1)), iso(day(1))] },
+    { label: "3 dias", range: () => last(3) },
     { label: "7 dias", range: () => last(7) },
     { label: "14 dias", range: () => last(14) },
     { label: "30 dias", range: () => last(30) },
+    { label: "90 dias", range: () => last(90) },
     {
       label: "Este mês",
       range: () => {
@@ -213,6 +257,7 @@ export function AccountFilterBar({
               {p.label}
             </button>
           ))}
+          <DaysInput active={periodLabel} onApply={onPeriod} />
           <div className="afCustom">{customPicker}</div>
         </div>
         <span className="afRange">{periodRange}</span>
