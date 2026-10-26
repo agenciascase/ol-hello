@@ -84,6 +84,14 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
   .scase-pdf-export .dashboardIntro>div:nth-child(2) strong{font-size:22px!important;line-height:1.3!important}
   .scase-pdf-export .dashboardIntro>div:last-child strong{font-size:15px!important;line-height:1.4!important;white-space:normal!important;overflow-wrap:anywhere!important}
   .scase-pdf-export .dashboardIntro small,.scase-pdf-export .dashboardIntro span{font-size:11px!important}
+  /* Keep the results intelligence card together and eliminate compact/tangled rows in PDF. */
+  .scase-pdf-export .scase-intelligence{margin-top:8px!important;margin-bottom:12px!important;padding-top:18px!important;padding-bottom:18px!important;height:auto!important;max-height:none!important;overflow:visible!important}
+  .scase-pdf-export .scase-intelligence-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:start!important;gap:12px!important;height:auto!important;max-height:none!important;overflow:visible!important}
+  .scase-pdf-export .scase-intelligence-tile{min-width:0!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important;padding:12px!important}
+  .scase-pdf-export .scase-intelligence-line{display:flex!important;flex-wrap:wrap!important;align-items:flex-start!important;justify-content:space-between!important;gap:3px 8px!important;padding:6px 0!important;line-height:1.45!important;white-space:normal!important}
+  .scase-pdf-export .scase-intelligence-line span{flex:1 1 130px!important;min-width:0!important;white-space:normal!important;overflow-wrap:anywhere!important}
+  .scase-pdf-export .scase-intelligence-line strong{flex:0 0 auto!important;white-space:normal!important;text-align:right!important}
+  .scase-pdf-export .scase-intelligence-line small{display:block!important;white-space:normal!important}
   .scase-pdf-export .panel{overflow:visible!important}
 
   .scase-pdf-export .chart,.scase-pdf-export .recharts-wrapper{background:transparent!important}
