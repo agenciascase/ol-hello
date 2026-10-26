@@ -14,6 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_accounts_catalog: {
+        Row: {
+          account_id: string
+          currency: string | null
+          name: string
+          provider: string
+          status: string | null
+          synced_at: string
+        }
+        Insert: {
+          account_id: string
+          currency?: string | null
+          name: string
+          provider: string
+          status?: string | null
+          synced_at?: string
+        }
+        Update: {
+          account_id?: string
+          currency?: string | null
+          name?: string
+          provider?: string
+          status?: string | null
+          synced_at?: string
+        }
+        Relationships: []
+      }
+      ads_connections: {
+        Row: {
+          access_token_ciphertext: string
+          created_at: string
+          expires_at: string | null
+          owner_id: string
+          provider: string
+          refresh_token_ciphertext: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_ciphertext: string
+          created_at?: string
+          expires_at?: string | null
+          owner_id: string
+          provider: string
+          refresh_token_ciphertext?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_ciphertext?: string
+          created_at?: string
+          expires_at?: string | null
+          owner_id?: string
+          provider?: string
+          refresh_token_ciphertext?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      client_ad_accounts: {
+        Row: {
+          account_id: string
+          account_name: string
+          client_id: string
+          created_at: string
+          id: string
+          provider: string
+        }
+        Insert: {
+          account_id: string
+          account_name: string
+          client_id: string
+          created_at?: string
+          id?: string
+          provider: string
+        }
+        Update: {
+          account_id?: string
+          account_name?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_ad_accounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          emails: string[]
+          id: string
+          logo_url: string | null
+          name: string
+          owner_name: string | null
+          timezone: string
+          updated_at: string
+          whatsapp_numbers: string[]
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          emails?: string[]
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_name?: string | null
+          timezone?: string
+          updated_at?: string
+          whatsapp_numbers?: string[]
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          emails?: string[]
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_name?: string | null
+          timezone?: string
+          updated_at?: string
+          whatsapp_numbers?: string[]
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null
@@ -32,6 +166,189 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      report_configs: {
+        Row: {
+          active: boolean
+          campaign_filter: string | null
+          channels: string[]
+          client_id: string
+          compare_previous: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          intro_message: string | null
+          metrics: string[]
+          name: string
+          period: string
+          platforms: string[]
+          share_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          campaign_filter?: string | null
+          channels?: string[]
+          client_id: string
+          compare_previous?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intro_message?: string | null
+          metrics?: string[]
+          name: string
+          period?: string
+          platforms?: string[]
+          share_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          campaign_filter?: string | null
+          channels?: string[]
+          client_id?: string
+          compare_previous?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intro_message?: string | null
+          metrics?: string[]
+          name?: string
+          period?: string
+          platforms?: string[]
+          share_token?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_configs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_deliveries: {
+        Row: {
+          channel: string
+          error: string | null
+          id: string
+          recipient: string
+          report_config_id: string
+          report_url: string | null
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          channel: string
+          error?: string | null
+          id?: string
+          recipient: string
+          report_config_id: string
+          report_url?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          channel?: string
+          error?: string | null
+          id?: string
+          recipient?: string
+          report_config_id?: string
+          report_url?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_deliveries_report_config_id_fkey"
+            columns: ["report_config_id"]
+            isOneToOne: false
+            referencedRelation: "report_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_schedules: {
+        Row: {
+          active: boolean
+          created_at: string
+          day_of_month: number | null
+          frequency: string
+          id: string
+          next_run_at: string | null
+          report_config_id: string
+          send_time: string
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          day_of_month?: number | null
+          frequency: string
+          id?: string
+          next_run_at?: string | null
+          report_config_id: string
+          send_time?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          day_of_month?: number | null
+          frequency?: string
+          id?: string
+          next_run_at?: string | null
+          report_config_id?: string
+          send_time?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_schedules_report_config_id_fkey"
+            columns: ["report_config_id"]
+            isOneToOne: false
+            referencedRelation: "report_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scase_live_google_shares: {
+        Row: {
+          created_at: string
+          customer_id: string
+          customer_name: string
+          expires_at: string
+          id: string
+          owner_id: string
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          customer_name: string
+          expires_at?: string
+          id?: string
+          owner_id: string
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          customer_name?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          revoked_at?: string | null
+          token_hash?: string
         }
         Relationships: []
       }
@@ -63,6 +380,41 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      scase_ads_connection_get: {
+        Args: { p_provider: string }
+        Returns: {
+          access_token_ciphertext: string
+          expires_at: string
+          refresh_token_ciphertext: string
+        }[]
+      }
+      scase_ads_connection_put: {
+        Args: {
+          p_access_token_ciphertext: string
+          p_expires_at: string
+          p_provider: string
+          p_refresh_token_ciphertext: string
+        }
+        Returns: undefined
+      }
+      scase_create_live_google_share: {
+        Args: { p_customer_id: string; p_customer_name: string }
+        Returns: string
+      }
+      scase_read_live_google_share: {
+        Args: { p_token: string }
+        Returns: {
+          access_token_ciphertext: string
+          customer_id: string
+          customer_name: string
+          expires_at: string
+          refresh_token_ciphertext: string
+        }[]
+      }
+      scase_revoke_live_google_share: {
+        Args: { p_token: string }
         Returns: boolean
       }
     }

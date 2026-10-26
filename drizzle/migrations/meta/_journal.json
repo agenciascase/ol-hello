@@ -8,6 +8,13 @@
       "when": 1792523683629,
       "tag": "0000_create_profiles_and_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793026010745,
+      "tag": "0001_reporting_platform_stage1",
+      "breakpoints": true
     }
   ]
 }
