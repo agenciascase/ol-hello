@@ -1,5 +1,6 @@
 import {createCipheriv, createDecipheriv, randomBytes, createHash} from "node:crypto";
 import {isAuthenticatedAgencyAdmin} from "./integration-security.server";
+import {metaTokenLifetime} from "./ads-oauth.server";
 const required=(key:string)=>{const value=process.env[key];if(!value)throw new Error("Missing secure configuration: "+key);return value};
 const encryptionKey=()=>{const secret=required("SCASE_TOKEN_ENCRYPTION_KEY");if(secret.length<32)throw new Error("Token encryption key is too short");return createHash("sha256").update(secret).digest()};
 export function encryptToken(value:string){const iv=randomBytes(12);const cipher=createCipheriv("aes-256-gcm",encryptionKey(),iv);const enc=Buffer.concat([cipher.update(value,"utf8"),cipher.final()]);return [iv.toString("base64"),cipher.getAuthTag().toString("base64"),enc.toString("base64")].join(".")}
@@ -67,6 +68,12 @@ export async function saveMetaCredential(request:Request,token:string,expiresIn:
 }
 export async function metaAccessToken(request:Request):Promise<string>{
  const row=await getStored(request,"meta");
- if(!row||Date.parse(row.expires_at)<=Date.now()+60000)throw new Error("Meta Ads não conectado ou autorização expirada.");
- return decryptToken(row.access_token_ciphertext);
+ if(!row)throw new Error("Meta Ads não conectado.");
+ const token=decryptToken(row.access_token_ciphertext);
+ if(Date.parse(row.expires_at)>Date.now()+60000)return token;
+ // The stored expiry may be wrong (long-lived tokens without expires_in): confirm with Meta and fix it.
+ const lifetime=await metaTokenLifetime(token).catch(()=>null);
+ if(!lifetime)throw new Error("A autorização da Meta expirou. Reconecte o Meta Ads em Integrações.");
+ await saveMetaCredential(request,token,lifetime).catch(()=>undefined);
+ return token;
 }

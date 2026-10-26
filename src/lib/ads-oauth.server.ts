@@ -95,3 +95,25 @@ export async function metaAccounts(accessToken:string){
   // Results may be paginated; follow API paging.next on server only after host validation.
   return response.json();
 }
+
+/**
+ * Real remaining lifetime of a Meta token, in seconds, or null when it is no longer valid.
+ * Long-lived and Login for Business tokens may not report expires_in at all (or never expire),
+ * so the stored expiry is taken from Meta's debug_token instead of guessed.
+ */
+export async function metaTokenLifetime(token: string): Promise<number | null> {
+  const c = config("meta");
+  const u = new URL("https://graph.facebook.com/v24.0/debug_token");
+  u.searchParams.set("input_token", token);
+  u.searchParams.set("access_token", `${c.clientId}|${c.clientSecret}`);
+  const r = await fetch(u, { cache: "no-store" });
+  if (!r.ok) return null;
+  const body = (await r.json()) as { data?: { is_valid?: boolean; expires_at?: number; data_access_expires_at?: number } };
+  if (!body.data?.is_valid) return null;
+  const now = Date.now() / 1000;
+  const exp = body.data.expires_at ?? 0;
+  const dataExp = body.data.data_access_expires_at ?? 0;
+  // expires_at = 0 means the token itself does not expire; data access still renews every 90 days.
+  const end = exp > 0 ? exp : dataExp > 0 ? dataExp : now + 365 * 86400;
+  return Math.max(60, Math.floor(end - now));
+}
