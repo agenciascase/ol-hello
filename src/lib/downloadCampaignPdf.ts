@@ -157,7 +157,8 @@ export async function downloadDashboardPdf(selector: string, filename: string, o
       return {top:Math.max(0,Math.round((rect.top-rootRect.top)*pixelScale)),
         bottom:Math.min(canvas.height,Math.ceil((rect.bottom-rootRect.top)*pixelScale))};
     }).filter(rect=>rect.bottom>rect.top&&rect.top<canvas.height);
-    await downloadCanvasPagesPdf(canvas,filename,{singleA4:options.singleA4===true,longReport:options.longReport===true,background,sections,singlePage:true});
+    // One-page SCASE standard applies to every dashboard export, regardless of source or mode.
+    await downloadCanvasPagesPdf(canvas,filename,{background,sections,singlePage:true});
   }finally{host.remove();}
 }
 async function downloadCanvasPagesPdf(canvas:HTMLCanvasElement,filename:string,options:{singleA4?:boolean;longReport?:boolean;background?:string;sections?:{top:number;bottom:number}[];singlePage?:boolean}={}){
