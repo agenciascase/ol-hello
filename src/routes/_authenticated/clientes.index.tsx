@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { FileBarChart2, Link2, Mail, MessageCircle, Plus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
-import { ClientForm, type ClientRow } from "@/components/agency/ClientForm";
+import { CLIENT_COLUMNS, ClientForm, type ClientRow } from "@/components/agency/ClientForm";
 
 export const Route = createFileRoute("/_authenticated/clientes/")({ component: ClientsPage });
 
@@ -20,7 +20,7 @@ function ClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id,name,owner_name,logo_url,emails,whatsapp_numbers,timezone,active,client_ad_accounts(provider),report_configs(id,active)")
+        .select(CLIENT_COLUMNS + ",client_ad_accounts(provider),report_configs(id,active)")
         .order("name");
       if (error) throw new Error(error.message);
       return (data ?? []) as unknown as ClientListRow[];

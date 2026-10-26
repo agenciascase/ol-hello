@@ -1,6 +1,7 @@
 // Pure metric helpers shared by the live panel, the PDF and the e-mail (no Node or browser APIs).
 export type MetricKey =
   | "spend"
+  | "revenue"
   | "impressions"
   | "clicks"
   | "ctr"
@@ -25,6 +26,7 @@ export type ReportTotals = {
 
 export const METRIC_LABELS: Record<MetricKey, string> = {
   spend: "Investimento",
+  revenue: "Receita atribuída",
   impressions: "Impressões",
   clicks: "Cliques",
   ctr: "CTR",
@@ -47,6 +49,8 @@ export function metricValue(key: MetricKey, t: ReportTotals): number | null {
   switch (key) {
     case "spend":
       return t.spend;
+    case "revenue":
+      return t.revenue;
     case "impressions":
       return t.impressions;
     case "clicks":
@@ -78,7 +82,7 @@ const dec = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFr
 
 export function formatMetric(key: MetricKey, value: number | null): string {
   if (value === null || !Number.isFinite(value)) return "—";
-  if (key === "spend" || key === "cpc" || key === "cpm" || key === "cpa") return brl.format(value);
+  if (key === "spend" || key === "revenue" || key === "cpc" || key === "cpm" || key === "cpa") return brl.format(value);
   if (key === "ctr") return dec.format(value) + "%";
   if (key === "roas") return dec.format(value) + "x";
   if (key === "frequency") return dec.format(value);

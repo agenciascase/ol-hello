@@ -12,7 +12,25 @@ export type ClientRow = {
   whatsapp_numbers: string[];
   timezone: string;
   active: boolean;
+  monthly_budget: number | null;
+  goal_cpa: number | null;
+  goal_conversions_month: number | null;
+  goal_roas: number | null;
+  meta_tax_pct: number;
+  google_tax_pct: number;
 };
+
+export const CLIENT_COLUMNS = "id,name,owner_name,logo_url,emails,whatsapp_numbers,timezone,active,monthly_budget,goal_cpa,goal_conversions_month,goal_roas,meta_tax_pct,google_tax_pct";
+
+/** Parses a Brazilian-formatted number ("1.234,56", "12,5" or "12.5"); empty → null. */
+export function parseNumberBR(text: string): number | null | "invalid" {
+  const t = text.trim().replace(/^R\$\s*/, "").replace(/%$/, "");
+  if (!t) return null;
+  const normalised = t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t;
+  const n = Number(normalised);
+  return Number.isFinite(n) && n >= 0 ? n : "invalid";
+}
+const showNumber = (n: number | null | undefined) => (n === null || n === undefined ? "" : String(n).replace(".", ","));
 
 export const TIMEZONES = [
   ["America/Sao_Paulo", "Brasília (SP, RJ, MG, Sul, GO, DF, BA…)"],
@@ -54,6 +72,12 @@ export function ClientForm({ client, onClose, onSaved }: { client?: ClientRow; o
   const [phones, setPhones] = useState((client?.whatsapp_numbers ?? []).join("\n"));
   const [timezone, setTimezone] = useState(client?.timezone ?? "America/Sao_Paulo");
   const [active, setActive] = useState(client?.active ?? true);
+  const [budget, setBudget] = useState(showNumber(client?.monthly_budget));
+  const [goalCpa, setGoalCpa] = useState(showNumber(client?.goal_cpa));
+  const [goalConv, setGoalConv] = useState(showNumber(client?.goal_conversions_month));
+  const [goalRoas, setGoalRoas] = useState(showNumber(client?.goal_roas));
+  const [metaTax, setMetaTax] = useState(showNumber(client?.meta_tax_pct ?? 0));
+  const [googleTax, setGoogleTax] = useState(showNumber(client?.google_tax_pct ?? 0));
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -67,8 +91,18 @@ export function ClientForm({ client, onClose, onSaved }: { client?: ClientRow; o
     const badPhone = phoneList.find((p) => !E164.test(p));
     if (badPhone) return setError(`WhatsApp inválido: ${badPhone}. Use DDD + número, ex.: 11 98765-4321.`);
     if (logo && !/^https:\/\//.test(logo)) return setError("A logo precisa ser um link https.");
+    const nums = { budget: parseNumberBR(budget), goalCpa: parseNumberBR(goalCpa), goalConv: parseNumberBR(goalConv), goalRoas: parseNumberBR(goalRoas), metaTax: parseNumberBR(metaTax), googleTax: parseNumberBR(googleTax) };
+    if (Object.values(nums).includes("invalid")) return setError("Confira as metas, a verba e os impostos: use apenas números, como 15.000 ou 12,15.");
+    const num = (v: number | null | "invalid") => (v === "invalid" ? null : v);
+    if ((num(nums.metaTax) ?? 0) > 100 || (num(nums.googleTax) ?? 0) > 100) return setError("Os impostos devem ficar entre 0% e 100%.");
     setSaving(true);
     const payload = {
+      monthly_budget: num(nums.budget) || null,
+      goal_cpa: num(nums.goalCpa) || null,
+      goal_conversions_month: num(nums.goalConv) || null,
+      goal_roas: num(nums.goalRoas) || null,
+      meta_tax_pct: num(nums.metaTax) ?? 0,
+      google_tax_pct: num(nums.googleTax) ?? 0,
       name: name.trim(),
       owner_name: owner.trim() || null,
       logo_url: logo.trim() || null,
@@ -133,6 +167,38 @@ export function ClientForm({ client, onClose, onSaved }: { client?: ClientRow; o
           </label>
           <label className="rpCheck" style={{ alignSelf: "center" }}>
             <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /> Cliente ativo (recebe relatórios)
+          </label>
+        </div>
+        <h3 className="rpFormGroup">Metas e verba mensal</h3>
+        <p className="rpFormHint">Usadas para mostrar no relatório se o resultado está dentro, perto ou fora do combinado. Deixe em branco o que não se aplica.</p>
+        <div className="rpFour">
+          <label className="rpField">
+            <span>Verba do mês (R$)</span>
+            <input inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="15.000" />
+          </label>
+          <label className="rpField">
+            <span>Conversões por mês</span>
+            <input inputMode="decimal" value={goalConv} onChange={(e) => setGoalConv(e.target.value)} placeholder="400" />
+          </label>
+          <label className="rpField">
+            <span>Custo por conversão até (R$)</span>
+            <input inputMode="decimal" value={goalCpa} onChange={(e) => setGoalCpa(e.target.value)} placeholder="35,00" />
+          </label>
+          <label className="rpField">
+            <span>ROAS mínimo</span>
+            <input inputMode="decimal" value={goalRoas} onChange={(e) => setGoalRoas(e.target.value)} placeholder="3" />
+          </label>
+        </div>
+        <h3 className="rpFormGroup">Impostos sobre a mídia</h3>
+        <p className="rpFormHint">As plataformas mostram o gasto sem impostos. Informe o percentual da fatura para o relatório mostrar também o valor com impostos.</p>
+        <div className="rpFour">
+          <label className="rpField">
+            <span>Meta Ads (%)</span>
+            <input inputMode="decimal" value={metaTax} onChange={(e) => setMetaTax(e.target.value)} placeholder="0" />
+          </label>
+          <label className="rpField">
+            <span>Google Ads (%)</span>
+            <input inputMode="decimal" value={googleTax} onChange={(e) => setGoogleTax(e.target.value)} placeholder="0" />
           </label>
         </div>
         {error && <p className="rpError">{error}</p>}

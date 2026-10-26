@@ -96,7 +96,7 @@ function IntegrationsPage() {
           <KeyRound size={18} /> Configuração de envio
         </h2>
         <p className="rpHint">Valores ficam nos Secrets do projeto (Lovable Cloud). Aqui só mostramos se estão preenchidos.</p>
-        <ConfigRow icon={<KeyRound size={15} />} label="Developer token do Google Ads" ok={status.data?.config.googleDeveloperToken} hint="GOOGLE_ADS_DEVELOPER_TOKEN" />
+        <ConfigRow icon={<KeyRound size={15} />} label="Developer token do Google Ads (opcional)" ok={status.data?.config.googleDeveloperToken} optional hint="Desde set/2026 o acesso à API vem do projeto no Google Cloud; o token não é mais exigido." />
         <ConfigRow icon={<Link2 size={15} />} label="Endereço público do app" ok={status.data?.config.appOrigin} hint="APP_ORIGIN" />
         <ConfigRow icon={<Mail size={15} />} label="E-mail (Resend)" ok={status.data?.config.email} hint="RESEND_API_KEY, REPORT_EMAIL_FROM" />
         <ConfigRow
@@ -105,13 +105,13 @@ function IntegrationsPage() {
           ok={status.data?.config.whatsapp}
           hint={status.data?.config.whatsappProvider === "zapi" ? "ZAPI_INSTANCE_ID, ZAPI_TOKEN" : "WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TEMPLATE_NAME"}
         />
-        <ConfigRow icon={<Timer size={15} />} label="Agendador automático" ok={status.data?.config.cron} hint="LOVABLE_CRON_SECRET + chamada a /api/cron/reports a cada 15 min" />
+        <ConfigRow icon={<Timer size={15} />} label="Senha do agendador automático" ok={status.data?.config.cron} hint="LOVABLE_CRON_SECRET. Também é preciso um serviço chamando /api/cron/reports a cada 15 min." />
       </section>
     </AgencyShell>
   );
 }
 
-function ConfigRow({ icon, label, ok, hint }: { icon: React.ReactNode; label: string; ok: boolean | undefined; hint: string }) {
+function ConfigRow({ icon, label, ok, hint, optional }: { icon: React.ReactNode; label: string; ok: boolean | undefined; hint: string; optional?: boolean }) {
   return (
     <div className="rpRow">
       <div className="rpRowMain">
@@ -120,7 +120,7 @@ function ConfigRow({ icon, label, ok, hint }: { icon: React.ReactNode; label: st
         </strong>
         <small>{hint}</small>
       </div>
-      {ok === undefined ? <span className="rpBadge">—</span> : ok ? <span className="rpBadge ok">Configurado</span> : <span className="rpBadge warn">Pendente</span>}
+      {ok === undefined ? <span className="rpBadge">—</span> : ok ? <span className="rpBadge ok">Configurado</span> : optional ? <span className="rpBadge">Não necessário</span> : <span className="rpBadge warn">Pendente</span>}
     </div>
   );
 }

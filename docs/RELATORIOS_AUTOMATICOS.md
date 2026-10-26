@@ -48,3 +48,13 @@ A resposta lista o que foi processado; falhas também ficam no histórico do cli
 
 ## Banco
 Migrações: `drizzle/migrations/0001_reporting_platform_stage1.sql` e `0002_reporting_platform_stage2.sql` (já aplicadas). Todas as tabelas têm RLS liberando só usuários com papel `admin`; o agendador e as rotas públicas usam a service role no servidor.
+
+## Relatório completo (v2)
+- **Nível de detalhe por relatório**: *Essencial* (resumo, principais números, metas e análise), *Padrão* (+ evolução diária, funil, conversões por tipo, campanhas) e *Completo* (+ criativos, termos de pesquisa, público, histórico de 6 meses). Seções e métricas podem ser ajustadas uma a uma; seções sem dados são omitidas.
+- **Objetivo do cliente** (leads, vendas, tráfego, alcance) define as métricas em destaque e o texto dos destaques automáticos.
+- **Metas e verba** no cadastro do cliente: verba mensal, conversões/mês, custo por conversão e ROAS. O relatório mostra status (dentro/atenção/fora) e o ritmo da verba com projeção do mês.
+- **Impostos** (% Meta e % Google) no cliente: o relatório mostra o investimento com impostos, próximo da fatura.
+- **Análise da equipe**, **o que fizemos** e **próximos passos** em cada relatório, com botão "Sugerir a partir dos números".
+- **Cache de 30 min** (`report_cache`) para o painel público não consumir a cota diária das APIs; envios e PDF do admin usam dados atualizados.
+- Conversões da Meta = leads + conversas iniciadas + compras.
+- Migração: `drizzle/migrations/0003_relatorio_completo.sql` (já aplicada).

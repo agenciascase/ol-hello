@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/integrations/reports/$id/pdf")({
         if (denied) return denied;
         if (!UUID_RE.test(params.id)) return Response.json({ error: "Relatório inválido." }, { status: 400, headers: noStore });
         try {
-          const built = await buildReportFor({ id: params.id });
+          const built = await buildReportFor({ id: params.id }, { fresh: true });
           if (!built) return Response.json({ error: "Relatório não encontrado." }, { status: 404, headers: noStore });
           const pdf = renderReportPdf(built.report, built.config.share_token ? reportPanelUrl(built.config.share_token) : null);
           return new Response(pdf as BodyInit, {

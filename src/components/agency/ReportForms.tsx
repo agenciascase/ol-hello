@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
+import { agencyApi } from "@/lib/agency-client";
+import { ALL_SECTIONS, DETAIL_LEVELS, OBJECTIVES, SECTIONS, detectLevel, isObjective, metricsFor, type DetailLevel, type Objective } from "@/lib/report-insights";
 import { supabase } from "@/integrations/supabase/client";
 import { METRICS, PERIOD_LABELS, WEEKDAYS, computeNextRun, formatNextRun, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
 
@@ -16,6 +18,11 @@ export type ReportConfigRow = {
   channels: string[];
   share_token: string | null;
   active: boolean;
+  objective: string;
+  sections: string[];
+  manager_notes: string | null;
+  actions_taken: string | null;
+  next_steps: string | null;
 };
 export type ScheduleRow = {
   id: string;
@@ -29,7 +36,7 @@ export type ScheduleRow = {
   active: boolean;
 };
 
-const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+const toggle = <T,>(list: T[], v: T): T[] => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
 function Chips<T extends string | number>({ options, value, onChange }: { options: ReadonlyArray<readonly [T, string]>; value: T[]; onChange: (v: T[]) => void }) {
   return (
@@ -59,20 +66,51 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
-const DEFAULT_METRICS = ["spend", "impressions", "clicks", "ctr", "cpc", "conversions", "cpa"];
-
 export function ReportConfigForm({ clientId, config, availablePlatforms, onClose, onSaved }: { clientId: string; config?: ReportConfigRow; availablePlatforms: string[]; onClose: () => void; onSaved: (id: string) => void }) {
   const [name, setName] = useState(config?.name ?? "Relatório semanal de performance");
+  const [objective, setObjective] = useState<Objective>(config && isObjective(config.objective) ? config.objective : "leads");
   const [platforms, setPlatforms] = useState<string[]>(config?.platforms ?? (availablePlatforms.length ? availablePlatforms : ["meta", "google"]));
-  const [metrics, setMetrics] = useState<string[]>(config?.metrics ?? DEFAULT_METRICS);
+  const [metrics, setMetrics] = useState<string[]>(config?.metrics ?? metricsFor("leads", "standard"));
+  const [sections, setSections] = useState<string[]>(config?.sections?.length ? config.sections : DETAIL_LEVELS.standard.sections);
+  const level = detectLevel(sections);
   const [period, setPeriod] = useState<ReportPeriod>(config?.period ?? "last_7_days");
   const [compare, setCompare] = useState(config?.compare_previous ?? true);
   const [filter, setFilter] = useState(config?.campaign_filter ?? "");
   const [intro, setIntro] = useState(config?.intro_message ?? "");
+  const [notes, setNotes] = useState(config?.manager_notes ?? "");
+  const [actions, setActions] = useState(config?.actions_taken ?? "");
+  const [nextSteps, setNextSteps] = useState(config?.next_steps ?? "");
   const [channels, setChannels] = useState<string[]>(config?.channels ?? ["email"]);
   const [active, setActive] = useState(config?.active ?? true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+
+  function pickObjective(o: Objective) {
+    setObjective(o);
+    // New reports follow the objective's metric preset; existing ones keep the agency's choice.
+    if (!config) setMetrics(metricsFor(o, level ?? "standard"));
+  }
+
+  function pickLevel(l: DetailLevel) {
+    setSections(DETAIL_LEVELS[l].sections);
+    setMetrics(metricsFor(objective, l));
+  }
+
+  async function suggest() {
+    if (!config) return;
+    setDrafting(true);
+    setError("");
+    try {
+      const r = await agencyApi<{ draft: string }>(`/api/integrations/reports/${config.id}/draft`);
+      if (!r.draft) setError("Ainda não há dados suficientes no período para sugerir uma análise.");
+      else setNotes((cur) => (cur.trim() ? cur.trim() + "\n\n" + r.draft : r.draft));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível sugerir a análise.");
+    } finally {
+      setDrafting(false);
+    }
+  }
 
   async function save() {
     setError("");
@@ -85,12 +123,17 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
     const payload = {
       client_id: clientId,
       name: name.trim(),
+      objective,
       platforms,
       metrics: ordered,
+      sections: ALL_SECTIONS.filter((k) => sections.includes(k)),
       period,
       compare_previous: compare,
       campaign_filter: filter.trim() || null,
       intro_message: intro.trim() || null,
+      manager_notes: notes.trim() || null,
+      actions_taken: actions.trim() || null,
+      next_steps: nextSteps.trim() || null,
       channels,
       active,
       updated_at: new Date().toISOString(),
@@ -110,16 +153,34 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         <input value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <div className="rpField">
-        <span>Plataformas</span>
-        <Chips options={[["meta", "Meta Ads"], ["google", "Google Ads"]] as const} value={platforms} onChange={setPlatforms} />
-        {platforms.some((p) => !availablePlatforms.includes(p)) && <small>Este cliente ainda não tem conta vinculada em uma das plataformas escolhidas.</small>}
+        <span>Objetivo do cliente</span>
+        <div className="rpObjectives" role="radiogroup">
+          {(Object.keys(OBJECTIVES) as Objective[]).map((o) => (
+            <button key={o} type="button" role="radio" aria-checked={objective === o} className="rpObjective" onClick={() => pickObjective(o)}>
+              <strong>{OBJECTIVES[o].label}</strong>
+              <small>{OBJECTIVES[o].description}</small>
+            </button>
+          ))}
+        </div>
       </div>
       <div className="rpField">
-        <span>Métricas</span>
-        <Chips options={METRICS} value={metrics} onChange={setMetrics} />
-        <small>Alcance e frequência existem só na Meta; leads vêm das ações de lead da Meta.</small>
+        <span>Nível de detalhe</span>
+        <div className="rpObjectives rpLevels" role="radiogroup">
+          {(Object.keys(DETAIL_LEVELS) as DetailLevel[]).map((l) => (
+            <button key={l} type="button" role="radio" aria-checked={level === l} className="rpObjective" onClick={() => pickLevel(l)}>
+              <strong>{DETAIL_LEVELS[l].label}</strong>
+              <small>{DETAIL_LEVELS[l].description}</small>
+            </button>
+          ))}
+        </div>
+        <small>{level ? "Ajuste seções e métricas abaixo se quiser personalizar." : "Personalizado: seções escolhidas manualmente abaixo."}</small>
       </div>
       <div className="rpTwo">
+        <div className="rpField">
+          <span>Plataformas</span>
+          <Chips<string> options={[["meta", "Meta Ads"], ["google", "Google Ads"]] as const} value={platforms} onChange={setPlatforms} />
+          {platforms.some((p) => !availablePlatforms.includes(p)) && <small>Este cliente ainda não tem conta vinculada em uma das plataformas escolhidas.</small>}
+        </div>
         <label className="rpField">
           <span>Período analisado</span>
           <select value={period} onChange={(e) => setPeriod(e.target.value as ReportPeriod)}>
@@ -130,9 +191,19 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
             ))}
           </select>
         </label>
-        <label className="rpCheck" style={{ alignSelf: "center" }}>
-          <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> Comparar com o período anterior
-        </label>
+      </div>
+      <label className="rpCheck" style={{ marginBottom: 14 }}>
+        <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> Comparar com o período anterior
+      </label>
+      <div className="rpField">
+        <span>Métricas</span>
+        <Chips<string> options={METRICS} value={metrics} onChange={setMetrics} />
+        <small>As principais do objetivo aparecem em destaque. Alcance e frequência existem só na Meta.</small>
+      </div>
+      <div className="rpField">
+        <span>Seções do relatório</span>
+        <Chips<string> options={SECTIONS} value={sections} onChange={setSections} />
+        <small>Seções sem dados no período são omitidas automaticamente.</small>
       </div>
       <label className="rpField">
         <span>Filtrar campanhas (opcional)</span>
@@ -142,10 +213,36 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         <span>Mensagem de abertura (opcional)</span>
         <textarea value={intro} onChange={(e) => setIntro(e.target.value)} placeholder="Olá! Segue o resumo de performance do período." />
       </label>
+
+      <h3 className="rpFormGroup">Análise da equipe</h3>
+      <p className="rpFormHint">Vai no topo do relatório e do e-mail. Atualize antes de cada envio; os destaques automáticos entram de qualquer forma.</p>
+      <div className="rpField">
+        <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          Análise do período
+          {config && (
+            <button type="button" className="textLink" disabled={drafting} onClick={suggest}>
+              <Sparkles size={13} /> {drafting ? "Gerando sugestão…" : "Sugerir a partir dos números"}
+            </button>
+          )}
+        </span>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="O que aconteceu no período e por quê." />
+        {!config && <small>Depois de salvar, você pode pedir uma sugestão de texto baseada nos números.</small>}
+      </div>
+      <div className="rpTwo">
+        <label className="rpField">
+          <span>O que fizemos no período</span>
+          <textarea value={actions} onChange={(e) => setActions(e.target.value)} placeholder="Testes, criativos novos, ajustes de verba…" />
+        </label>
+        <label className="rpField">
+          <span>Próximos passos</span>
+          <textarea value={nextSteps} onChange={(e) => setNextSteps(e.target.value)} placeholder="O que vamos fazer a seguir." />
+        </label>
+      </div>
+
       <div className="rpTwo">
         <div className="rpField">
           <span>Canais de envio</span>
-          <Chips options={[["email", "E-mail"], ["whatsapp", "WhatsApp"]] as const} value={channels} onChange={setChannels} />
+          <Chips<string> options={[["email", "E-mail"], ["whatsapp", "WhatsApp"]] as const} value={channels} onChange={setChannels} />
         </div>
         <label className="rpCheck" style={{ alignSelf: "center" }}>
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /> Relatório ativo

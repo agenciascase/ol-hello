@@ -5,11 +5,12 @@ import { ArrowLeft, CalendarClock, Copy, Download, ExternalLink, FileBarChart2, 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
-import { ClientForm, TIMEZONES, type ClientRow } from "@/components/agency/ClientForm";
+import { CLIENT_COLUMNS, ClientForm, TIMEZONES, type ClientRow } from "@/components/agency/ClientForm";
 import { AccountLinker } from "@/components/agency/AccountLinker";
 import { ReportConfigForm, ScheduleForm, type ReportConfigRow, type ScheduleRow } from "@/components/agency/ReportForms";
 import { agencyApi, agencyDownload } from "@/lib/agency-client";
 import { METRIC_LABELS, isMetricKey } from "@/lib/report-metrics";
+import { DETAIL_LEVELS, OBJECTIVES, detectLevel, isObjective } from "@/lib/report-insights";
 import { PERIOD_LABELS, WEEKDAYS, formatNextRun } from "@/lib/report-schedule";
 
 export const Route = createFileRoute("/_authenticated/clientes/$clientId")({ component: ClientDetailPage });
@@ -38,11 +39,11 @@ function ClientDetailPage() {
     queryKey: ["client-detail", clientId],
     queryFn: async () => {
       const [client, accounts, configs] = await Promise.all([
-        supabase.from("clients").select("id,name,owner_name,logo_url,emails,whatsapp_numbers,timezone,active").eq("id", clientId).maybeSingle(),
+        supabase.from("clients").select(CLIENT_COLUMNS).eq("id", clientId).maybeSingle(),
         supabase.from("client_ad_accounts").select("id,provider,account_id,account_name").eq("client_id", clientId).order("provider"),
         supabase
           .from("report_configs")
-          .select("id,client_id,name,platforms,metrics,period,compare_previous,campaign_filter,intro_message,channels,share_token,active,report_schedules(id,report_config_id,frequency,weekdays,day_of_month,send_time,next_run_at,last_run_at,active)")
+          .select("id,client_id,name,platforms,metrics,period,compare_previous,campaign_filter,intro_message,channels,share_token,active,objective,sections,manager_notes,actions_taken,next_steps,report_schedules(id,report_config_id,frequency,weekdays,day_of_month,send_time,next_run_at,last_run_at,active)")
           .eq("client_id", clientId)
           .order("created_at"),
       ]);
@@ -54,7 +55,7 @@ function ClientDetailPage() {
         ? await supabase.from("report_deliveries").select("id,report_config_id,sent_at,channel,recipient,status,error,trigger").in("report_config_id", ids).order("sent_at", { ascending: false }).limit(30)
         : { data: [] };
       return {
-        client: client.data as ClientRow,
+        client: client.data as unknown as ClientRow,
         accounts: (accounts.data ?? []) as LinkedAccount[],
         configs: cfgs,
         deliveries: (deliveries.data ?? []) as Delivery[],
@@ -199,7 +200,7 @@ function ClientDetailPage() {
                   <FileBarChart2 size={17} color="#0baa59" /> {c.name} {!c.active && <span className="rpBadge">Pausado</span>}
                 </strong>
                 <small>
-                  {PERIOD_LABELS[c.period]}
+                  {isObjective(c.objective) ? OBJECTIVES[c.objective].label : "Geração de leads"} · nível {(() => { const l = detectLevel(c.sections ?? []); return l ? DETAIL_LEVELS[l].label.toLowerCase() : "personalizado"; })()} · {PERIOD_LABELS[c.period]}
                   {c.compare_previous ? " · com comparação" : ""} · {c.platforms.map((p) => (p === "meta" ? "Meta" : "Google")).join(" + ")} ·{" "}
                   {c.channels.map((ch) => (ch === "email" ? "E-mail" : "WhatsApp")).join(" + ")}
                   {c.campaign_filter ? ` · campanhas com “${c.campaign_filter}”` : ""}
