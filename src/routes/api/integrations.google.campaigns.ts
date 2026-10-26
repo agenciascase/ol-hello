@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { adminUserId, googleAccessToken } from "../../lib/ads-credentials.server";
-import { MCC_CUSTOMER_ID, googleAccounts, refreshGoogleToken } from "../../lib/ads-oauth.server";
+import { googleHeaders, googleAccounts, refreshGoogleToken } from "../../lib/ads-oauth.server";
 
 // Server-only, administrator-only, read-only Google Ads campaign metrics.
 export const Route = createFileRoute("/api/integrations/google/campaigns")({
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
    const previousEnd=new Date(start);previousEnd.setUTCDate(previousEnd.getUTCDate()-1);
    const query=`SELECT segments.date, campaign.id, campaign.name, campaign.status, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value, metrics.absolute_top_impression_percentage, metrics.interactions, metrics.phone_calls FROM campaign WHERE segments.date BETWEEN "${utcDay(previousStart)}" AND "${utcDay(end)}" ORDER BY segments.date DESC LIMIT 10000`;
    const result=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{
-    method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},
+    method:"POST",headers:googleHeaders(token),
     body:JSON.stringify({query}),cache:"no-store"
    });
    if(!result.ok)return Response.json({error:"A API do Google Ads não conseguiu consultar as campanhas dessa conta.",upstream_status:result.status},{status:502});
@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
    const conversionActions:Array<{campaignId:string;name:string;conversions:number}>=[];
    try {
     const actionQuery=`SELECT campaign.id, segments.conversion_action_name, metrics.conversions FROM campaign WHERE segments.date BETWEEN "${utcDay(start)}" AND "${utcDay(end)}" LIMIT 10000`;
-    const actionResult=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},body:JSON.stringify({query:actionQuery}),cache:"no-store"});
+    const actionResult=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:googleHeaders(token),body:JSON.stringify({query:actionQuery}),cache:"no-store"});
     if(!actionResult.ok)console.warn("[scase/google] Conversion-action breakdown unavailable",actionResult.status);
     if(actionResult.ok){
      const chunks=await actionResult.json() as Array<{results?:Array<{campaign?:{id?:string|number};segments?:{conversionActionName?:string};metrics?:{conversions?:string|number}}> }>;
@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/integrations/google/campaigns")({
    const devices:Array<{campaignId:string;device:string;cost:number;clicks:number;conversions:number}>=[];
    const searchTerms:Array<{campaignId:string;term:string;cost:number;conversions:number}>=[];
    const fetchSegment=async(query:string)=>{
-    const response=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:{authorization:"Bearer "+token,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},body:JSON.stringify({query}),cache:"no-store"});
+    const response=await fetch(`https://googleads.googleapis.com/${version}/customers/${customerId}/googleAds:searchStream`,{method:"POST",headers:googleHeaders(token),body:JSON.stringify({query}),cache:"no-store"});
     if(!response.ok)return [];
     const batches=await response.json() as Array<{results?:Array<Record<string,unknown>>}>;
     return batches.flatMap(batch=>batch.results??[]);

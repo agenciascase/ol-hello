@@ -239,8 +239,10 @@ export type Database = {
           recipient: string
           report_config_id: string
           report_url: string | null
+          schedule_id: string | null
           sent_at: string
           status: string
+          trigger: string
         }
         Insert: {
           channel: string
@@ -249,8 +251,10 @@ export type Database = {
           recipient: string
           report_config_id: string
           report_url?: string | null
+          schedule_id?: string | null
           sent_at?: string
           status?: string
+          trigger?: string
         }
         Update: {
           channel?: string
@@ -259,10 +263,19 @@ export type Database = {
           recipient?: string
           report_config_id?: string
           report_url?: string | null
+          schedule_id?: string | null
           sent_at?: string
           status?: string
+          trigger?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "report_deliveries_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "report_schedules"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "report_deliveries_report_config_id_fkey"
             columns: ["report_config_id"]
@@ -279,6 +292,7 @@ export type Database = {
           day_of_month: number | null
           frequency: string
           id: string
+          last_run_at: string | null
           next_run_at: string | null
           report_config_id: string
           send_time: string
@@ -291,6 +305,7 @@ export type Database = {
           day_of_month?: number | null
           frequency: string
           id?: string
+          last_run_at?: string | null
           next_run_at?: string | null
           report_config_id: string
           send_time?: string
@@ -303,6 +318,7 @@ export type Database = {
           day_of_month?: number | null
           frequency?: string
           id?: string
+          last_run_at?: string | null
           next_run_at?: string | null
           report_config_id?: string
           send_time?: string

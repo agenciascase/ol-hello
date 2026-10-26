@@ -15,6 +15,13 @@
       "when": 1793026010745,
       "tag": "0001_reporting_platform_stage1",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793030000000,
+      "tag": "0002_reporting_platform_stage2",
+      "breakpoints": true
     }
   ]
 }

@@ -2,10 +2,15 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
 import {useState} from "react";
 import {LiveBI} from "@/components/LiveBI";
+import {ReportPanel} from "@/components/ReportPanel";
 import "../performance.css";
-export const Route=createFileRoute("/live/$token")({component:GoogleLiveReport});
-function GoogleLiveReport(){
+export const Route=createFileRoute("/live/$token")({component:LivePage});
+// Report-config links start with "r"; the older Google-only links are 64 hex characters.
+function LivePage(){
  const {token}=Route.useParams();
+ return /^r[0-9a-f]{48}$/.test(token)?<ReportPanel token={token}/>:<GoogleLiveReport token={token}/>;
+}
+function GoogleLiveReport({token}:{token:string}){
  const [days,setDays]=useState<"7"|"15"|"30">("30");
  const q=useQuery({queryKey:["scase-public-google-live",token,days],queryFn:async()=>{
   const r=await fetch("/api/google-live-report?token="+encodeURIComponent(token)+"&days="+days,{cache:"no-store"});

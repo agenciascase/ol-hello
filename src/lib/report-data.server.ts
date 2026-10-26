@@ -1,19 +1,15 @@
 /** Server-only: fetches real Meta/Google metrics for report configurations. Tokens never leave the server. */
 import { decryptToken, encryptToken } from "./ads-credentials.server";
-import { MCC_CUSTOMER_ID, META_BUSINESS_ID, refreshGoogleToken } from "./ads-oauth.server";
+import { googleHeaders, MCC_CUSTOMER_ID, META_BUSINESS_ID, refreshGoogleToken } from "./ads-oauth.server";
+export { googleHeaders };
 import { resolvePeriod, type ReportPeriod } from "./report-schedule";
 
 const GRAPH = "https://graph.facebook.com/v24.0/";
-export type Totals = { spend: number; impressions: number; clicks: number; conversions: number; revenue: number; leads: number | null; reach: number | null };
+import type { ReportTotals } from "./report-metrics";
+export type Totals = ReportTotals;
 export type CampaignRow = Totals & { name: string; platform: "meta" | "google"; account: string };
 const empty = (): Totals => ({ spend: 0, impressions: 0, clicks: 0, conversions: 0, revenue: 0, leads: null, reach: null });
 
-export function googleHeaders(token: string): Record<string, string> {
-  const h: Record<string, string> = { authorization: "Bearer " + token, "login-customer-id": MCC_CUSTOMER_ID, "content-type": "application/json" };
-  const dev = process.env["GOOGLE_ADS_DEVELOPER_TOKEN"];
-  if (dev) h["developer-token"] = dev;
-  return h;
-}
 const googleVersion = () => process.env["GOOGLE_ADS_API_VERSION"] || "v26";
 
 async function admin() {
@@ -61,10 +57,10 @@ export async function syncMetaCatalog(token: string) {
   for (const edge of ["owned_ad_accounts", "client_ad_accounts"]) {
     const rows = await graphPages(`${GRAPH}${META_BUSINESS_ID}/${edge}?fields=${fields}&limit=100`, token);
     for (const r of rows) {
-      const id = String(r.id ?? "");
+      const id = String(r["id"] ?? "");
       if (!/^act_\d+$/.test(id)) continue;
-      const st = Number(r.account_status ?? 0);
-      all.set(id, { account_id: id, name: String(r.name ?? id), currency: String(r.currency ?? ""), status: st === 1 ? "ACTIVE" : st === 2 ? "DISABLED" : st === 101 ? "CLOSED" : "STATUS_" + st });
+      const st = Number(r["account_status"] ?? 0);
+      all.set(id, { account_id: id, name: String(r["name"] ?? id), currency: String(r["currency"] ?? ""), status: st === 1 ? "ACTIVE" : st === 2 ? "DISABLED" : st === 101 ? "CLOSED" : "STATUS_" + st });
     }
   }
   return [...all.values()];
@@ -99,9 +95,9 @@ async function metaCampaigns(token: string, accountId: string, since: string, un
   u.searchParams.set("limit", "200");
   const rows = await graphPages(u.toString(), token, 10);
   return rows.map((r) => {
-    const leads = actionSum(r.actions, ["lead", "onsite_conversion.lead_grouped", "offsite_conversion.fb_pixel_lead"]);
-    const purchases = actionSum(r.actions, ["purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"]);
-    return { platform: "meta" as const, account: accountId, name: String(r.campaign_name ?? "Campanha"), spend: Number(r.spend ?? 0), impressions: Number(r.impressions ?? 0), clicks: Number(r.clicks ?? 0), reach: Number(r.reach ?? 0), leads, conversions: purchases + leads, revenue: actionSum(r.action_values, ["purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"]) };
+    const leads = actionSum(r["actions"], ["lead", "onsite_conversion.lead_grouped", "offsite_conversion.fb_pixel_lead"]);
+    const purchases = actionSum(r["actions"], ["purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"]);
+    return { platform: "meta" as const, account: accountId, name: String(r["campaign_name"] ?? "Campanha"), spend: Number(r["spend"] ?? 0), impressions: Number(r["impressions"] ?? 0), clicks: Number(r["clicks"] ?? 0), reach: Number(r["reach"] ?? 0), leads, conversions: purchases + leads, revenue: actionSum(r["action_values"], ["purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"]) };
   }).filter((c) => matches(c.name, filter));
 }
 
@@ -111,16 +107,16 @@ async function googleCampaigns(token: string, customerId: string, since: string,
   if (!res.ok) throw new Error("Google Ads (" + res.status + ")");
   const batches = (await res.json()) as Array<{ results?: Array<{ campaign?: { name?: string }; metrics?: Record<string, string | number> }> }>;
   return batches.flatMap((b) => b.results ?? []).map((r) => ({
-    platform: "google" as const, account: customerId, name: r.campaign?.name ?? "Campanha", spend: Number(r.metrics?.costMicros ?? 0) / 1e6, impressions: Number(r.metrics?.impressions ?? 0), clicks: Number(r.metrics?.clicks ?? 0), conversions: Number(r.metrics?.conversions ?? 0), revenue: Number(r.metrics?.conversionsValue ?? 0), leads: null, reach: null,
+    platform: "google" as const, account: customerId, name: r.campaign?.name ?? "Campanha", spend: Number(r.metrics?.["costMicros"] ?? 0) / 1e6, impressions: Number(r.metrics?.["impressions"] ?? 0), clicks: Number(r.metrics?.["clicks"] ?? 0), conversions: Number(r.metrics?.["conversions"] ?? 0), revenue: Number(r.metrics?.["conversionsValue"] ?? 0), leads: null, reach: null,
   })).filter((c) => matches(c.name, filter));
 }
 
 function sum(rows: Totals[]): Totals {
   const t = empty();
   for (const r of rows) {
-    t.spend += r.spend; t.impressions += r.impressions; t.clicks += r.clicks; t.conversions += r.conversions; t.revenue += r.revenue;
+    t.spend += r["spend"]; t.impressions += r["impressions"]; t.clicks += r["clicks"]; t.conversions += r.conversions; t.revenue += r.revenue;
     if (r.leads !== null) t.leads = (t.leads ?? 0) + r.leads;
-    if (r.reach !== null) t.reach = (t.reach ?? 0) + r.reach;
+    if (r["reach"] !== null) t.reach = (t.reach ?? 0) + r["reach"];
   }
   return t;
 }
@@ -131,7 +127,7 @@ export async function buildReport(input: ReportConfigInput) {
   const range = resolvePeriod(input.config.period as ReportPeriod, input.client.timezone || "America/Sao_Paulo");
   const tokens = await agencyTokens();
   const errors: string[] = [];
-  const platforms = (["meta", "google"] as const).filter((p) => input.config.platforms.includes(p));
+  const platforms = (["meta", "google"] as const).filter((p) => input.config.platforms.includes(p) && input.accounts.some((a) => a.provider === p));
   const current: CampaignRow[] = []; const previous: CampaignRow[] = [];
   await Promise.all(input.accounts.filter((a) => platforms.includes(a.provider as "meta" | "google")).map(async (a) => {
     const token = a.provider === "meta" ? tokens.meta : tokens.google;
@@ -154,7 +150,7 @@ export type BuiltReport = Awaited<ReturnType<typeof buildReport>>;
 
 export async function loadConfigForReport(by: { token?: string; id?: string }) {
   const db = await admin();
-  let q = db.from("report_configs").select("id,name,platforms,metrics,period,compare_previous,campaign_filter,intro_message,active,client_id,share_token");
+  let q = db.from("report_configs").select("id,name,platforms,metrics,period,compare_previous,campaign_filter,intro_message,channels,active,client_id,share_token");
   q = by.token ? q.eq("share_token", by.token) : q.eq("id", by.id!);
   const { data: config } = await q.maybeSingle();
   if (!config) return null;
@@ -164,4 +160,29 @@ export async function loadConfigForReport(by: { token?: string; id?: string }) {
   ]);
   if (!client) return null;
   return { config, client, accounts: accounts ?? [] };
+}
+
+/** Share tokens for report panels: "r" + 48 hex chars (distinct from the 64-hex Google live links). */
+export const REPORT_TOKEN_RE = /^r[0-9a-f]{48}$/;
+export async function newReportToken() {
+  const { randomBytes } = await import("node:crypto");
+  return "r" + randomBytes(24).toString("hex");
+}
+
+/** Loads a configuration (by id or public token) and builds its report with live data. */
+export async function buildReportFor(by: { token?: string; id?: string }) {
+  const loaded = await loadConfigForReport(by);
+  if (!loaded) return null;
+  const report = await buildReport({ client: loaded.client, config: loaded.config, accounts: loaded.accounts });
+  return { ...loaded, report };
+}
+
+export function appOrigin() {
+  return (process.env["APP_ORIGIN"] ?? "").replace(/\/$/, "");
+}
+export function reportPanelUrl(token: string) {
+  return `${appOrigin()}/live/${token}`;
+}
+export function reportPdfUrl(token: string) {
+  return `${appOrigin()}/api/report-pdf?token=${token}`;
 }

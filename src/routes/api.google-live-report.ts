@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { decryptToken } from "../lib/ads-credentials.server";
-import { MCC_CUSTOMER_ID, refreshGoogleToken, googleAccounts } from "../lib/ads-oauth.server";
+import { googleHeaders, refreshGoogleToken, googleAccounts } from "../lib/ads-oauth.server";
 type SecureShare={customer_id:string;customer_name:string;access_token_ciphertext:string;refresh_token_ciphertext:string|null;expires_at:string};
 export const Route=createFileRoute("/api/google-live-report")({server:{handlers:{GET:async ({request})=>{
   const url=new URL(request.url);
@@ -32,7 +32,7 @@ export const Route=createFileRoute("/api/google-live-report")({server:{handlers:
     const previousStart=new Date(start);previousStart.setUTCDate(previousStart.getUTCDate()-count);
     const iso=(d:Date)=>d.toISOString().slice(0,10);
     const query=`SELECT segments.date, campaign.id, campaign.name, campaign.status, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value FROM campaign WHERE segments.date BETWEEN "${iso(previousStart)}" AND "${iso(end)}" ORDER BY segments.date DESC LIMIT 10000`;
-    const response=await fetch(`https://googleads.googleapis.com/${version}/customers/${share.customer_id}/googleAds:searchStream`,{method:"POST",headers:{authorization:"Bearer "+access,"login-customer-id":MCC_CUSTOMER_ID,"content-type":"application/json"},body:JSON.stringify({query}),cache:"no-store"});
+    const response=await fetch(`https://googleads.googleapis.com/${version}/customers/${share.customer_id}/googleAds:searchStream`,{method:"POST",headers:googleHeaders(access),body:JSON.stringify({query}),cache:"no-store"});
     if(!response.ok)return Response.json({error:"Não foi possível consultar o Google Ads."},{status:502});
     const batches=await response.json() as Array<{results?:Array<{segments?:{date?:string};campaign?:{id?:string;name?:string;status?:string};metrics?:{costMicros?:number|string;impressions?:number|string;clicks?:number|string;conversions?:number|string;conversionsValue?:number|string}}> }>;
     type Row={id:string;name:string;status:string;cost:number;impressions:number;clicks:number;conversions:number;conversionValue:number};
