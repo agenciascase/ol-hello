@@ -180,7 +180,7 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
       doc.y -= size + 4.5;
     }
   };
-  const table = (cols: Col[], rows: string[][], opts: { boldFirst?: boolean; size?: number } = {}) => {
+  const table = (cols: Col[], rows: string[][], opts: { boldFirst?: boolean; size?: number; totalLast?: boolean } = {}) => {
     const size = opts.size ?? 9;
     const header = () => {
       doc.rect(M, doc.y, W, 18, C.card);
@@ -194,9 +194,12 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
         doc.newPage();
         header();
       }
+      const isTotal = Boolean(opts.totalLast && i === rows.length - 1);
+      if (isTotal) doc.rect(M, doc.y, W, 16, C.soft);
       cols.forEach((c, j) => {
-        const v = c.width ? fit(r[j] ?? "", size, c.width, opts.boldFirst && j === 0) : r[j] ?? "";
-        doc.text(c.x, doc.y - 11, v, size, { align: c.align ?? "left", bold: Boolean(opts.boldFirst && j === 0), color: j === 0 ? C.ink : C.body });
+        const bold = isTotal || Boolean(opts.boldFirst && j === 0);
+        const v = c.width ? fit(r[j] ?? "", size, c.width, bold) : r[j] ?? "";
+        doc.text(c.x, doc.y - 11, v, size, { align: c.align ?? "left", bold, color: j === 0 || isTotal ? C.ink : C.body });
       });
       doc.y -= 16;
       if (i < rows.length - 1) doc.line(M, doc.y + 2, M + W, doc.y + 2, C.border, 0.4);
@@ -407,30 +410,32 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
     );
   }
 
-  /* Campaigns */
+  /* Campaigns, one table per platform with its subtotal */
   if (has("campaigns") && report.campaigns.length) {
-    section("Campanhas", "Ordenadas por investimento");
-    table(
-      [
-        { label: "Campanha", x: M + 8, width: 185 },
-        { label: "Plat.", x: M + 200 },
-        { label: "Investimento", x: M + 300, align: "right" },
-        { label: "Cliques", x: M + 350, align: "right" },
-        { label: "CTR", x: M + 395, align: "right" },
-        { label: "Conv.", x: M + 440, align: "right" },
-        { label: "CPA", x: M + W - 4, align: "right" },
-      ],
-      report.campaigns.slice(0, 20).map((c) => [
-        c.name,
-        c.platform === "meta" ? "Meta" : "Google",
-        formatMetric("spend", c.spend),
-        formatMetric("clicks", c.clicks),
-        formatMetric("ctr", metricValue("ctr", c)),
-        formatMetric("conversions", c.conversions),
-        formatMetric("cpa", metricValue("cpa", c)),
-      ]),
-      { size: 8.5 },
-    );
+    const groups = (Object.keys(PLATFORM_LABEL) as Array<keyof typeof PLATFORM_LABEL>).filter((p) => report.campaigns.some((c) => c.platform === p));
+    const cols: Col[] = [
+      { label: "Campanha", x: M + 8, width: 215 },
+      { label: "Investimento", x: M + 300, align: "right" },
+      { label: "Cliques", x: M + 350, align: "right" },
+      { label: "CTR", x: M + 395, align: "right" },
+      { label: "Conv.", x: M + 440, align: "right" },
+      { label: "CPA", x: M + W - 4, align: "right" },
+    ];
+    const row = (name: string, t: Parameters<typeof metricValue>[1]) => [
+      name,
+      formatMetric("spend", t.spend),
+      formatMetric("clicks", t.clicks),
+      formatMetric("ctr", metricValue("ctr", t)),
+      formatMetric("conversions", t.conversions),
+      formatMetric("cpa", metricValue("cpa", t)),
+    ];
+    groups.forEach((p, gi) => {
+      const list = report.campaigns.filter((c) => c.platform === p);
+      const total = report.byPlatform[p]?.current;
+      section(`Campanhas ${PLATFORM_LABEL[p]}`, `${list.length} campanha${list.length === 1 ? "" : "s"}, ordenadas por investimento`, 80);
+      table(cols, [...list.slice(0, 20).map((c) => row(c.name, c)), ...(total ? [row(`Total ${PLATFORM_LABEL[p]}`, total)] : [])], { size: 8.5, totalLast: Boolean(total) });
+      if (gi === groups.length - 1 && groups.length > 1) table(cols, [row("Total geral", report.total.current)], { size: 8.5, totalLast: true });
+    });
   }
 
   /* Creatives */

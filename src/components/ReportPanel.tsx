@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Download, ImageOff } from "lucide-react";
 import { PERIOD_LABELS, type ReportPeriod } from "@/lib/report-schedule";
@@ -67,6 +68,96 @@ function ShareBars({ rows, unit = "do investimento" }: { rows: AudienceRow[]; un
         </li>
       ))}
     </ul>
+  );
+}
+
+type PlatformKey = keyof typeof PLATFORM;
+const CAMPAIGN_COLS: Array<[MetricKey, string]> = [
+  ["spend", "Investimento"],
+  ["impressions", "Impressões"],
+  ["clicks", "Cliques"],
+  ["ctr", "CTR"],
+  ["conversions", "Conversões"],
+  ["cpa", "Custo/conv."],
+];
+
+/** Campaigns grouped by platform, each group with its own subtotal; tabs narrow to one platform. */
+function CampaignTables({ data, platforms }: { data: PanelData; platforms: PlatformKey[] }) {
+  const withCampaigns = platforms.filter((p) => data.campaigns.some((c) => c.platform === p));
+  const [tab, setTab] = useState<"all" | PlatformKey>("all");
+  const shown = tab === "all" ? withCampaigns : withCampaigns.filter((p) => p === tab);
+  return (
+    <>
+      {withCampaigns.length > 1 && (
+        <div className="rpxTabs" role="tablist" aria-label="Plataforma">
+          {(["all", ...withCampaigns] as Array<"all" | PlatformKey>).map((t) => (
+            <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
+              {t === "all" ? "Todas" : PLATFORM[t]}
+              <span>{t === "all" ? data.campaigns.length : data.campaigns.filter((c) => c.platform === t).length}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="rpxTableWrap">
+        <table className="rpxTable">
+          <thead>
+            <tr>
+              <th>Campanha</th>
+              {CAMPAIGN_COLS.map(([k, l]) => (
+                <th key={k} className="num">
+                  {l}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          {shown.map((p) => {
+            const rows = data.campaigns.filter((c) => c.platform === p);
+            const total = data.byPlatform[p]?.current;
+            return (
+              <tbody key={p} className={"rpxGroup " + p}>
+                <tr className="rpxGroupHead">
+                  <th colSpan={CAMPAIGN_COLS.length + 1}>
+                    {PLATFORM[p]} <span>{rows.length} campanha{rows.length === 1 ? "" : "s"}</span>
+                  </th>
+                </tr>
+                {rows.map((c, i) => (
+                  <tr key={c.account + c.name + i}>
+                    <td className="name">{c.name}</td>
+                    {CAMPAIGN_COLS.map(([k]) => (
+                      <td key={k} className="num">
+                        {formatMetric(k, metricValue(k, c))}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                {total && (
+                  <tr className="rpxSubtotal">
+                    <td>Total {PLATFORM[p]}</td>
+                    {CAMPAIGN_COLS.map(([k]) => (
+                      <td key={k} className="num">
+                        {formatMetric(k, metricValue(k, total))}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+              </tbody>
+            );
+          })}
+          {tab === "all" && shown.length > 1 && (
+            <tbody>
+              <tr className="rpxGrandTotal">
+                <td>Total geral</td>
+                {CAMPAIGN_COLS.map(([k]) => (
+                  <td key={k} className="num">
+                    {formatMetric(k, metricValue(k, data.total.current))}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          )}
+        </table>
+      </div>
+    </>
   );
 }
 
@@ -351,38 +442,8 @@ export function ReportPanel({ token }: { token: string }) {
         )}
 
         {sectionHasData["campaigns"] && (
-          <Section id="campaigns" title="Campanhas" note="Ordenadas por investimento no período.">
-            <div className="rpxTableWrap">
-              <table className="rpxTable">
-                <thead>
-                  <tr>
-                    <th>Campanha</th>
-                    <th className="num">Investimento</th>
-                    <th className="num">Impressões</th>
-                    <th className="num">Cliques</th>
-                    <th className="num">CTR</th>
-                    <th className="num">Conversões</th>
-                    <th className="num">Custo/conv.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {d.campaigns.map((c, i) => (
-                    <tr key={c.platform + c.account + c.name + i}>
-                      <td className="name">
-                        {c.name}
-                        <small className={"rpxTag " + c.platform}>{c.platform === "meta" ? "Meta" : "Google"}</small>
-                      </td>
-                      <td className="num">{formatMetric("spend", c.spend)}</td>
-                      <td className="num">{formatMetric("impressions", c.impressions)}</td>
-                      <td className="num">{formatMetric("clicks", c.clicks)}</td>
-                      <td className="num">{formatMetric("ctr", metricValue("ctr", c))}</td>
-                      <td className="num">{formatMetric("conversions", c.conversions)}</td>
-                      <td className="num">{formatMetric("cpa", metricValue("cpa", c))}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <Section id="campaigns" title="Campanhas" note="Separadas por plataforma e ordenadas por investimento, com o total de cada uma.">
+            <CampaignTables data={d} platforms={platforms} />
           </Section>
         )}
 

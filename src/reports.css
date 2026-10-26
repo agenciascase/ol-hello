@@ -190,3 +190,16 @@ html:has(.rpx){scroll-behavior:smooth}
 .perf .rpObjective:focus-visible,.perf .rpChip:focus-visible{outline:2px solid #0eae5b;outline-offset:2px}
 .perf .rpLevels{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:780px){.perf .rpLevels,.perf .rpObjectives{grid-template-columns:1fr}}
+.rpx .rpxTabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.rpx .rpxTabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-weight:700;font-size:13px;color:var(--body);display:inline-flex;gap:8px;align-items:center}
+.rpx .rpxTabs button span{font-size:11px;color:var(--muted);font-weight:600}
+.rpx .rpxTabs button[aria-selected="true"]{background:var(--pine);border-color:var(--pine);color:#fff}
+.rpx .rpxTabs button[aria-selected="true"] span{color:#9fd8b9}
+.rpx .rpxTabs button:focus-visible{outline:2px solid var(--leaf);outline-offset:2px}
+.rpx .rpxGroupHead th{background:#fff;color:var(--ink);font-size:13.5px;padding:16px 14px 8px;border-top:1px solid var(--line);text-align:left}
+.rpx .rpxGroup:first-of-type .rpxGroupHead th{border-top:0}
+.rpx .rpxGroupHead th span{font-weight:600;color:var(--muted);font-size:12px;margin-left:8px}
+.rpx .rpxGroup.meta .rpxGroupHead th{box-shadow:inset 3px 0 0 #7055c7}
+.rpx .rpxGroup.google .rpxGroupHead th{box-shadow:inset 3px 0 0 #3067bf}
+.rpx .rpxSubtotal td{background:#f7faf8;font-weight:800;color:var(--ink)}
+.rpx .rpxGrandTotal td{background:var(--pine);color:#fff;font-weight:800;border-top:0}

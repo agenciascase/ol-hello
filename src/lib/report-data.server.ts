@@ -504,7 +504,8 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
   const goals = evaluateGoals(input.client, total.current, range);
   const pacing = hasHistory ? evaluatePacing(input.client.monthly_budget, historyMap.get(today.slice(0, 7))?.spend ?? 0, today) : null;
   const taxes = { meta: Number(input.client.meta_tax_pct ?? 0), google: Number(input.client.google_tax_pct ?? 0) };
-  const campaigns = current.sort((a, b) => b.spend - a.spend).slice(0, 50);
+  // Keep the top campaigns of each platform so neither one is crowded out of the report.
+  const campaigns = platforms.flatMap((p) => current.filter((c) => c.platform === p).sort((a, b) => b.spend - a.spend).slice(0, 40));
   const highlights = buildHighlights({ objective, total, byPlatform, campaigns, goals, pacing });
 
   return {
