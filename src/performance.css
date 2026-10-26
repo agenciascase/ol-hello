@@ -571,6 +571,12 @@
 /* Intelligence section: clean report detail in light and dark themes. */
 .perf .scase-intelligence-tile{background:#f7fcf9;color:#17392a;border:1px solid #d9e9df;border-radius:14px;padding:17px;min-width:0}
 .perf .scase-intelligence-tile h3{font-size:15px;margin:0 0 12px;font-weight:800}
+.perf .scase-intelligence-device{padding:9px 0;border-top:1px solid #dceae0;break-inside:avoid}
+.perf .scase-intelligence-device:first-of-type{border-top:0}
+.perf .scase-intelligence-device-name{display:block;font-size:12px;line-height:1.45;overflow-wrap:anywhere;margin-bottom:5px}
+.perf .scase-intelligence-device .scase-intelligence-line{border:0;padding:3px 0;gap:10px}
+.perf .scase-intelligence-device .scase-intelligence-line strong{font-size:12px}
+.perf.themeDark .scase-intelligence-device{border-color:#28533c}
 .perf .scase-intelligence-line{display:flex;justify-content:space-between;align-items:start;gap:10px;padding:9px 0;border-top:1px solid #dceae0;font-size:12px}
 .perf .scase-intelligence-line:first-of-type{border-top:0}
 .perf .scase-intelligence-line span{min-width:0;overflow-wrap:anywhere}
