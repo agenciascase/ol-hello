@@ -108,6 +108,12 @@ export type Database = {
       }
       clients: {
         Row: {
+          goal_conversions_month: number | null
+          goal_cpa: number | null
+          goal_roas: number | null
+          google_tax_pct: number
+          meta_tax_pct: number
+          monthly_budget: number | null
           active: boolean
           created_at: string
           created_by: string | null
@@ -121,6 +127,12 @@ export type Database = {
           whatsapp_numbers: string[]
         }
         Insert: {
+          goal_conversions_month?: number | null
+          goal_cpa?: number | null
+          goal_roas?: number | null
+          google_tax_pct?: number
+          meta_tax_pct?: number
+          monthly_budget?: number | null
           active?: boolean
           created_at?: string
           created_by?: string | null
@@ -134,6 +146,12 @@ export type Database = {
           whatsapp_numbers?: string[]
         }
         Update: {
+          goal_conversions_month?: number | null
+          goal_cpa?: number | null
+          goal_roas?: number | null
+          google_tax_pct?: number
+          meta_tax_pct?: number
+          monthly_budget?: number | null
           active?: boolean
           created_at?: string
           created_by?: string | null
@@ -169,8 +187,39 @@ export type Database = {
         }
         Relationships: []
       }
+      report_cache: {
+        Row: {
+          built_at: string
+          data: Json
+          report_config_id: string
+        }
+        Insert: {
+          built_at?: string
+          data: Json
+          report_config_id: string
+        }
+        Update: {
+          built_at?: string
+          data?: Json
+          report_config_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_cache_report_config_id_fkey"
+            columns: ["report_config_id"]
+            isOneToOne: true
+            referencedRelation: "report_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_configs: {
         Row: {
+          actions_taken: string | null
+          manager_notes: string | null
+          next_steps: string | null
+          objective: string
+          sections: string[]
           active: boolean
           campaign_filter: string | null
           channels: string[]
@@ -188,6 +237,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          actions_taken?: string | null
+          manager_notes?: string | null
+          next_steps?: string | null
+          objective?: string
+          sections?: string[]
           active?: boolean
           campaign_filter?: string | null
           channels?: string[]
@@ -205,6 +259,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          actions_taken?: string | null
+          manager_notes?: string | null
+          next_steps?: string | null
+          objective?: string
+          sections?: string[]
           active?: boolean
           campaign_filter?: string | null
           channels?: string[]

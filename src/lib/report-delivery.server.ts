@@ -13,7 +13,8 @@
 import { buildReportFor, newReportToken, reportPanelUrl, reportPdfUrl, type BuiltReport } from "./report-data.server";
 import { renderReportPdf, reportPdfFilename } from "./report-pdf.server";
 import { PERIOD_LABELS, type ReportPeriod } from "./report-schedule";
-import { METRIC_LABELS, formatDateBR, formatMetric, formatVariation, isMetricKey, isPositiveChange, metricValue, variation } from "./report-metrics";
+import { METRIC_LABELS, formatDateBR, formatMetric, formatVariation, isPositiveChange, metricValue, variation } from "./report-metrics";
+import { STATUS_COLORS, orderedMetrics } from "./report-insights";
 
 async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
@@ -36,17 +37,34 @@ export async function ensureShareToken(configId: string, current: string | null)
 }
 
 export function reportEmailHtml(r: BuiltReport, panelUrl: string) {
-  const rows = r.metrics
-    .filter(isMetricKey)
+  const td = "padding:10px 0;border-bottom:1px solid #e3efe7";
+  const rows = orderedMetrics(r.metrics, r.objective)
+    .slice(0, 8)
     .map((k) => {
       const cur = metricValue(k, r.total.current);
       const v = r.total.previous ? variation(cur, metricValue(k, r.total.previous)) : null;
       const good = isPositiveChange(k, v);
       const color = good === null ? "#61776a" : good ? "#087a48" : "#b91c1c";
-      return `<tr><td style="padding:10px 0;border-bottom:1px solid #e3efe7;color:#61776a">${METRIC_LABELS[k]}</td><td style="padding:10px 0;border-bottom:1px solid #e3efe7;text-align:right;font-weight:700;color:#102f1d">${esc(formatMetric(k, cur))}</td><td style="padding:10px 0 10px 12px;border-bottom:1px solid #e3efe7;text-align:right;font-size:12px;color:${color}">${esc(formatVariation(v))}</td></tr>`;
+      return `<tr><td style="${td};color:#61776a">${METRIC_LABELS[k]}</td><td style="${td};text-align:right;font-weight:700;color:#102f1d">${esc(formatMetric(k, cur))}</td><td style="${td};padding-left:12px;text-align:right;font-size:12px;color:${color}">${esc(formatVariation(v))}</td></tr>`;
     })
     .join("");
-  const intro = r.intro ? `<p style="margin:0 0 20px;line-height:1.55;color:#102f1d">${esc(r.intro).replace(/\n/g, "<br>")}</p>` : "";
+  const has = (s: string) => (r.sections as string[]).includes(s);
+  const block = (title: string, body: string) => `<div style="margin:0 0 22px"><div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#087a48;margin-bottom:8px">${title}</div>${body}</div>`;
+  const para = (t: string) => `<p style="margin:0;line-height:1.55;color:#102f1d">${esc(t).replace(/\n/g, "<br>")}</p>`;
+  const highlights = has("highlights") && r.highlights.length ? block("DESTAQUES DO PERÍODO", `<ul style="margin:0;padding-left:18px;color:#102f1d;line-height:1.55">${r.highlights.map((h) => `<li style="margin-bottom:6px">${esc(h)}</li>`).join("")}</ul>`) : "";
+  const goals =
+    has("goals") && (r.goals.length || r.pacing)
+      ? block(
+          "METAS",
+          [...r.goals.map((g) => ({ status: g.status, label: g.label, text: g.text })), ...(r.pacing ? [{ status: r.pacing.status, label: "Ritmo da verba", text: r.pacing.text }] : [])]
+            .map((g) => `<div style="margin-bottom:8px"><span style="display:inline-block;background:${STATUS_COLORS[g.status].bg};color:${STATUS_COLORS[g.status].fg};font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px">${STATUS_COLORS[g.status].label}</span> <strong style="color:#102f1d">${esc(g.label)}:</strong> <span style="color:#3d5546">${esc(g.text)}</span></div>`)
+            .join(""),
+        )
+      : "";
+  const analysis = has("analysis") && r.analysis.notes ? block("ANÁLISE DA EQUIPE", para(r.analysis.notes)) : "";
+  const next = has("analysis") && r.analysis.nextSteps ? block("PRÓXIMOS PASSOS", para(r.analysis.nextSteps)) : "";
+  const tax = r.taxes.spendWithTax !== null ? `<p style="font-size:12px;color:#61776a;margin:8px 0 0">Investimento com impostos: <strong>${esc(formatMetric("spend", r.taxes.spendWithTax))}</strong></p>` : "";
+  const intro = r.intro ? `<div style="margin:0 0 22px">${para(r.intro)}</div>` : "";
   return `<!doctype html><html><body style="margin:0;background:#f1f6f3;font-family:Arial,Helvetica,sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden">
@@ -55,11 +73,11 @@ export function reportEmailHtml(r: BuiltReport, panelUrl: string) {
 <div style="color:#ffffff;font-size:22px;font-weight:800;margin-top:8px">${esc(r.clientName)}</div>
 <div style="color:#cfe9da;font-size:13px;margin-top:6px">${esc(r.reportName)} · ${esc(periodText(r))}</div>
 </td></tr>
-<tr><td style="padding:26px 30px">${intro}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">${rows}</table>
-${r.compare ? `<p style="font-size:11px;color:#61776a;margin:10px 0 0">Variação em relação a ${formatDateBR(r.range.prevSince)} a ${formatDateBR(r.range.prevUntil)}.</p>` : ""}
-<p style="margin:26px 0 8px"><a href="${esc(panelUrl)}" style="background:#07e77e;color:#062417;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:10px;display:inline-block">Ver painel ao vivo</a></p>
-<p style="font-size:12px;color:#61776a;margin:14px 0 0">O relatório completo em PDF está anexado a este e-mail.</p>
+<tr><td style="padding:26px 30px">${intro}${highlights}
+${block("NÚMEROS DO PERÍODO", `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">${rows}</table>${tax}${r.compare ? `<p style="font-size:11px;color:#61776a;margin:8px 0 0">Variação em relação a ${formatDateBR(r.range.prevSince)} a ${formatDateBR(r.range.prevUntil)}.</p>` : ""}`)}
+${goals}${analysis}${next}
+<p style="margin:6px 0 8px"><a href="${esc(panelUrl)}" style="background:#07e77e;color:#062417;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:10px;display:inline-block">Ver painel completo</a></p>
+<p style="font-size:12px;color:#61776a;margin:14px 0 0">O relatório completo em PDF está anexado. No painel você encontra gráficos, campanhas, criativos e público.</p>
 </td></tr>
 <tr><td style="padding:18px 30px;background:#f4faf6;font-size:11px;color:#61776a">Agência SCASE · Branding, design e performance</td></tr>
 </table></td></tr></table></body></html>`;
@@ -122,7 +140,7 @@ export type DeliveryResult = { channel: "email" | "whatsapp"; recipient: string;
 
 /** Builds and sends one report configuration to every recipient of its client. */
 export async function deliverReport(configId: string, opts: { trigger: "schedule" | "manual"; scheduleId?: string | null }) {
-  const built = await buildReportFor({ id: configId });
+  const built = await buildReportFor({ id: configId }, { fresh: true });
   if (!built) throw new Error("Configuração de relatório não encontrada.");
   const { config, client, report } = built;
   const db = await admin();

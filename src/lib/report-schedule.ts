@@ -11,7 +11,7 @@ export const PERIOD_LABELS: Record<ReportPeriod, string> = {
   month_to_yesterday: "Mês atual até ontem",
 };
 export const METRICS = [
-  ["spend", "Gasto"], ["impressions", "Impressões"], ["clicks", "Cliques"], ["ctr", "CTR"], ["cpc", "CPC"], ["cpm", "CPM"],
+  ["spend", "Investimento"], ["revenue", "Receita"], ["impressions", "Impressões"], ["clicks", "Cliques"], ["ctr", "CTR"], ["cpc", "CPC"], ["cpm", "CPM"],
   ["conversions", "Conversões"], ["cpa", "CPA"], ["roas", "ROAS"], ["leads", "Leads"], ["reach", "Alcance"], ["frequency", "Frequência"],
 ] as const;
 export const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
