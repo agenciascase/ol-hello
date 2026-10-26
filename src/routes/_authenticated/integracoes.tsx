@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Mail, MessageCircle, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
+import { DeliveryChannels } from "@/components/agency/ChannelConnect";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
@@ -104,28 +105,7 @@ function IntegrationsPage() {
         ))}
       </div>
 
-      <section className="intSection">
-        <h2>Próximas integrações</h2>
-        <p>Canais de envio automático dos relatórios. Ficam ativos quando as chaves forem cadastradas.</p>
-        <div className="intFuture">
-          <div className="intFutureItem">
-            <Mail size={20} />
-            <div>
-              <strong>E-mail</strong>
-              <p>Relatório com resumo no corpo do e-mail, PDF anexado e link do painel ao vivo.</p>
-            </div>
-            <span className={"intTag" + (status.data?.channels.email ? " ready" : "")}>{status.data?.channels.email ? "Pronto para usar" : "Em breve"}</span>
-          </div>
-          <div className="intFutureItem">
-            <MessageCircle size={20} />
-            <div>
-              <strong>WhatsApp</strong>
-              <p>Envio do PDF e do link do painel para o número ou grupo de cada cliente.</p>
-            </div>
-            <span className={"intTag" + (status.data?.channels.whatsapp ? " ready" : "")}>{status.data?.channels.whatsapp ? "Pronto para usar" : "Em breve"}</span>
-          </div>
-        </div>
-      </section>
+      <DeliveryChannels channels={status.data?.channels} />
     </AgencyShell>
   );
 }

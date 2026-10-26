@@ -14,9 +14,10 @@ export type ProviderStatus = {
   profileHint: string | null;
   asset: { id: string; name: string | null };
 };
+export type ChannelState = { connected: boolean; source: "plataforma" | "secrets" | null; info: Record<string, string>; updatedAt: string | null };
 export type IntegrationStatus = {
   providers: ProviderStatus[];
-  channels: { email: boolean; whatsapp: boolean; whatsappProvider: string };
+  channels: Record<"email" | "whatsapp", ChannelState>;
 };
 
 export const PROVIDER_NAME = { meta: "Meta Ads", google: "Google Ads" } as const;
@@ -55,14 +56,14 @@ export function IntegrationsCompact() {
               <strong>E-mail</strong>
               <small>Envio automático dos relatórios por e-mail</small>
             </div>
-            <span className={"chip" + (q.data.channels.email ? " ok" : "")}>{q.data.channels.email ? "Pronto" : "Em breve"}</span>
+            <span className={"chip" + (q.data.channels.email.connected ? " ok" : "")}>{q.data.channels.email.connected ? "Conectado" : "Não conectado"}</span>
           </div>
           <div className="row">
             <div>
               <strong>WhatsApp</strong>
               <small>Envio automático dos relatórios aos clientes e grupos</small>
             </div>
-            <span className={"chip" + (q.data.channels.whatsapp ? " ok" : "")}>{q.data.channels.whatsapp ? "Pronto" : "Em breve"}</span>
+            <span className={"chip" + (q.data.channels.whatsapp.connected ? " ok" : "")}>{q.data.channels.whatsapp.connected ? "Conectado" : "Não conectado"}</span>
           </div>
         </>
       )}

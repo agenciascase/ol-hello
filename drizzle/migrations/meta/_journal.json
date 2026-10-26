@@ -29,6 +29,13 @@
       "when": 1793036000000,
       "tag": "0003_relatorio_completo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793040000000,
+      "tag": "0004_canais_envio",
+      "breakpoints": true
     }
   ]
 }
