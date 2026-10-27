@@ -2,7 +2,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {adminUserId,metaAccessToken} from "../../lib/ads-credentials.server";
 export const Route=createFileRoute("/api/integrations/meta/campaigns")({server:{handlers:{GET:async({request})=>{
  if(!(await adminUserId(request)))return Response.json({error:"Acesso administrativo necessário."},{status:403});
- const u=new URL(request.url),id=u.searchParams.get("account_id")||"",from=u.searchParams.get("from")||"",to=u.searchParams.get("to")||"";
+ const u=new URL(request.url),rawId=u.searchParams.get("account_id")||"",id=/^\d+$/.test(rawId)?"act_"+rawId:rawId,from=u.searchParams.get("from")||"",to=u.searchParams.get("to")||"";
  if(!/^act_\d+$/.test(id)||!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)||from>to)return Response.json({error:"Conta ou período inválido."},{status:400});
  try{
   const token=await metaAccessToken(request);
@@ -16,7 +16,7 @@ export const Route=createFileRoute("/api/integrations/meta/campaigns")({server:{
   next.searchParams.set("time_range",JSON.stringify({since:from,until:to}));next.searchParams.set("limit","100");
   for(let i=0;i<10;i++){
    const res=await fetch(next.toString(),{headers:{Authorization:"Bearer "+token},cache:"no-store"});
-   if(!res.ok)throw Error("A Meta não liberou a consulta às campanhas.");
+   if(!res.ok){const b=await res.json().catch(()=>({})) as {error?:{message?:string}};throw Error("A Meta não liberou a consulta às campanhas"+(b.error?.message?": "+b.error.message:"."));}
    const payload=await res.json() as {data?:Array<Record<string,unknown>>;paging?:{next?:string}};
    items.push(...payload.data||[]);
    const page=payload.paging?.next;

@@ -5,6 +5,7 @@ import { FileBarChart2, Link2, Mail, MessageCircle, Plus, Search } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
 import { CLIENT_COLUMNS, ClientForm, type ClientRow } from "@/components/agency/ClientForm";
+import { QuickClientAdd } from "@/components/agency/QuickClientAdd";
 
 export const Route = createFileRoute("/_authenticated/clientes/")({ component: ClientsPage });
 
@@ -36,15 +37,17 @@ function ClientsPage() {
 
   return (
     <AgencyShell
-      eyebrow="RELATÓRIOS AUTOMATIZADOS"
+      eyebrow="CARTEIRA DA AGÊNCIA"
       title="Clientes"
-      description="Cadastre os clientes, vincule as contas da BM e da MCC e programe os relatórios de cada um."
+      description="Cadastre pelo número da conta do Google ou pelo ID da BM da Meta."
       actions={
         <button className="primary" type="button" onClick={() => setCreating(true)}>
-          <Plus size={16} /> Novo cliente
+          <Plus size={16} /> Cadastro manual
         </button>
       }
     >
+      <QuickClientAdd onCreated={(id) => navigate({ to: "/clientes/$clientId", params: { clientId: id } })} />
+
       <div className="rpToolbar">
         <label className="searchBox rpSearch">
           <Search size={15} />
@@ -74,7 +77,7 @@ function ClientsPage() {
       ) : list.length === 0 ? (
         <section className="panel rpEmpty">
           <h2>{clients.data?.length ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado ainda"}</h2>
-          <p>Comece cadastrando um cliente e vinculando as contas de anúncio dele.</p>
+          <p>Use o cadastro pela conta acima: digite o número da conta Google ou o ID da BM da Meta.</p>
         </section>
       ) : (
         <div className="clientsGrid">

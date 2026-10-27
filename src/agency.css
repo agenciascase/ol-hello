@@ -292,3 +292,7 @@
 .drApply{border:0;background:#062419;color:#fff;font:inherit;font-weight:700;border-radius:8px;padding:8px 16px;cursor:pointer}
 .drApply:disabled{opacity:.4;cursor:default}
 @media(max-width:640px){.drPop{position:fixed;left:8px;right:8px;top:70px;flex-direction:column;max-height:calc(100vh - 90px);overflow:auto}.drLeft,.drRight{width:auto}.drPresets{max-height:none}}
+/* The campaign picker carries inline flex sizing; inside the column field it must not grow vertically. */
+.afBar .afCampaign>*:not(.afLabel){flex:none!important;max-width:none!important;width:100%}
+.afBar .afRow{align-items:flex-end}
+.afBar .afSegment{margin-bottom:2px}
