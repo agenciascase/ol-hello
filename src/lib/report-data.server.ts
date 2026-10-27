@@ -141,7 +141,8 @@ type Range = { since: string; until: string };
 
 function metaUrl(accountId: string, params: Record<string, string>, range: Range, filter: string | null) {
   const u = new URL(`${GRAPH}${accountId}/insights`);
-  u.searchParams.set("time_range", JSON.stringify(range));
+  // Only since/until: Meta rejects any other key (e.g. the comparison dates) in time_range.
+  u.searchParams.set("time_range", JSON.stringify({ since: range.since, until: range.until }));
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   if (filter) u.searchParams.set("filtering", JSON.stringify([{ field: "campaign.name", operator: "CONTAIN", value: filter }]));
   return u.toString();
