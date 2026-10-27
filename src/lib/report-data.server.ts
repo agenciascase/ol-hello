@@ -139,16 +139,24 @@ const metaConversions = (actions: unknown) => actionMax(actions, LEAD) + actionM
 
 type Range = { since: string; until: string };
 
-function metaUrl(accountId: string, params: Record<string, string>, range: Range, filter: string | null) {
+/** Which campaigns of an account enter the report. ids are the platform's campaign IDs. */
+export type Scope = { text: string | null; ids: string[] | null; activeOnly: boolean };
+type Filter = Scope | null;
+
+function metaUrl(accountId: string, params: Record<string, string>, range: Range, filter: Filter) {
   const u = new URL(`${GRAPH}${accountId}/insights`);
   // Only since/until: Meta rejects any other key (e.g. the comparison dates) in time_range.
   u.searchParams.set("time_range", JSON.stringify({ since: range.since, until: range.until }));
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
-  if (filter) u.searchParams.set("filtering", JSON.stringify([{ field: "campaign.name", operator: "CONTAIN", value: filter }]));
+  const rules: Array<{ field: string; operator: string; value: unknown }> = [];
+  if (filter?.text) rules.push({ field: "campaign.name", operator: "CONTAIN", value: filter.text });
+  if (filter?.ids?.length) rules.push({ field: "campaign.id", operator: "IN", value: filter.ids });
+  if (filter?.activeOnly) rules.push({ field: "campaign.effective_status", operator: "IN", value: ["ACTIVE"] });
+  if (rules.length) u.searchParams.set("filtering", JSON.stringify(rules));
   return u.toString();
 }
 
-async function metaCampaigns(token: string, accountId: string, range: Range, filter: string | null): Promise<CampaignRow[]> {
+async function metaCampaigns(token: string, accountId: string, range: Range, filter: Filter): Promise<CampaignRow[]> {
   const rows = await graphPages(metaUrl(accountId, { level: "campaign", fields: "campaign_name,spend,impressions,clicks,reach,actions,action_values", limit: "200" }, range, filter), token, 10);
   return rows.map((r) => ({
     platform: "meta" as const,
@@ -265,7 +273,7 @@ async function metaAdImages(token: string, accountId: string, ids: string[], not
   return out;
 }
 
-async function metaExtras(token: string, accountId: string, range: Range, history: Range, filter: string | null, sections: Set<SectionKey>): Promise<Extras> {
+async function metaExtras(token: string, accountId: string, range: Range, history: Range, filter: Filter, sections: Set<SectionKey>): Promise<Extras> {
   const base = "spend,impressions,clicks,actions";
   const [dailyRows, ads, ageGender, region, device, placement, months] = await Promise.all([
     optional("meta daily", () => graphPages(metaUrl(accountId, { level: "account", fields: base, time_increment: "1", limit: "100" }, range, filter), token, 5), [] as Row[]),
@@ -355,10 +363,18 @@ export async function syncGoogleCatalog(token: string) {
 }
 
 /** GAQL condition for the optional campaign-name filter (quotes and backslashes removed). */
-const gFilter = (filter: string | null) => (filter ? ` AND campaign.name LIKE '%${filter.replace(/['\\]/g, "")}%'` : "");
+const gFilter = (filter: Filter) => {
+  if (!filter) return "";
+  let w = "";
+  if (filter.text) w += ` AND campaign.name LIKE '%${filter.text.replace(/['\\%_]/g, "")}%'`;
+  const ids = (filter.ids ?? []).filter((x) => /^\d+$/.test(x));
+  if (ids.length) w += ` AND campaign.id IN (${ids.join(",")})`;
+  if (filter.activeOnly) w += ` AND campaign.status = 'ENABLED'`;
+  return w;
+};
 const between = (r: Range) => `segments.date BETWEEN '${r.since}' AND '${r.until}'`;
 
-async function googleCampaigns(token: string, customerId: string, range: Range, filter: string | null): Promise<CampaignRow[]> {
+async function googleCampaigns(token: string, customerId: string, range: Range, filter: Filter): Promise<CampaignRow[]> {
   const rows = await gaql(token, customerId, `SELECT campaign.name, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value FROM campaign WHERE ${between(range)}${gFilter(filter)}`);
   return rows.map((r) => ({
     platform: "google" as const,
@@ -376,7 +392,7 @@ async function googleCampaigns(token: string, customerId: string, range: Range, 
 
 const G_DEVICE: Record<string, string> = { MOBILE: "Celular", DESKTOP: "Computador", TABLET: "Tablet", CONNECTED_TV: "TV conectada" };
 
-async function googleExtras(token: string, id: string, range: Range, history: Range, filter: string | null, sections: Set<SectionKey>): Promise<Extras> {
+async function googleExtras(token: string, id: string, range: Range, history: Range, filter: Filter, sections: Set<SectionKey>): Promise<Extras> {
   const f = gFilter(filter);
   const w = between(range);
   const [daily, types, device, terms, months] = await Promise.all([
@@ -503,6 +519,9 @@ type ConfigInput = {
   period: string;
   compare_previous: boolean;
   campaign_filter: string | null;
+  campaign_mode?: string | null | undefined;
+  /** "google:<id>" / "meta:<id>" when campaign_mode is "selected". */
+  campaign_ids?: string[] | null | undefined;
   intro_message: string | null;
   objective: string | null;
   sections: string[] | null;
@@ -522,7 +541,10 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
   const objective = isObjective(input.config.objective ?? "") ? (input.config.objective as FullReport["objective"]) : "leads";
   const sections = (input.config.sections?.length ? input.config.sections : ALL_SECTIONS).filter((s): s is SectionKey => (ALL_SECTIONS as string[]).includes(s));
   const sectionSet = new Set(sections);
-  const filter = input.config.campaign_filter?.trim() || null;
+  const text = input.config.campaign_filter?.trim() || null;
+  const mode = input.config.campaign_mode === "active" || input.config.campaign_mode === "selected" ? input.config.campaign_mode : "all";
+  const picked = (p: Platform) => (input.config.campaign_ids ?? []).filter((x) => x.startsWith(p + ":")).map((x) => x.slice(p.length + 1));
+  const scopeFor = (p: Platform): Filter => (text || mode !== "all" ? { text, ids: mode === "selected" ? picked(p) : null, activeOnly: mode === "active" } : null);
   const tokens = await agencyTokens();
   const errors: string[] = [];
   const platforms = (["meta", "google"] as const).filter((p) => input.config.platforms.includes(p) && input.accounts.some((a) => a.provider === p));
@@ -533,6 +555,8 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
   await Promise.all(
     input.accounts
       .filter((a) => platforms.includes(a.provider as Platform))
+      // With a hand-picked list, accounts of a platform with nothing picked stay out.
+      .filter((a) => mode !== "selected" || picked(a.provider as Platform).length > 0)
       .map(async (a) => {
         const platform = a.provider as Platform;
         const token = platform === "meta" ? tokens.meta : tokens.google;
@@ -541,6 +565,7 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
           return;
         }
         const camp = platform === "meta" ? metaCampaigns : googleCampaigns;
+        const filter = scopeFor(platform);
         const extra = platform === "meta" ? metaExtras : googleExtras;
         try {
           const [cur, prev, ex] = await Promise.all([
@@ -611,7 +636,7 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
     clientName: input.client.name,
     logoUrl: input.client.logo_url,
     reportName: input.config.name,
-    campaignFilter: filter,
+    campaignFilter: text ? `Campanha: ${text}` : mode === "active" ? "Somente campanhas ativas" : mode === "selected" ? campaignLabel(current) : null,
     intro: input.config.intro_message,
     objective,
     sections,
@@ -648,11 +673,17 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
   };
 }
 
+function campaignLabel(rows: CampaignRow[]) {
+  const names = [...new Set(rows.map((r) => r.name))];
+  if (names.length === 1) return `Campanha: ${names[0]}`;
+  return names.length ? `${names.length} campanhas selecionadas` : "Campanhas selecionadas";
+}
+
 export async function loadConfigForReport(by: { token?: string; id?: string }) {
   const db = await admin();
   let q = db
     .from("report_configs")
-    .select("id,name,platforms,metrics,period,compare_previous,campaign_filter,intro_message,channels,active,client_id,share_token,objective,sections,manager_notes,actions_taken,next_steps");
+    .select("id,name,platforms,metrics,period,compare_previous,campaign_filter,campaign_mode,campaign_ids,intro_message,channels,active,client_id,updated_at,share_token,objective,sections,manager_notes,actions_taken,next_steps");
   q = by.token ? q.eq("share_token", by.token) : q.eq("id", by.id ?? "");
   const { data: config } = await q.maybeSingle();
   if (!config) return null;
@@ -682,7 +713,9 @@ export async function buildReportFor(by: { token?: string; id?: string }, opts: 
   const db = await admin();
   if (!opts.fresh) {
     const { data: cached } = await db.from("report_cache").select("data,built_at").eq("report_config_id", loaded.config.id).maybeSingle();
-    if (cached && Date.now() - Date.parse(cached.built_at) < CACHE_MAX_AGE_MS) {
+    // A cached copy built before the last edit of the report settings is stale.
+    const editedAt = Date.parse(String((loaded.config as { updated_at?: string }).updated_at ?? "")) || 0;
+    if (cached && Date.now() - Date.parse(cached.built_at) < CACHE_MAX_AGE_MS && Date.parse(cached.built_at) > editedAt) {
       // Manager text is edited often: always take the current version.
       const report = { ...(cached.data as unknown as FullReport), analysis: { notes: loaded.config.manager_notes, actions: loaded.config.actions_taken, nextSteps: loaded.config.next_steps } };
       return { ...loaded, report };
@@ -703,4 +736,41 @@ export function reportPanelUrl(token: string) {
 }
 export function reportPdfUrl(token: string) {
   return `${appOrigin()}/api/report-pdf?token=${token}`;
+}
+
+/* ───────────────────────────── Campaign picker ───────────────────────────── */
+
+export type CampaignOption = { key: string; platform: Platform; id: string; name: string; active: boolean; account: string };
+
+/** Campaigns of the given accounts (not removed/deleted), active first, for choosing what a report shows. */
+export async function listCampaigns(accounts: Array<{ provider: string; account_id: string; account_name: string }>) {
+  const tokens = await agencyTokens();
+  const out: CampaignOption[] = [];
+  const errors: string[] = [];
+  await Promise.all(
+    accounts.map(async (a) => {
+      try {
+        if (a.provider === "google") {
+          if (!tokens.google) throw new Error("Google Ads não conectado.");
+          const rows = (await gaql(tokens.google, a.account_id, "SELECT campaign.id, campaign.name, campaign.status FROM campaign WHERE campaign.status != 'REMOVED'")) as unknown as Array<{ campaign?: { id?: string | number; name?: string; status?: string } }>;
+          for (const r of rows) {
+            const id = String(r.campaign?.id ?? "");
+            if (id) out.push({ key: "google:" + id, platform: "google", id, name: r.campaign?.name ?? id, active: r.campaign?.status === "ENABLED", account: a.account_name });
+          }
+        } else if (a.provider === "meta") {
+          if (!tokens.meta) throw new Error("Meta Ads não conectado.");
+          const rows = await graphPages(`${GRAPH}${a.account_id}/campaigns?fields=id,name,effective_status&limit=200`, tokens.meta, 5);
+          for (const r of rows) {
+            const id = String(r["id"] ?? "");
+            const st = String(r["effective_status"] ?? "");
+            if (id && st !== "DELETED" && st !== "ARCHIVED") out.push({ key: "meta:" + id, platform: "meta", id, name: String(r["name"] ?? id), active: st === "ACTIVE", account: a.account_name });
+          }
+        }
+      } catch (e) {
+        errors.push(`${a.account_name}: ${e instanceof Error ? e.message : "falha na consulta"}`);
+      }
+    }),
+  );
+  out.sort((x, y) => Number(y.active) - Number(x.active) || x.name.localeCompare(y.name, "pt-BR"));
+  return { campaigns: out, errors };
 }

@@ -3,6 +3,7 @@ import { Sparkles, X } from "lucide-react";
 import { agencyApi } from "@/lib/agency-client";
 import { ALL_SECTIONS, DETAIL_LEVELS, OBJECTIVES, SECTIONS, detectLevel, isObjective, metricsFor, type DetailLevel, type Objective } from "@/lib/report-insights";
 import { supabase } from "@/integrations/supabase/client";
+import { CampaignScope, type CampaignMode } from "./CampaignScope";
 import { METRICS, PERIOD_LABELS, WEEKDAYS, computeNextRun, formatNextRun, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
 
 export type ReportConfigRow = {
@@ -14,6 +15,8 @@ export type ReportConfigRow = {
   period: ReportPeriod;
   compare_previous: boolean;
   campaign_filter: string | null;
+  campaign_mode?: string | null;
+  campaign_ids?: string[] | null;
   intro_message: string | null;
   channels: string[];
   share_token: string | null;
@@ -76,6 +79,8 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
   const [period, setPeriod] = useState<ReportPeriod>(config?.period ?? "last_7_days");
   const [compare, setCompare] = useState(config?.compare_previous ?? true);
   const [filter, setFilter] = useState(config?.campaign_filter ?? "");
+  const [campaignMode, setCampaignMode] = useState<CampaignMode>(config?.campaign_mode === "active" || config?.campaign_mode === "selected" ? config.campaign_mode : "all");
+  const [campaignIds, setCampaignIds] = useState<string[]>(config?.campaign_ids ?? []);
   const [intro, setIntro] = useState(config?.intro_message ?? "");
   const [notes, setNotes] = useState(config?.manager_notes ?? "");
   const [actions, setActions] = useState(config?.actions_taken ?? "");
@@ -118,6 +123,7 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
     if (!platforms.length) return setError("Escolha pelo menos uma plataforma.");
     if (!metrics.length) return setError("Escolha pelo menos uma métrica.");
     if (!channels.length) return setError("Escolha pelo menos um canal de envio.");
+    if (campaignMode === "selected" && !campaignIds.length) return setError("Marque pelo menos uma campanha ou escolha outra opção em Campanhas do relatório.");
     setSaving(true);
     const ordered = METRICS.map(([k]) => k as string).filter((k) => metrics.includes(k));
     const payload = {
@@ -130,6 +136,8 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       period,
       compare_previous: compare,
       campaign_filter: filter.trim() || null,
+      campaign_mode: campaignMode,
+      campaign_ids: campaignMode === "selected" ? campaignIds : [],
       intro_message: intro.trim() || null,
       manager_notes: notes.trim() || null,
       actions_taken: actions.trim() || null,
@@ -205,8 +213,9 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         <Chips<string> options={SECTIONS} value={sections} onChange={setSections} />
         <small>Seções sem dados no período são omitidas automaticamente.</small>
       </div>
+      <CampaignScope clientId={clientId} platforms={platforms} mode={campaignMode} onMode={setCampaignMode} selected={campaignIds} onSelected={setCampaignIds} />
       <label className="rpField">
-        <span>Filtrar campanhas (opcional)</span>
+        <span>Filtrar também pelo nome (opcional)</span>
         <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Só campanhas cujo nome contém este texto, ex.: [LEADS]" />
       </label>
       <label className="rpField">

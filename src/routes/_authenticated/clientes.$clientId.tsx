@@ -43,7 +43,7 @@ function ClientDetailPage() {
         supabase.from("client_ad_accounts").select("id,provider,account_id,account_name").eq("client_id", clientId).order("provider"),
         supabase
           .from("report_configs")
-          .select("id,client_id,name,platforms,metrics,period,compare_previous,campaign_filter,intro_message,channels,share_token,active,objective,sections,manager_notes,actions_taken,next_steps,report_schedules(id,report_config_id,frequency,weekdays,day_of_month,send_time,next_run_at,last_run_at,active)")
+          .select("id,client_id,name,platforms,metrics,period,compare_previous,campaign_filter,campaign_mode,campaign_ids,intro_message,channels,share_token,active,objective,sections,manager_notes,actions_taken,next_steps,report_schedules(id,report_config_id,frequency,weekdays,day_of_month,send_time,next_run_at,last_run_at,active)")
           .eq("client_id", clientId)
           .order("created_at"),
       ]);
@@ -203,6 +203,7 @@ function ClientDetailPage() {
                   {isObjective(c.objective) ? OBJECTIVES[c.objective].label : "Geração de leads"} · nível {(() => { const l = detectLevel(c.sections ?? []); return l ? DETAIL_LEVELS[l].label.toLowerCase() : "personalizado"; })()} · {PERIOD_LABELS[c.period]}
                   {c.compare_previous ? " · com comparação" : ""} · {c.platforms.map((p) => (p === "meta" ? "Meta" : "Google")).join(" + ")} ·{" "}
                   {c.channels.map((ch) => (ch === "email" ? "E-mail" : "WhatsApp")).join(" + ")}
+                  {c.campaign_mode === "active" ? " · só campanhas ativas" : c.campaign_mode === "selected" ? ` · ${c.campaign_ids?.length ?? 0} campanha(s) escolhida(s)` : ""}
                   {c.campaign_filter ? ` · campanhas com “${c.campaign_filter}”` : ""}
                 </small>
                 <small>{c.metrics.filter(isMetricKey).map((m) => METRIC_LABELS[m]).join(" · ")}</small>

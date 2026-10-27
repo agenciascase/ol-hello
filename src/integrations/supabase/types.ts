@@ -222,6 +222,8 @@ export type Database = {
           sections: string[]
           active: boolean
           campaign_filter: string | null
+          campaign_ids: string[]
+          campaign_mode: string
           channels: string[]
           client_id: string
           compare_previous: boolean
@@ -244,6 +246,8 @@ export type Database = {
           sections?: string[]
           active?: boolean
           campaign_filter?: string | null
+          campaign_ids?: string[]
+          campaign_mode?: string
           channels?: string[]
           client_id: string
           compare_previous?: boolean
@@ -266,6 +270,8 @@ export type Database = {
           sections?: string[]
           active?: boolean
           campaign_filter?: string | null
+          campaign_ids?: string[]
+          campaign_mode?: string
           channels?: string[]
           client_id?: string
           compare_previous?: boolean

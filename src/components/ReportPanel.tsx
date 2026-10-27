@@ -276,7 +276,7 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
                 <strong className="rpxClientName">
                   {d.clientName}
                 </strong>
-                <span className="rpxCampaignName">{d.campaignFilter ? `Campanha: ${d.campaignFilter}` : "Todas as campanhas"}</span>
+                <span className="rpxCampaignName">{d.campaignFilter ?? "Todas as campanhas"}</span>
               </div>
             </div>
             <div className="rpxPeriodCard">
