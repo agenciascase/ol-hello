@@ -270,7 +270,7 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
         <div className="rpxHeroBody">
           <div className="rpxIdentity">
             <div className="rpxWho">
-              <span className="rpxAvatar">{d.logoUrl ? <img src={d.logoUrl} alt="" /> : initials(d.clientName)}</span>
+              <span className={"rpxAvatar" + (!d.logoUrl && platforms.length ? " rpxAvatarMark" : "")}>{d.logoUrl ? <img src={d.logoUrl} alt="" /> : platforms[0] ? <PlatformMark platform={platforms[0]} size={38} /> : initials(d.clientName)}</span>
               <div className="rpxWhoText">
                 <span className="rpxIdLabel">Cliente</span>
                 <strong className="rpxClientName">
