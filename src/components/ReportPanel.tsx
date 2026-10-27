@@ -4,7 +4,7 @@ import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, 
 import { Download, ImageOff } from "lucide-react";
 import { PERIOD_LABELS, type ReportPeriod } from "@/lib/report-schedule";
 import { METRIC_LABELS, formatDateBR, formatMetric, formatVariation, isPositiveChange, metricValue, variation, type MetricKey, type ReportTotals } from "@/lib/report-metrics";
-import { ATTRIBUTION_NOTE, GLOSSARY, OBJECTIVES, STATUS_COLORS, orderedMetrics, type AudienceRow, type FullReport, type SectionKey } from "@/lib/report-insights";
+import { ATTRIBUTION_NOTE, daysBetween, GLOSSARY, OBJECTIVES, STATUS_COLORS, orderedMetrics, type AudienceRow, type FullReport, type SectionKey } from "@/lib/report-insights";
 import "../performance.css";
 import "../reports.css";
 
@@ -29,6 +29,14 @@ const PLATFORM = { meta: "Meta Ads", google: "Google Ads" } as const;
 const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 const monthLabel = (ym: string) => `${MONTHS[Number(ym.slice(5, 7)) - 1] ?? ym}/${ym.slice(2, 4)}`;
 const dayLabel = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+const initials = (name: string) =>
+  name
+    .replace(/[^\p{L}\p{N} ]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("") || "?";
 const pct = (n: number) => `${n.toFixed(n < 10 ? 1 : 0).replace(".", ",")}%`;
 
 const NAV: Array<[SectionKey | "summary", string]> = [
@@ -259,7 +267,6 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
         <div className="rpxHeroTop">
           {embedded ? <span className="rpxEmbedTag">Prévia do que o cliente recebe</span> : <img src="/scase-logo-light.svg" alt="SCASE" className="rpxLogo" />}
           <div className="rpxHeroActions">
-            {d.logoUrl && <img src={d.logoUrl} alt={d.clientName} className="rpxClientLogo" />}
             {pdfHref && (
               <a className="rpxPdf" href={pdfHref} target="_blank" rel="noreferrer">
                 <Download size={15} /> Baixar PDF
@@ -268,21 +275,35 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
           </div>
         </div>
         <div className="rpxHeroBody">
-          <p className="rpxClient">
-            {d.clientName} <span>{d.reportName}</span>
-          </p>
+          <div className="rpxIdentity">
+            <div className="rpxWho">
+              <span className="rpxAvatar">{d.logoUrl ? <img src={d.logoUrl} alt="" /> : initials(d.clientName)}</span>
+              <div className="rpxWhoText">
+                <span className="rpxIdLabel">Cliente</span>
+                <strong className="rpxClientName">{d.clientName}</strong>
+                <div className="rpxBadges">
+                  {platforms.map((p) => (
+                    <span key={p} className={"rpxPlat " + p}>
+                      <i aria-hidden />
+                      {PLATFORM[p]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="rpxPeriodCard">
+              <span className="rpxIdLabel">Período de análise</span>
+              <strong>
+                {d.range.since === d.range.until ? formatDateBR(d.range.since) : `${formatDateBR(d.range.since)} a ${formatDateBR(d.range.until)}`}
+              </strong>
+              <small>
+                {PERIOD_LABELS[d.period as ReportPeriod] ? PERIOD_LABELS[d.period as ReportPeriod] + " · " : ""}
+                {daysBetween(d.range.since, d.range.until)} dia{daysBetween(d.range.since, d.range.until) === 1 ? "" : "s"}
+                {d.compare && ` · comparado a ${formatDateBR(d.range.prevSince)} a ${formatDateBR(d.range.prevUntil)}`}
+              </small>
+            </div>
+          </div>
           <h1>{headline}</h1>
-          <p className="rpxPeriod">
-            {PERIOD_LABELS[d.period as ReportPeriod] ?? "Período"}: {formatDateBR(d.range.since)} a {formatDateBR(d.range.until)}
-            {d.compare && (
-              <>
-                {" "}
-                <span>
-                  comparado a {formatDateBR(d.range.prevSince)} a {formatDateBR(d.range.prevUntil)}
-                </span>
-              </>
-            )}
-          </p>
         </div>
       </div>
 
