@@ -8,7 +8,7 @@ export type SideKey = "dashboard" | "clients" | "integrations" | "settings";
 type Item = { key: SideKey; label: string; icon: ReactNode; adminOnly?: boolean; to: "/dashboard" | "/clientes" | "/integracoes"; view?: "settings" };
 const ITEMS: Item[] = [
   { key: "dashboard", label: "Visão geral", icon: <LayoutDashboard size={18} />, to: "/dashboard" },
-  { key: "clients", label: "Clientes e relatórios", icon: <Users size={18} />, to: "/clientes", adminOnly: true },
+  { key: "clients", label: "Clientes", icon: <Users size={18} />, to: "/clientes", adminOnly: true },
   { key: "integrations", label: "Integrações", icon: <Link2 size={18} />, to: "/integracoes", adminOnly: true },
   { key: "settings", label: "Configurações", icon: <Settings size={18} />, to: "/dashboard", view: "settings", adminOnly: true },
 ];

@@ -8,7 +8,7 @@ import { ATTRIBUTION_NOTE, GLOSSARY, OBJECTIVES, STATUS_COLORS, orderedMetrics, 
 import "../performance.css";
 import "../reports.css";
 
-type PanelData = Omit<FullReport, "errors"> & { partial: boolean };
+export type PanelData = Omit<FullReport, "errors"> & { partial: boolean };
 const PLATFORM = { meta: "Meta Ads", google: "Google Ads" } as const;
 const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 const monthLabel = (ym: string) => `${MONTHS[Number(ym.slice(5, 7)) - 1] ?? ym}/${ym.slice(2, 4)}`;
@@ -40,7 +40,7 @@ function Delta({ k, cur, prev }: { k: MetricKey; cur: number | null; prev: numbe
   );
 }
 
-function Section({ id, title, note, children }: { id: string; title: string; note?: string; children: React.ReactNode }) {
+function Section({ id, title, note, children }: { id: string; title: string; note?: string | undefined; children: React.ReactNode }) {
   return (
     <section id={id} className="rpxSection">
       <header className="rpxSectionHead">
@@ -198,6 +198,14 @@ export function ReportPanel({ token }: { token: string }) {
       </main>
     );
 
+  return <ReportView d={d} pdfHref={"/api/report-pdf?token=" + encodeURIComponent(token)} />;
+}
+
+/**
+ * The report itself. Used by the client's public panel and, embedded, by the agency's
+ * "Visão geral" so both show exactly the same numbers and layout.
+ */
+export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdfHref: string | null; embedded?: boolean }) {
   const has = (s: SectionKey) => d.sections.includes(s);
   const metrics = orderedMetrics(d.metrics, d.objective);
   const primary = metrics.filter((m) => OBJECTIVES[d.objective].primary.includes(m)).slice(0, 4);
@@ -228,16 +236,19 @@ export function ReportPanel({ token }: { token: string }) {
     );
   };
 
+  const Root = embedded ? "div" : "main";
   return (
-    <main className="perf rpx">
+    <Root className={"perf rpx" + (embedded ? " rpxEmbedded" : "")}>
       <div className="rpxHero">
         <div className="rpxHeroTop">
-          <img src="/scase-logo-light.svg" alt="SCASE" className="rpxLogo" />
+          {embedded ? <span className="rpxEmbedTag">Prévia do que o cliente recebe</span> : <img src="/scase-logo-light.svg" alt="SCASE" className="rpxLogo" />}
           <div className="rpxHeroActions">
             {d.logoUrl && <img src={d.logoUrl} alt={d.clientName} className="rpxClientLogo" />}
-            <a className="rpxPdf" href={"/api/report-pdf?token=" + encodeURIComponent(token)} target="_blank" rel="noreferrer">
-              <Download size={15} /> Baixar PDF
-            </a>
+            {pdfHref && (
+              <a className="rpxPdf" href={pdfHref} target="_blank" rel="noreferrer">
+                <Download size={15} /> Baixar PDF
+              </a>
+            )}
           </div>
         </div>
         <div className="rpxHeroBody">
@@ -561,6 +572,6 @@ export function ReportPanel({ token }: { token: string }) {
           Relatório preparado pela SCASE com dados da Meta e do Google. Atualizado em {new Date(d.generatedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}.
         </footer>
       </div>
-    </main>
+    </Root>
   );
 }

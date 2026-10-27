@@ -404,6 +404,14 @@ function sixMonths(today: string): string[] {
 
 /* ───────────────────────────── Report ───────────────────────────── */
 
+function customRange(r: { since: string; until: string }) {
+  const day = 86_400_000;
+  const a = Date.parse(r.since + "T00:00:00Z"), b = Date.parse(r.until + "T00:00:00Z");
+  const len = Math.round((b - a) / day) + 1;
+  const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
+  return { since: r.since, until: r.until, prevSince: iso(a - len * day), prevUntil: iso(a - day) };
+}
+
 type ClientInput = {
   name: string;
   timezone: string;
@@ -428,12 +436,14 @@ type ConfigInput = {
   manager_notes: string | null;
   actions_taken: string | null;
   next_steps: string | null;
+  /** Explicit dates (agency overview). The comparison window is the same length right before it. */
+  range?: { since: string; until: string } | undefined;
 };
 export type ReportConfigInput = { client: ClientInput; config: ConfigInput; accounts: Array<{ provider: string; account_id: string; account_name: string }> };
 
 export async function buildReport(input: ReportConfigInput): Promise<FullReport> {
   const tz = input.client.timezone || "America/Sao_Paulo";
-  const range = resolvePeriod(input.config.period as ReportPeriod, tz);
+  const range = input.config.range ? customRange(input.config.range) : resolvePeriod(input.config.period as ReportPeriod, tz);
   const today = localToday(tz);
   const hist = historyRange(today);
   const objective = isObjective(input.config.objective ?? "") ? (input.config.objective as FullReport["objective"]) : "leads";

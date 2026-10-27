@@ -203,3 +203,43 @@ html:has(.rpx){scroll-behavior:smooth}
 .rpx .rpxGroup.google .rpxGroupHead th{box-shadow:inset 3px 0 0 #3067bf}
 .rpx .rpxSubtotal td{background:#f7faf8;font-weight:800;color:var(--ink)}
 .rpx .rpxGrandTotal td{background:var(--pine);color:#fff;font-weight:800;border-top:0}
+
+/* Report embedded in the agency's "Visão geral" */
+.rpx.rpxEmbedded{min-height:0;border-radius:18px;overflow:clip;border:1px solid var(--line)}
+.rpx.rpxEmbedded .rpxHero{padding-top:18px}
+.rpx .rpxEmbedTag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8fe9b8;font-weight:800}
+.rpx.rpxEmbedded .rpxNav{top:0}
+
+/* Quick client registration */
+.perf .qcBox{padding:22px;margin-bottom:18px}
+.perf .qcHead{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+.perf .qcHead h2{font-size:16px}
+.perf .qcHead p{color:var(--muted);font-size:13px;margin-top:4px}
+.perf .qcIcon{width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;background:#e5f8ee;color:#0a7a45}
+.perf .qcForm{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.perf .qcSeg{display:inline-flex;background:#eef3f0;border-radius:12px;padding:4px;gap:4px;margin-top:21px}
+.perf .qcSegBtn{display:inline-flex;align-items:center;gap:8px;border:0;background:transparent;border-radius:9px;padding:10px 14px;font-weight:700;font-size:13px;color:#5c6f64}
+.perf .qcSegBtn i{width:9px;height:9px;border-radius:3px;background:#b9c6be}
+.perf .qcSegBtn.google i{background:#2f6fd6}.perf .qcSegBtn.meta i{background:#6d4fd1}
+.perf .qcSegBtn[aria-selected="true"]{background:#fff;color:#0e2619;box-shadow:0 1px 3px #0e261915}
+.perf .qcField{display:grid;gap:6px;flex:1 1 260px;min-width:0}
+.perf .qcField>span{font-size:11.5px;font-weight:700;color:#5c6f64}
+.perf .qcField input{border:1px solid #e1eae4;border-radius:10px;padding:12px 13px;font-size:14px;outline:none;background:#fff;color:#0e2619;min-width:0}
+.perf .qcField input:focus{border-color:#1fbf75;box-shadow:0 0 0 3px #1fbf7522}
+.perf .qcField small{font-size:11.5px;color:var(--muted)}
+.perf .qcGo{margin-top:21px;min-height:46px}
+.perf .qcError{margin-top:12px}
+.perf .qcResult{margin-top:16px;border-top:1px solid #e1eae4;padding-top:16px;display:grid;gap:12px}
+.perf .qcFound{font-weight:800;color:#0a7a45;font-size:13px}
+.perf .qcAccounts{display:grid;gap:6px;max-height:280px;overflow:auto}
+.perf .qcAcc{display:flex;gap:10px;align-items:center;border:1px solid #e1eae4;border-radius:10px;padding:10px 12px;cursor:pointer}
+.perf .qcAcc input{accent-color:#0eae5b;width:17px;height:17px}
+.perf .qcAcc span{display:grid;gap:2px;min-width:0}
+.perf .qcAcc strong{font-size:13.5px}
+.perf .qcAcc small{font-size:11.5px;color:var(--muted)}
+.perf .qcAcc.taken{opacity:.55;cursor:default}
+.perf .qcSave{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.perf .qcNote{color:var(--muted)}
+.perf .qcSpin{animation:qcSpin 1s linear infinite}
+@keyframes qcSpin{to{transform:rotate(360deg)}}
+@media(max-width:640px){.perf .qcSeg,.perf .qcGo{margin-top:0}.perf .qcGo{width:100%}}
