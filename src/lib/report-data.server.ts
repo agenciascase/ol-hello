@@ -611,6 +611,7 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
     clientName: input.client.name,
     logoUrl: input.client.logo_url,
     reportName: input.config.name,
+    campaignFilter: filter,
     intro: input.config.intro_message,
     objective,
     sections,

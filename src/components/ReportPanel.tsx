@@ -273,15 +273,15 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
               <span className="rpxAvatar">{d.logoUrl ? <img src={d.logoUrl} alt="" /> : initials(d.clientName)}</span>
               <div className="rpxWhoText">
                 <span className="rpxIdLabel">Cliente</span>
-                <strong className="rpxClientName">{d.clientName}</strong>
-                <div className="rpxBadges">
+                <strong className="rpxClientName">
                   {platforms.map((p) => (
-                    <span key={p} className={"rpxPlat " + p}>
-                      <PlatformMark platform={p} size={14} />
-                      {PLATFORM[p]}
+                    <span key={p} className="rpxNameMark" title={PLATFORM[p]}>
+                      <PlatformMark platform={p} size={18} />
                     </span>
                   ))}
-                </div>
+                  {d.clientName}
+                </strong>
+                <span className="rpxCampaignName">{d.campaignFilter ? `Campanha: ${d.campaignFilter}` : "Todas as campanhas"}</span>
               </div>
             </div>
             <div className="rpxPeriodCard">
