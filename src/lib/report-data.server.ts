@@ -210,16 +210,24 @@ type MetaCreative = {
 async function metaAdImages(token: string, accountId: string, ids: string[], notes: Record<string, string> = {}): Promise<Record<string, string>> {
   if (!ids.length) return {};
   const inner = "{image_url,thumbnail_url,image_hash,object_story_spec,asset_feed_spec}";
-  const ask = async (creativeField: string) => {
-    const res = await fetch(`${GRAPH}?ids=${ids.join(",")}&fields=${encodeURIComponent(creativeField + inner)}`, { headers: { Authorization: "Bearer " + token }, cache: "no-store" });
-    const json = (await res.json().catch(() => ({}))) as Record<string, { creative?: MetaCreative }> & { error?: { message?: string } };
+  // One request per ad: the multi-object "?ids=" lookup is no longer accepted by the Graph API.
+  const one = async (adId: string, creativeField: string) => {
+    const res = await fetch(`${GRAPH}${adId}?fields=${encodeURIComponent(creativeField + inner)}`, { headers: { Authorization: "Bearer " + token }, cache: "no-store" });
+    const json = (await res.json().catch(() => ({}))) as { creative?: MetaCreative; error?: { message?: string } };
     return { ok: res.ok, json };
   };
-  // Larger thumbnails first; plain request if the API refuses the size modifiers.
-  let r = await ask("creative.thumbnail_width(600).thumbnail_height(600)");
-  if (!r.ok) r = await ask("creative");
-  const body = r.json;
-  if (!r.ok) throw new Error("miniaturas: " + (body.error?.message ?? "falha"));
+  const body: Record<string, { creative?: MetaCreative }> = {};
+  const failures: string[] = [];
+  await Promise.all(
+    ids.map(async (adId) => {
+      // Larger thumbnails first; plain request if the API refuses the size modifiers.
+      let r = await one(adId, "creative.thumbnail_width(600).thumbnail_height(600)");
+      if (!r.ok) r = await one(adId, "creative");
+      if (r.ok) body[adId] = r.json;
+      else failures.push(r.json.error?.message ?? "falha");
+    }),
+  );
+  if (failures.length === ids.length) throw new Error("miniaturas: " + failures[0]);
   const out: Record<string, string> = {};
   const needHash: Record<string, string> = {};
   for (const id of ids) {
