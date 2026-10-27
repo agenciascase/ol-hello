@@ -34,7 +34,7 @@ export const ALL_SECTIONS: SectionKey[] = SECTIONS.map(([k]) => k);
 export type DailyPoint = { date: string; spend: number; impressions: number; clicks: number; conversions: number };
 export type ConversionType = { platform: Platform; label: string; value: number };
 export type Funnel = { impressions: number; clicks: number; landingPageViews: number | null; conversions: number };
-export type Creative = { id: string; name: string; thumbnail: string | null; spend: number; impressions: number; clicks: number; conversions: number };
+export type Creative = { id: string; name: string; thumbnail: string | null; imageNote?: string | null; spend: number; impressions: number; clicks: number; conversions: number };
 export type SearchTerm = { term: string; impressions: number; clicks: number; conversions: number; spend: number };
 export type AudienceRow = { label: string; spend: number; impressions: number; clicks: number; conversions: number };
 export type Audience = { ageGender: AudienceRow[]; region: AudienceRow[]; device: AudienceRow[]; placement: AudienceRow[] };

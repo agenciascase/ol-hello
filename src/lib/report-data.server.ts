@@ -207,7 +207,7 @@ type MetaCreative = {
  * Best available picture for each ad: the creative image, the post/video/carousel picture, a
  * dynamic-creative asset, the image library (by hash) and finally the large thumbnail.
  */
-async function metaAdImages(token: string, accountId: string, ids: string[]): Promise<Record<string, string>> {
+async function metaAdImages(token: string, accountId: string, ids: string[], notes: Record<string, string> = {}): Promise<Record<string, string>> {
   if (!ids.length) return {};
   const inner = "{image_url,thumbnail_url,image_hash,object_story_spec,asset_feed_spec}";
   const ask = async (creativeField: string) => {
@@ -224,7 +224,10 @@ async function metaAdImages(token: string, accountId: string, ids: string[]): Pr
   const needHash: Record<string, string> = {};
   for (const id of ids) {
     const c = (body[id] as { creative?: MetaCreative } | undefined)?.creative;
-    if (!c) continue;
+    if (!c) {
+      notes[id] = "a Meta não devolveu o criativo deste anúncio";
+      continue;
+    }
     const s = c.object_story_spec;
     const url =
       c.image_url ||
@@ -238,6 +241,7 @@ async function metaAdImages(token: string, accountId: string, ids: string[]): Pr
     if (url) out[id] = url;
     else if (hash) needHash[id] = hash;
     if (!out[id] && c.thumbnail_url) out[id] = c.thumbnail_url;
+    if (!out[id] && !needHash[id]) notes[id] = "criativo sem imagem (campos: " + (Object.keys(c).join(", ") || "nenhum") + ")";
   }
   const hashes = [...new Set(Object.values(needHash))];
   if (hashes.length) {
@@ -245,7 +249,10 @@ async function metaAdImages(token: string, accountId: string, ids: string[]): Pr
       .then((r) => (r.ok ? (r.json() as Promise<{ data?: Array<{ hash?: string; url?: string; permalink_url?: string }> }>) : { data: [] }))
       .catch(() => ({ data: [] as Array<{ hash?: string; url?: string; permalink_url?: string }> }));
     const byHash = new Map((lib.data ?? []).map((i) => [i.hash ?? "", i.url || i.permalink_url || ""]));
-    for (const [id, h] of Object.entries(needHash)) if (byHash.get(h)) out[id] = byHash.get(h)!;
+    for (const [id, h] of Object.entries(needHash)) {
+      if (byHash.get(h)) out[id] = byHash.get(h)!;
+      else notes[id] = "imagem não encontrada na biblioteca da conta";
+    }
   }
   return out;
 }
@@ -274,16 +281,19 @@ async function metaExtras(token: string, accountId: string, range: Range, histor
   if (ads.length) {
     const ids = ads.map((a) => String(a["ad_id"] ?? "")).filter((id) => /^\d+$/.test(id));
     let thumbs: Record<string, string> = {};
+    const notes: Record<string, string> = {};
     try {
-      thumbs = await metaAdImages(token, accountId, ids);
+      thumbs = await metaAdImages(token, accountId, ids, notes);
       const missing = ids.filter((id) => !thumbs[id]).length;
       if (missing) out.warnings = [`Meta não devolveu imagem para ${missing} de ${ids.length} anúncios.`];
     } catch (e) {
-      out.warnings = ["Imagens dos anúncios: " + (e instanceof Error ? e.message : "falha na Meta")];
+      const msg = e instanceof Error ? e.message : "falha na Meta";
+      out.warnings = ["Imagens dos anúncios: " + msg];
+      for (const id of ids) notes[id] = msg;
     }
     out.creatives = ads.map((a) => {
       const id = String(a["ad_id"] ?? "");
-      return { id, name: String(a["ad_name"] ?? "Anúncio"), thumbnail: thumbs[id] ?? null, spend: Number(a["spend"] ?? 0), impressions: Number(a["impressions"] ?? 0), clicks: Number(a["clicks"] ?? 0), conversions: metaConversions(a["actions"]) };
+      return { id, name: String(a["ad_name"] ?? "Anúncio"), thumbnail: thumbs[id] ?? null, imageNote: notes[id] ?? null, spend: Number(a["spend"] ?? 0), impressions: Number(a["impressions"] ?? 0), clicks: Number(a["clicks"] ?? 0), conversions: metaConversions(a["actions"]) };
     });
   }
   out.audience = {
