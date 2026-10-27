@@ -9,10 +9,14 @@ import "../performance.css";
 import "../reports.css";
 
 /** Ad picture with a placeholder when there is none or it fails to load (e.g. an expired CDN link). */
+const viaProxy = (src: string) => (/^https:\/\/[^/]*(fbcdn\.net|facebook\.com|fbsbx\.com)\//.test(src) ? "/api/ad-image?u=" + encodeURIComponent(src) : src);
 function CreativeImage({ src, alt }: { src: string | null; alt: string }) {
-  const [failed, setFailed] = useState(false);
-  return src && !failed ? (
-    <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
+  // Try our server first (Meta's CDN may refuse browsers from other sites), then the direct link.
+  const [step, setStep] = useState(0);
+  const url = src ? (step === 0 ? viaProxy(src) : src) : null;
+  const failed = !url || step > 1 || (step === 1 && viaProxy(src!) === src);
+  return !failed ? (
+    <img key={url} src={url!} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setStep((n) => n + 1)} />
   ) : (
     <div className="rpxNoImg">
       <ImageOff size={22} />
