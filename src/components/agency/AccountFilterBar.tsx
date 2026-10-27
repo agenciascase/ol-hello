@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { PlatformMark } from "./PlatformMark";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { DateRangePicker } from "./DateRangePicker";
 import "../../agency.css";
@@ -162,7 +163,7 @@ export function AccountFilterBar({
             const s = p === "google" ? google : meta;
             return (
               <button key={p} type="button" role="tab" aria-selected={platform === p} className={"afSeg " + p} onClick={() => onPlatform(p)}>
-                <i aria-hidden />
+                <PlatformMark platform={p} />
                 {LABEL[p]}
                 <span>{s.loading && !s.accounts.length ? "…" : s.accounts.length}</span>
               </button>
