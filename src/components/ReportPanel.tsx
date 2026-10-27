@@ -10,7 +10,7 @@ import "../reports.css";
 
 /** Ad picture with a placeholder when there is none or it fails to load (e.g. an expired CDN link). */
 const viaProxy = (src: string) => (/^https:\/\/[^/]*(fbcdn\.net|facebook\.com|fbsbx\.com)\//.test(src) ? "/api/ad-image?u=" + encodeURIComponent(src) : src);
-function CreativeImage({ src, alt }: { src: string | null; alt: string }) {
+function CreativeImage({ src, alt, note }: { src: string | null; alt: string; note?: string | null | undefined }) {
   // Try our server first (Meta's CDN may refuse browsers from other sites), then the direct link.
   const [step, setStep] = useState(0);
   const url = src ? (step === 0 ? viaProxy(src) : src) : null;
@@ -20,6 +20,7 @@ function CreativeImage({ src, alt }: { src: string | null; alt: string }) {
   ) : (
     <div className="rpxNoImg">
       <ImageOff size={22} />
+      {note !== undefined && <small>{src ? "A imagem existe, mas não carregou (servidor e link direto)." : note || "Sem imagem disponível."}</small>}
     </div>
   );
 }
@@ -487,7 +488,7 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
             <div className="rpxCreatives">
               {d.creatives.map((c) => (
                 <figure key={c.id}>
-                  <CreativeImage src={c.thumbnail} alt={c.name} />
+                  <CreativeImage src={c.thumbnail} alt={c.name} note={embedded ? (c.imageNote ?? null) : undefined} />
                   <figcaption>
                     <strong title={c.name}>{c.name}</strong>
                     <span>
