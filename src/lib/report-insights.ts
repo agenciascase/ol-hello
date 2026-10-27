@@ -49,6 +49,8 @@ export type FullReport = {
   clientName: string;
   logoUrl: string | null;
   reportName: string;
+  /** Campaign-name filter applied to the report, if any. */
+  campaignFilter: string | null;
   intro: string | null;
   objective: Objective;
   sections: SectionKey[];
