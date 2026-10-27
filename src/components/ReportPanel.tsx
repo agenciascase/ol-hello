@@ -105,7 +105,7 @@ const CAMPAIGN_COLS: Array<[MetricKey, string]> = [
   ["cpa", "Custo/conv."],
 ];
 
-/** Campaigns grouped by platform, each group with its own subtotal; tabs narrow to one platform. */
+/** Campaigns grouped by platform; tabs narrow to one platform. */
 function CampaignTables({ data, platforms }: { data: PanelData; platforms: PlatformKey[] }) {
   const withCampaigns = platforms.filter((p) => data.campaigns.some((c) => c.platform === p));
   const [tab, setTab] = useState<"all" | PlatformKey>("all");
@@ -136,7 +136,6 @@ function CampaignTables({ data, platforms }: { data: PanelData; platforms: Platf
           </thead>
           {shown.map((p) => {
             const rows = data.campaigns.filter((c) => c.platform === p);
-            const total = data.byPlatform[p]?.current;
             return (
               <tbody key={p} className={"rpxGroup " + p}>
                 <tr className="rpxGroupHead">
@@ -154,16 +153,6 @@ function CampaignTables({ data, platforms }: { data: PanelData; platforms: Platf
                     ))}
                   </tr>
                 ))}
-                {total && (
-                  <tr className="rpxSubtotal">
-                    <td>Total {PLATFORM[p]}</td>
-                    {CAMPAIGN_COLS.map(([k]) => (
-                      <td key={k} className="num">
-                        {formatMetric(k, metricValue(k, total))}
-                      </td>
-                    ))}
-                  </tr>
-                )}
               </tbody>
             );
           })}

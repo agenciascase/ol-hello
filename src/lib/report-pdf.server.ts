@@ -410,7 +410,7 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
     );
   }
 
-  /* Campaigns, one table per platform with its subtotal */
+  /* Campaigns, one table per platform */
   if (has("campaigns") && report.campaigns.length) {
     const groups = (Object.keys(PLATFORM_LABEL) as Array<keyof typeof PLATFORM_LABEL>).filter((p) => report.campaigns.some((c) => c.platform === p));
     const cols: Col[] = [
@@ -431,9 +431,8 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
     ];
     groups.forEach((p, gi) => {
       const list = report.campaigns.filter((c) => c.platform === p);
-      const total = report.byPlatform[p]?.current;
       section(`Campanhas ${PLATFORM_LABEL[p]}`, `${list.length} campanha${list.length === 1 ? "" : "s"}, ordenadas por investimento`, 80);
-      table(cols, [...list.slice(0, 20).map((c) => row(c.name, c)), ...(total ? [row(`Total ${PLATFORM_LABEL[p]}`, total)] : [])], { size: 8.5, totalLast: Boolean(total) });
+      table(cols, list.slice(0, 20).map((c) => row(c.name, c)), { size: 8.5 });
       if (gi === groups.length - 1 && groups.length > 1) table(cols, [row("Total geral", report.total.current)], { size: 8.5, totalLast: true });
     });
   }
