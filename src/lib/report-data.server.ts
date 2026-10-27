@@ -193,6 +193,61 @@ function audienceRows(rows: Row[], label: (r: Row) => string): AudienceRow[] {
   return rows.map((r) => ({ label: label(r), spend: Number(r["spend"] ?? 0), impressions: Number(r["impressions"] ?? 0), clicks: Number(r["clicks"] ?? 0), conversions: metaConversions(r["actions"]) }));
 }
 
+type MetaCreative = {
+  image_url?: string;
+  thumbnail_url?: string;
+  image_hash?: string;
+  object_story_spec?: { link_data?: { picture?: string; image_hash?: string; child_attachments?: Array<{ picture?: string; image_hash?: string }> }; video_data?: { image_url?: string; image_hash?: string }; photo_data?: { url?: string; image_hash?: string } };
+  asset_feed_spec?: { images?: Array<{ url?: string; hash?: string }>; videos?: Array<{ thumbnail_url?: string }> };
+};
+
+/**
+ * Best available picture for each ad: the creative image, the post/video/carousel picture, a
+ * dynamic-creative asset, the image library (by hash) and finally the large thumbnail.
+ */
+async function metaAdImages(token: string, accountId: string, ids: string[]): Promise<Record<string, string>> {
+  if (!ids.length) return {};
+  const inner = "{image_url,thumbnail_url,image_hash,object_story_spec,asset_feed_spec}";
+  const ask = async (creativeField: string) => {
+    const res = await fetch(`${GRAPH}?ids=${ids.join(",")}&fields=${encodeURIComponent(creativeField + inner)}`, { headers: { Authorization: "Bearer " + token }, cache: "no-store" });
+    const json = (await res.json().catch(() => ({}))) as Record<string, { creative?: MetaCreative }> & { error?: { message?: string } };
+    return { ok: res.ok, json };
+  };
+  // Larger thumbnails first; plain request if the API refuses the size modifiers.
+  let r = await ask("creative.thumbnail_width(600).thumbnail_height(600)");
+  if (!r.ok) r = await ask("creative");
+  const body = r.json;
+  if (!r.ok) throw new Error("miniaturas: " + (body.error?.message ?? "falha"));
+  const out: Record<string, string> = {};
+  const needHash: Record<string, string> = {};
+  for (const id of ids) {
+    const c = (body[id] as { creative?: MetaCreative } | undefined)?.creative;
+    if (!c) continue;
+    const s = c.object_story_spec;
+    const url =
+      c.image_url ||
+      s?.link_data?.picture ||
+      s?.link_data?.child_attachments?.find((x) => x.picture)?.picture ||
+      s?.video_data?.image_url ||
+      s?.photo_data?.url ||
+      c.asset_feed_spec?.images?.find((x) => x.url)?.url ||
+      c.asset_feed_spec?.videos?.find((x) => x.thumbnail_url)?.thumbnail_url;
+    const hash = c.image_hash || s?.link_data?.image_hash || s?.link_data?.child_attachments?.find((x) => x.image_hash)?.image_hash || s?.video_data?.image_hash || s?.photo_data?.image_hash || c.asset_feed_spec?.images?.find((x) => x.hash)?.hash;
+    if (url) out[id] = url;
+    else if (hash) needHash[id] = hash;
+    if (!out[id] && c.thumbnail_url) out[id] = c.thumbnail_url;
+  }
+  const hashes = [...new Set(Object.values(needHash))];
+  if (hashes.length) {
+    const lib = await fetch(`${GRAPH}${accountId}/adimages?hashes=${encodeURIComponent(JSON.stringify(hashes))}&fields=hash,url,permalink_url`, { headers: { Authorization: "Bearer " + token }, cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ data?: Array<{ hash?: string; url?: string; permalink_url?: string }> }>) : { data: [] }))
+      .catch(() => ({ data: [] as Array<{ hash?: string; url?: string; permalink_url?: string }> }));
+    const byHash = new Map((lib.data ?? []).map((i) => [i.hash ?? "", i.url || i.permalink_url || ""]));
+    for (const [id, h] of Object.entries(needHash)) if (byHash.get(h)) out[id] = byHash.get(h)!;
+  }
+  return out;
+}
+
 async function metaExtras(token: string, accountId: string, range: Range, history: Range, filter: string | null, sections: Set<SectionKey>): Promise<Extras> {
   const base = "spend,impressions,clicks,actions";
   const [dailyRows, ads, ageGender, region, device, placement, months] = await Promise.all([
@@ -215,21 +270,11 @@ async function metaExtras(token: string, accountId: string, range: Range, histor
   out.conversionTypes = META_TYPES.map(([label, types]) => ({ platform: "meta" as const, label, value: dailyRows.reduce((s, r) => s + actionMax(r["actions"], types), 0) })).filter((t) => t.value > 0);
 
   if (ads.length) {
-    const thumbs = await optional(
-      "meta thumbnails",
-      async () => {
-        const ids = ads.map((a) => String(a["ad_id"] ?? "")).filter((id) => /^\d+$/.test(id));
-        if (!ids.length) return {} as Record<string, { creative?: { thumbnail_url?: string; image_url?: string } }>;
-        const res = await fetch(`${GRAPH}?ids=${ids.join(",")}&fields=${encodeURIComponent("creative{thumbnail_url,image_url}")}`, { headers: { Authorization: "Bearer " + token }, cache: "no-store" });
-        if (!res.ok) throw new Error("thumbnails " + res.status);
-        return (await res.json()) as Record<string, { creative?: { thumbnail_url?: string; image_url?: string } }>;
-      },
-      {} as Record<string, { creative?: { thumbnail_url?: string; image_url?: string } }>,
-    );
+    const ids = ads.map((a) => String(a["ad_id"] ?? "")).filter((id) => /^\d+$/.test(id));
+    const thumbs = await optional("meta thumbnails", () => metaAdImages(token, accountId, ids), {} as Record<string, string>);
     out.creatives = ads.map((a) => {
       const id = String(a["ad_id"] ?? "");
-      const c = thumbs[id]?.creative;
-      return { id, name: String(a["ad_name"] ?? "Anúncio"), thumbnail: c?.image_url ?? c?.thumbnail_url ?? null, spend: Number(a["spend"] ?? 0), impressions: Number(a["impressions"] ?? 0), clicks: Number(a["clicks"] ?? 0), conversions: metaConversions(a["actions"]) };
+      return { id, name: String(a["ad_name"] ?? "Anúncio"), thumbnail: thumbs[id] ?? null, spend: Number(a["spend"] ?? 0), impressions: Number(a["impressions"] ?? 0), clicks: Number(a["clicks"] ?? 0), conversions: metaConversions(a["actions"]) };
     });
   }
   out.audience = {

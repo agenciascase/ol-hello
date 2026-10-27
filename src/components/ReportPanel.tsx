@@ -8,6 +8,18 @@ import { ATTRIBUTION_NOTE, GLOSSARY, OBJECTIVES, STATUS_COLORS, orderedMetrics, 
 import "../performance.css";
 import "../reports.css";
 
+/** Ad picture with a placeholder when there is none or it fails to load (e.g. an expired CDN link). */
+function CreativeImage({ src, alt }: { src: string | null; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  return src && !failed ? (
+    <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
+  ) : (
+    <div className="rpxNoImg">
+      <ImageOff size={22} />
+    </div>
+  );
+}
+
 export type PanelData = Omit<FullReport, "errors"> & { partial: boolean };
 const PLATFORM = { meta: "Meta Ads", google: "Google Ads" } as const;
 const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
@@ -463,7 +475,7 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
             <div className="rpxCreatives">
               {d.creatives.map((c) => (
                 <figure key={c.id}>
-                  {c.thumbnail ? <img src={c.thumbnail} alt={c.name} loading="lazy" referrerPolicy="no-referrer" /> : <div className="rpxNoImg"><ImageOff size={22} /></div>}
+                  <CreativeImage src={c.thumbnail} alt={c.name} />
                   <figcaption>
                     <strong title={c.name}>{c.name}</strong>
                     <span>
