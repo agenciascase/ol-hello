@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { PlatformMark } from "@/components/agency/PlatformMark";
 import { useState } from "react";
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Download, ImageOff } from "lucide-react";
@@ -273,7 +274,7 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
                 <div className="rpxBadges">
                   {platforms.map((p) => (
                     <span key={p} className={"rpxPlat " + p}>
-                      <i aria-hidden />
+                      <PlatformMark platform={p} size={14} />
                       {PLATFORM[p]}
                     </span>
                   ))}

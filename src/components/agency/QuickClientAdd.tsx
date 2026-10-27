@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PlatformMark } from "./PlatformMark";
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, Search, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,7 +89,7 @@ export function QuickClientAdd({ onCreated }: { onCreated: (id: string) => void 
                 setError("");
               }}
             >
-              <i aria-hidden />
+              <PlatformMark platform={p} />
               {p === "google" ? "Google Ads" : "Meta Ads"}
             </button>
           ))}
