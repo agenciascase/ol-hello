@@ -243,3 +243,22 @@ html:has(.rpx){scroll-behavior:smooth}
 .perf .qcSpin{animation:qcSpin 1s linear infinite}
 @keyframes qcSpin{to{transform:rotate(360deg)}}
 @media(max-width:640px){.perf .qcSeg,.perf .qcGo{margin-top:0}.perf .qcGo{width:100%}}
+
+/* Report header: client, platform and analysis period */
+.rpx .rpxHeroBody{margin-top:28px}
+.rpx .rpxIdentity{display:flex;align-items:stretch;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.rpx .rpxWho{display:flex;align-items:center;gap:16px;min-width:0;flex:1 1 320px}
+.rpx .rpxAvatar{width:68px;height:68px;flex:none;border-radius:16px;background:#fff;color:var(--pine);display:grid;place-items:center;font-weight:800;font-size:22px;overflow:hidden;box-shadow:0 6px 20px #0006}
+.rpx .rpxAvatar img{width:100%;height:100%;object-fit:contain;padding:6px}
+.rpx .rpxWhoText{display:grid;gap:4px;min-width:0}
+.rpx .rpxIdLabel{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#8fe9b8}
+.rpx .rpxClientName{font-size:clamp(20px,2.4vw,28px);font-weight:800;color:#fff;line-height:1.15;overflow-wrap:anywhere}
+.rpx .rpxBadges{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.rpx .rpxPlat{display:inline-flex;align-items:center;gap:7px;background:#ffffff14;border:1px solid #ffffff26;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;color:#eafff3}
+.rpx .rpxPlat i{width:8px;height:8px;border-radius:3px;background:#b9c6be}
+.rpx .rpxPlat.meta i{background:#8b6ff0}.rpx .rpxPlat.google i{background:#4b8df0}
+.rpx .rpxPeriodCard{display:grid;gap:5px;align-content:center;background:#ffffff0f;border:1px solid #ffffff22;border-radius:16px;padding:14px 18px;min-width:240px}
+.rpx .rpxPeriodCard strong{font-size:18px;color:#fff;font-weight:800}
+.rpx .rpxPeriodCard small{font-size:12px;color:#9fd8b9}
+.rpx .rpxHero h1{font-size:clamp(19px,2.2vw,26px);max-width:52ch;margin:26px 0 0;color:#eafff3;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+@media(max-width:640px){.rpx .rpxPeriodCard{min-width:0;width:100%}.rpx .rpxAvatar{width:54px;height:54px;font-size:18px}}
