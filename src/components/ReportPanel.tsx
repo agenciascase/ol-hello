@@ -235,7 +235,6 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
   const primary = metrics.filter((m) => OBJECTIVES[d.objective].primary.includes(m)).slice(0, 4);
   const secondary = metrics.filter((m) => !primary.includes(m));
   const platforms = Object.keys(d.byPlatform) as Array<keyof typeof PLATFORM>;
-  const headline = d.highlights[0] ?? `${OBJECTIVES[d.objective].label}: resultados de ${formatDateBR(d.range.since)} a ${formatDateBR(d.range.until)}.`;
   const sectionHasData: Record<string, boolean> = {
     summary: true,
     goals: has("goals") && (d.goals.length > 0 || d.pacing !== null),
@@ -303,7 +302,6 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
               </small>
             </div>
           </div>
-          <h1>{headline}</h1>
         </div>
       </div>
 
@@ -321,9 +319,9 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
         {d.partial && <p className="rpxNotice">Parte dos dados não pôde ser atualizada agora. Os números abaixo podem estar incompletos; tente recarregar em alguns minutos.</p>}
 
         <Section id="summary" title="Resumo do período" note={d.intro ?? undefined}>
-          {has("highlights") && d.highlights.length > 1 && (
+          {has("highlights") && d.highlights.length > 0 && (
             <ul className="rpxHighlights">
-              {d.highlights.slice(1).map((h) => (
+              {d.highlights.map((h) => (
                 <li key={h} className={h.startsWith("Ponto de atenção") ? "attention" : ""}>
                   {h}
                 </li>
