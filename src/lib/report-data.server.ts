@@ -165,6 +165,8 @@ async function metaCampaigns(token: string, accountId: string, range: Range, fil
 }
 
 type Extras = {
+  /** Non-blocking problems worth showing to the agency (never to the client). */
+  warnings?: string[];
   daily: DailyPoint[];
   conversionTypes: ConversionType[];
   landingPageViews: number | null;
@@ -271,7 +273,14 @@ async function metaExtras(token: string, accountId: string, range: Range, histor
 
   if (ads.length) {
     const ids = ads.map((a) => String(a["ad_id"] ?? "")).filter((id) => /^\d+$/.test(id));
-    const thumbs = await optional("meta thumbnails", () => metaAdImages(token, accountId, ids), {} as Record<string, string>);
+    let thumbs: Record<string, string> = {};
+    try {
+      thumbs = await metaAdImages(token, accountId, ids);
+      const missing = ids.filter((id) => !thumbs[id]).length;
+      if (missing) out.warnings = [`Meta não devolveu imagem para ${missing} de ${ids.length} anúncios.`];
+    } catch (e) {
+      out.warnings = ["Imagens dos anúncios: " + (e instanceof Error ? e.message : "falha na Meta")];
+    }
     out.creatives = ads.map((a) => {
       const id = String(a["ad_id"] ?? "");
       return { id, name: String(a["ad_name"] ?? "Anúncio"), thumbnail: thumbs[id] ?? null, spend: Number(a["spend"] ?? 0), impressions: Number(a["impressions"] ?? 0), clicks: Number(a["clicks"] ?? 0), conversions: metaConversions(a["actions"]) };
@@ -524,6 +533,7 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
           current.push(...cur);
           previous.push(...prev);
           extras.push({ ...ex, platform });
+          if (input.config.range && ex.warnings?.length) errors.push(...ex.warnings.map((w) => `${a.account_name}: ${w}`));
         } catch (e) {
           errors.push(`${a.account_name}: ${e instanceof Error ? e.message : "falha na consulta"}`);
         }
