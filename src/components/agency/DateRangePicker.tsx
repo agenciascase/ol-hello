@@ -17,47 +17,53 @@ const br = (s: string) => s.split("-").reverse().join("/");
 const MONTHS = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."];
 const WEEK = ["D", "S", "T", "Q", "Q", "S", "S"];
 
-type Range = { from: string; to: string; label: string };
-type Preset = { label: string; range: (today: string) => [string, string]; hint?: string };
+type Range = { from: string; to: string; label: string; code?: string };
+/** code: the rolling period this preset stands for in scheduled reports (see report-schedule). */
+type Preset = { label: string; code: string; range: (today: string) => [string, string]; hint?: string };
 
 const PRESETS: Preset[] = [
-  { label: "Hoje", range: (t) => [t, t] },
-  { label: "Ontem", range: (t) => [addDays(t, -1), addDays(t, -1)] },
-  { label: "Esta semana", hint: "dom. até hoje", range: (t) => [addDays(t, -parse(t).getDay()), t] },
-  { label: "7 dias atrás", range: (t) => [addDays(t, -6), t] },
+  { label: "Hoje", code: "today", range: (t) => [t, t] },
+  { label: "Ontem", code: "yesterday", range: (t) => [addDays(t, -1), addDays(t, -1)] },
+  { label: "Esta semana", code: "this_week", hint: "dom. até hoje", range: (t) => [addDays(t, -parse(t).getDay()), t] },
+  { label: "7 dias atrás", code: "days_today_7", range: (t) => [addDays(t, -6), t] },
   {
-    label: "Semana passada",
+    label: "Semana passada", code: "last_week",
     hint: "de dom. a sáb.",
     range: (t) => {
       const sat = addDays(t, -parse(t).getDay() - 1);
       return [addDays(sat, -6), sat];
     },
   },
-  { label: "14 dias atrás", range: (t) => [addDays(t, -13), t] },
-  { label: "15 dias atrás", range: (t) => [addDays(t, -14), t] },
+  { label: "14 dias atrás", code: "days_today_14", range: (t) => [addDays(t, -13), t] },
+  { label: "15 dias atrás", code: "days_today_15", range: (t) => [addDays(t, -14), t] },
   {
-    label: "Este mês",
+    label: "Este mês", code: "this_month",
     range: (t) => {
       const d = parse(t);
       return [iso(new Date(d.getFullYear(), d.getMonth(), 1, 12)), t];
     },
   },
-  { label: "30 dias atrás", range: (t) => [addDays(t, -29), t] },
+  { label: "30 dias atrás", code: "days_today_30", range: (t) => [addDays(t, -29), t] },
   {
-    label: "Último mês",
+    label: "Último mês", code: "last_month",
     range: (t) => {
       const d = parse(t);
       return [iso(new Date(d.getFullYear(), d.getMonth() - 1, 1, 12)), iso(new Date(d.getFullYear(), d.getMonth(), 0, 12))];
     },
   },
-  { label: "Últimos 12 meses", range: (t) => [addDays(t, -364), t] },
+  { label: "Últimos 12 meses", code: "last_12_months", range: (t) => [addDays(t, -364), t] },
 ];
+
+/** Picker label for a rolling period code, when it matches one of the presets. */
+export function presetLabel(code: string) {
+  return PRESETS.find((p) => p.code === code)?.label ?? null;
+}
 
 /** Label shown on the closed button for any applied period. */
 export function periodText(r: { from: string; to: string; label: string }) {
   if (!r.from || !r.to) return r.label || "Últimos 30 dias";
   const range = r.from === r.to ? br(r.from) : `${br(r.from)} – ${br(r.to)}`;
-  return PRESETS.some((p) => p.label === r.label) || /dias até/.test(r.label) ? `${r.label} · ${range}` : range;
+  return r.label && !/^\d{2}\//.test(r.label) && r.label !== "Personalizado" ? `${r.label} · ${range}` : range;
 }
 
 function Month({ year, month, draft, today, onPick, hover, onHover }: { year: number; month: number; draft: { from: string; to: string }; today: string; onPick: (d: string) => void; hover: string; onHover: (d: string) => void }) {
@@ -110,7 +116,8 @@ export function DateRangePicker({
   onCompare,
 }: {
   value: Range;
-  onApply: (from: string, to: string, label: string) => void;
+  /** code: rolling period code ("days_today_7", "last_month"…) or "custom_<from>_<to>" for fixed dates. */
+  onApply: (from: string, to: string, label: string, code: string) => void;
   compare: boolean;
   onCompare: (v: boolean) => void;
 }) {
@@ -136,7 +143,7 @@ export function DateRangePicker({
   useEffect(() => {
     if (!open) return;
     const fallback = PRESETS.find((p) => p.label === "30 dias atrás")!.range(today);
-    setDraft(value.from && value.to ? value : { from: fallback[0], to: fallback[1], label: value.label || "30 dias atrás" });
+    setDraft(value.from && value.to ? value : { from: fallback[0], to: fallback[1], label: value.label || "30 dias atrás", code: "days_today_30" });
     setDraftCompare(compare);
     const close = (e: MouseEvent) => {
       if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
@@ -165,14 +172,14 @@ export function DateRangePicker({
   };
   const setPreset = (p: Preset) => {
     const [from, to] = p.range(today);
-    setDraft({ from, to, label: p.label });
+    setDraft({ from, to, label: p.label, code: p.code });
     scrollTo(to.slice(0, 7), true);
   };
   const setDays = (n: string, untilYesterday: boolean) => {
     const v = Number(n);
     if (!Number.isInteger(v) || v < 1 || v > 365) return;
     const to = untilYesterday ? addDays(today, -1) : today;
-    setDraft({ from: addDays(to, -(v - 1)), to, label: `${v} dias até ${untilYesterday ? "ontem" : "hoje"}` });
+    setDraft({ from: addDays(to, -(v - 1)), to, label: `${v} dias até ${untilYesterday ? "ontem" : "hoje"}`, code: `days_${untilYesterday ? "yesterday" : "today"}_${v}` });
   };
   const visibleMonth = (draft.to || draft.from || today).slice(0, 7);
   const step = (dir: -1 | 1) => {
@@ -264,7 +271,8 @@ export function DateRangePicker({
                 className="drApply"
                 disabled={!ready}
                 onClick={() => {
-                  onApply(draft.from, draft.to, draft.label === "Personalizado" ? (draft.from === draft.to ? br(draft.from) : `${br(draft.from)} – ${br(draft.to)}`) : draft.label);
+                  const custom = draft.label === "Personalizado";
+                  onApply(draft.from, draft.to, custom ? (draft.from === draft.to ? br(draft.from) : `${br(draft.from)} – ${br(draft.to)}`) : draft.label, !custom && draft.code ? draft.code : `custom_${draft.from}_${draft.to}`);
                   onCompare(draftCompare);
                   setOpen(false);
                 }}

@@ -5,7 +5,7 @@
  */
 import type { FullReport } from "./report-insights";
 import { ATTRIBUTION_NOTE, GLOSSARY, OBJECTIVES, STATUS_COLORS, orderedMetrics, type SectionKey, type Status } from "./report-insights";
-import { PERIOD_LABELS, type ReportPeriod } from "./report-schedule";
+import { periodLabel as labelFor } from "./report-schedule";
 import { METRIC_LABELS, formatDateBR, formatMetric, formatVariation, isPositiveChange, metricValue, variation, type MetricKey } from "./report-metrics";
 
 type RGB = [number, number, number];
@@ -159,7 +159,7 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
   const W = doc.contentW;
   const has = (s: SectionKey) => report.sections.includes(s);
   const metrics = orderedMetrics(report.metrics, report.objective);
-  const periodLabel = PERIOD_LABELS[report.period as ReportPeriod] ?? "Período";
+  const periodLabel = labelFor(report.period) || "Período";
 
   const section = (title: string, subtitle?: string, need = 70) => {
     doc.ensure(need);

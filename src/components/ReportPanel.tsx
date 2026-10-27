@@ -3,7 +3,7 @@ import { PlatformMark } from "@/components/agency/PlatformMark";
 import { useState } from "react";
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Download, ImageOff } from "lucide-react";
-import { PERIOD_LABELS, type ReportPeriod } from "@/lib/report-schedule";
+import { periodLabel } from "@/lib/report-schedule";
 import { METRIC_LABELS, formatDateBR, formatMetric, formatVariation, isPositiveChange, metricValue, variation, type MetricKey, type ReportTotals } from "@/lib/report-metrics";
 import { ATTRIBUTION_NOTE, daysBetween, GLOSSARY, STATUS_COLORS, orderedMetrics, type AudienceRow, type FullReport, type SectionKey } from "@/lib/report-insights";
 import "../performance.css";
@@ -285,7 +285,7 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
                 {d.range.since === d.range.until ? formatDateBR(d.range.since) : `${formatDateBR(d.range.since)} a ${formatDateBR(d.range.until)}`}
               </strong>
               <small>
-                {PERIOD_LABELS[d.period as ReportPeriod] ? PERIOD_LABELS[d.period as ReportPeriod] + " · " : ""}
+                {periodLabel(d.period) && periodLabel(d.period) !== "Período" ? periodLabel(d.period) + " · " : ""}
                 {daysBetween(d.range.since, d.range.until)} dia{daysBetween(d.range.since, d.range.until) === 1 ? "" : "s"}
                 {d.compare && ` · comparado a ${formatDateBR(d.range.prevSince)} a ${formatDateBR(d.range.prevUntil)}`}
               </small>

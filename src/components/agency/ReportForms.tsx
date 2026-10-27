@@ -4,7 +4,9 @@ import { agencyApi } from "@/lib/agency-client";
 import { ALL_SECTIONS, DETAIL_LEVELS, OBJECTIVES, SECTIONS, detectLevel, isObjective, metricsFor, type DetailLevel, type Objective } from "@/lib/report-insights";
 import { supabase } from "@/integrations/supabase/client";
 import { CampaignScope, type CampaignMode } from "./CampaignScope";
-import { METRICS, PERIOD_LABELS, WEEKDAYS, computeNextRun, formatNextRun, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
+import { METRICS, WEEKDAYS, computeNextRun, formatNextRun, periodLabel, resolvePeriod, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
+import { DateRangePicker, presetLabel } from "./DateRangePicker";
+import { PlatformMark } from "./PlatformMark";
 
 export type ReportConfigRow = {
   id: string;
@@ -183,22 +185,60 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         </div>
         <small>{level ? "Ajuste seções e métricas abaixo se quiser personalizar." : "Personalizado: seções escolhidas manualmente abaixo."}</small>
       </div>
-      <div className="rpTwo">
-        <div className="rpField">
-          <span>Plataformas</span>
-          <Chips<string> options={[["meta", "Meta Ads"], ["google", "Google Ads"]] as const} value={platforms} onChange={setPlatforms} />
-          {platforms.some((p) => !availablePlatforms.includes(p)) && <small>Este cliente ainda não tem conta vinculada em uma das plataformas escolhidas.</small>}
+      <div className="rpField">
+        <span>Plataforma do relatório</span>
+        <div className="rfPlatforms" role="radiogroup">
+          {(
+            [
+              [["meta"], "Meta Ads"],
+              [["google"], "Google Ads"],
+              [["meta", "google"], "Meta + Google"],
+            ] as Array<[string[], string]>
+          ).map(([value, label]) => {
+            const chosen = value.length === platforms.length && value.every((v) => platforms.includes(v));
+            const missing = value.filter((v) => !availablePlatforms.includes(v));
+            return (
+              <button
+                key={label}
+                type="button"
+                role="radio"
+                aria-checked={chosen}
+                className="rpObjective rfPlatform"
+                disabled={missing.length === value.length}
+                onClick={() => {
+                  setPlatforms(value);
+                  setCampaignIds((cur) => cur.filter((k) => value.some((v) => k.startsWith(v + ":"))));
+                }}
+              >
+                <span className="rfMarks">
+                  {value.map((v) => (
+                    <PlatformMark key={v} platform={v as "meta" | "google"} size={18} />
+                  ))}
+                </span>
+                <strong>{label}</strong>
+                <small>{missing.length === value.length ? "Sem conta vinculada" : missing.length ? "Falta conta vinculada em uma delas" : "Contas vinculadas"}</small>
+              </button>
+            );
+          })}
         </div>
-        <label className="rpField">
-          <span>Período analisado</span>
-          <select value={period} onChange={(e) => setPeriod(e.target.value as ReportPeriod)}>
-            {(Object.keys(PERIOD_LABELS) as ReportPeriod[]).map((p) => (
-              <option key={p} value={p}>
-                {PERIOD_LABELS[p]}
-              </option>
-            ))}
-          </select>
-        </label>
+      </div>
+      <CampaignScope clientId={clientId} platforms={platforms} mode={campaignMode} onMode={setCampaignMode} selected={campaignIds} onSelected={setCampaignIds} />
+      <div className="rpField">
+        <span>Período analisado</span>
+        <DateRangePicker
+          value={(() => {
+            const r = resolvePeriod(period, "America/Sao_Paulo");
+            return { from: r.since, to: r.until, label: presetLabel(period) ?? periodLabel(period), code: period };
+          })()}
+          onApply={(_from, _to, _label, code) => setPeriod(code)}
+          compare={compare}
+          onCompare={setCompare}
+        />
+        <small>
+          {period.startsWith("custom_")
+            ? "Datas fixas: todo envio mostra exatamente esse período."
+            : "Período móvel: a cada envio as datas avançam (ex.: “7 dias atrás” sempre termina no dia do envio)."}
+        </small>
       </div>
       <label className="rpCheck" style={{ marginBottom: 14 }}>
         <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> Comparar com o período anterior
@@ -213,7 +253,6 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         <Chips<string> options={SECTIONS} value={sections} onChange={setSections} />
         <small>Seções sem dados no período são omitidas automaticamente.</small>
       </div>
-      <CampaignScope clientId={clientId} platforms={platforms} mode={campaignMode} onMode={setCampaignMode} selected={campaignIds} onSelected={setCampaignIds} />
       <label className="rpField">
         <span>Filtrar também pelo nome (opcional)</span>
         <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Só campanhas cujo nome contém este texto, ex.: [LEADS]" />
