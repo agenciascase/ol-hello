@@ -274,11 +274,6 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
               <div className="rpxWhoText">
                 <span className="rpxIdLabel">Cliente</span>
                 <strong className="rpxClientName">
-                  {platforms.map((p) => (
-                    <span key={p} className="rpxNameMark" title={PLATFORM[p]}>
-                      <PlatformMark platform={p} size={18} />
-                    </span>
-                  ))}
                   {d.clientName}
                 </strong>
                 <span className="rpxCampaignName">{d.campaignFilter ? `Campanha: ${d.campaignFilter}` : "Todas as campanhas"}</span>
