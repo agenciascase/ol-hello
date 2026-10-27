@@ -185,13 +185,6 @@ export function buildHighlights(input: HighlightInput): string[] {
     if (input.objective !== "awareness" && cv !== null && Math.abs(cv) >= 5 && cpaNow !== null)
       out.push(`O custo por conversão ${cv < 0 ? "caiu" : "subiu"} ${pct(Math.abs(cv))}, para ${brl(cpaNow)}.`);
   }
-  const withConv = input.campaigns.filter((c) => c.conversions > 0).sort((a, b) => b.conversions - a.conversions);
-  const best = withConv[0];
-  if (best && current.conversions > 0) {
-    const share = (best.conversions / current.conversions) * 100;
-    const cpa = metricValue("cpa", best);
-    out.push(`Destaque: a campanha “${best.name}” gerou ${int(best.conversions)} conversões (${pct(share)} do total)${cpa !== null ? `, a ${brl(cpa)} cada` : ""}.`);
-  }
   const meta = input.byPlatform.meta?.current;
   const google = input.byPlatform.google?.current;
   if (meta && google && current.spend > 0) {
