@@ -12,7 +12,7 @@
  */
 import { buildReportFor, newReportToken, reportPanelUrl, reportPdfUrl, type BuiltReport } from "./report-data.server";
 import { renderReportPdf, reportPdfFilename } from "./report-pdf.server";
-import { PERIOD_LABELS, type ReportPeriod } from "./report-schedule";
+import { periodLabel } from "./report-schedule";
 import { METRIC_LABELS, formatDateBR, formatMetric, formatVariation, isPositiveChange, metricValue, variation } from "./report-metrics";
 import { STATUS_COLORS, orderedMetrics } from "./report-insights";
 import { loadChannels, sendEmailWith, type WhatsAppConfig } from "./delivery-channels.server";
@@ -23,7 +23,7 @@ async function admin() {
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
 const periodText = (r: BuiltReport) =>
-  `${PERIOD_LABELS[r.period as ReportPeriod] ?? "Período"} (${formatDateBR(r.range.since)} a ${formatDateBR(r.range.until)})`;
+  `${periodLabel(r.period) || "Período"} (${formatDateBR(r.range.since)} a ${formatDateBR(r.range.until)})`;
 
 /** Returns the config's public token, creating one when it does not exist yet. */
 export async function ensureShareToken(configId: string, current: string | null) {

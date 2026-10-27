@@ -11,7 +11,7 @@ import { ReportConfigForm, ScheduleForm, type ReportConfigRow, type ScheduleRow 
 import { agencyApi, agencyDownload } from "@/lib/agency-client";
 import { METRIC_LABELS, isMetricKey } from "@/lib/report-metrics";
 import { DETAIL_LEVELS, OBJECTIVES, detectLevel, isObjective } from "@/lib/report-insights";
-import { PERIOD_LABELS, WEEKDAYS, formatNextRun } from "@/lib/report-schedule";
+import { WEEKDAYS, formatNextRun, periodLabel, resolvePeriod } from "@/lib/report-schedule";
 
 export const Route = createFileRoute("/_authenticated/clientes/$clientId")({ component: ClientDetailPage });
 
@@ -200,7 +200,7 @@ function ClientDetailPage() {
                   <FileBarChart2 size={17} color="#0baa59" /> {c.name} {!c.active && <span className="rpBadge">Pausado</span>}
                 </strong>
                 <small>
-                  {isObjective(c.objective) ? OBJECTIVES[c.objective].label : "Geração de leads"} · nível {(() => { const l = detectLevel(c.sections ?? []); return l ? DETAIL_LEVELS[l].label.toLowerCase() : "personalizado"; })()} · {PERIOD_LABELS[c.period]}
+                  {isObjective(c.objective) ? OBJECTIVES[c.objective].label : "Geração de leads"} · nível {(() => { const l = detectLevel(c.sections ?? []); return l ? DETAIL_LEVELS[l].label.toLowerCase() : "personalizado"; })()} · {(periodLabel(c.period) || (() => { const r = resolvePeriod(c.period, "America/Sao_Paulo"); return `${r.since.split("-").reverse().join("/")} a ${r.until.split("-").reverse().join("/")}`; })())}
                   {c.compare_previous ? " · com comparação" : ""} · {c.platforms.map((p) => (p === "meta" ? "Meta" : "Google")).join(" + ")} ·{" "}
                   {c.channels.map((ch) => (ch === "email" ? "E-mail" : "WhatsApp")).join(" + ")}
                   {c.campaign_mode === "active" ? " · só campanhas ativas" : c.campaign_mode === "selected" ? ` · ${c.campaign_ids?.length ?? 0} campanha(s) escolhida(s)` : ""}
