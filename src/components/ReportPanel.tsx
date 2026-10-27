@@ -5,7 +5,7 @@ import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, 
 import { Download, ImageOff } from "lucide-react";
 import { PERIOD_LABELS, type ReportPeriod } from "@/lib/report-schedule";
 import { METRIC_LABELS, formatDateBR, formatMetric, formatVariation, isPositiveChange, metricValue, variation, type MetricKey, type ReportTotals } from "@/lib/report-metrics";
-import { ATTRIBUTION_NOTE, daysBetween, GLOSSARY, OBJECTIVES, STATUS_COLORS, orderedMetrics, type AudienceRow, type FullReport, type SectionKey } from "@/lib/report-insights";
+import { ATTRIBUTION_NOTE, daysBetween, GLOSSARY, STATUS_COLORS, orderedMetrics, type AudienceRow, type FullReport, type SectionKey } from "@/lib/report-insights";
 import "../performance.css";
 import "../reports.css";
 
@@ -63,6 +63,69 @@ function Delta({ k, cur, prev }: { k: MetricKey; cur: number | null; prev: numbe
     <span className={"rpDelta " + (good === null ? "flat" : good ? "up" : "down")} title="Em relação ao período anterior">
       {formatVariation(v)}
     </span>
+  );
+}
+
+type FlowStep = { main: MetricKey; caption: string; link: { label: string; value: string; key?: MetricKey } | null; extras: MetricKey[] };
+
+/**
+ * Metrics as a chain, each step leading to the next: investment buys impressions (CPM), impressions
+ * become clicks (CTR), clicks become conversions (conversion rate) and, for sales, revenue (ROAS).
+ */
+function MetricFlow({ d, metrics }: { d: PanelData; metrics: MetricKey[] }) {
+  const cur = d.total.current;
+  const prev = d.compare ? d.total.previous : null;
+  const on = (k: MetricKey) => metrics.includes(k);
+  const convRate = cur.clicks > 0 ? (cur.conversions / cur.clicks) * 100 : null;
+  const pctText = (n: number | null) => (n === null ? "—" : `${n.toFixed(n < 10 ? 2 : 1).replace(".", ",")}%`);
+  const resultKey: MetricKey = on("conversions") || !on("leads") ? "conversions" : "leads";
+  const steps: FlowStep[] = [
+    { main: "spend", caption: "Valor investido em mídia", link: null, extras: [] },
+    { main: "impressions", caption: "Vezes que os anúncios apareceram", link: { label: "CPM", value: formatMetric("cpm", metricValue("cpm", cur)), key: "cpm" }, extras: (["reach", "frequency"] as MetricKey[]).filter(on) },
+    { main: "clicks", caption: "Pessoas que clicaram", link: { label: "CTR", value: formatMetric("ctr", metricValue("ctr", cur)), key: "ctr" }, extras: (["cpc"] as MetricKey[]).filter(on) },
+    {
+      main: resultKey,
+      caption: resultKey === "leads" ? "Contatos gerados" : "Resultados gerados",
+      link: { label: "Taxa de conversão", value: pctText(convRate) },
+      extras: (["cpa", ...(resultKey === "conversions" ? (["leads"] as MetricKey[]) : [])] as MetricKey[]).filter(on),
+    },
+  ];
+  if (on("revenue") || on("roas")) steps.push({ main: "revenue", caption: "Receita atribuída às campanhas", link: { label: "ROAS", value: formatMetric("roas", metricValue("roas", cur)), key: "roas" }, extras: [] });
+
+  return (
+    <ol className="rpxFlow" aria-label="Do investimento ao resultado">
+      {steps.map((st, i) => {
+        const v = metricValue(st.main, cur);
+        return (
+          <li key={st.main} className={"rpxFlowStep" + (i === steps.length - 1 ? " last" : "")}>
+            {st.link && (
+              <div className="rpxFlowLink" aria-label={`${st.link.label}: ${st.link.value}`}>
+                <span>{st.link.label}</span>
+                <b>{st.link.value}</b>
+                {st.link.key && prev && <Delta k={st.link.key} cur={metricValue(st.link.key, cur)} prev={metricValue(st.link.key, prev)} />}
+              </div>
+            )}
+            <div className="rpxFlowCard">
+              <span className="rpxFlowNum">{i + 1}</span>
+              <span className="rpxKpiLabel">{METRIC_LABELS[st.main]}</span>
+              <strong>{formatMetric(st.main, v)}</strong>
+              {prev && <Delta k={st.main} cur={v} prev={metricValue(st.main, prev)} />}
+              <small className="rpxFlowCaption">{st.caption}</small>
+              {st.extras.length > 0 && (
+                <dl className="rpxFlowExtras">
+                  {st.extras.map((k) => (
+                    <div key={k}>
+                      <dt>{METRIC_LABELS[k]}</dt>
+                      <dd>{formatMetric(k, metricValue(k, cur))}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -223,8 +286,6 @@ export function ReportPanel({ token }: { token: string }) {
 export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdfHref: string | null; embedded?: boolean }) {
   const has = (s: SectionKey) => d.sections.includes(s);
   const metrics = orderedMetrics(d.metrics, d.objective);
-  const primary = metrics.filter((m) => OBJECTIVES[d.objective].primary.includes(m)).slice(0, 4);
-  const secondary = metrics.filter((m) => !primary.includes(m));
   const platforms = Object.keys(d.byPlatform) as Array<keyof typeof PLATFORM>;
   const sectionHasData: Record<string, boolean> = {
     summary: true,
@@ -238,16 +299,6 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
     audience: has("audience") && (Object.values(d.audience) as AudienceRow[][]).some((r) => r.length > 0),
     history: has("history") && d.history.some((m) => m.spend > 0),
     glossary: has("glossary"),
-  };
-  const kpi = (k: MetricKey, big: boolean) => {
-    const cur = metricValue(k, d.total.current);
-    return (
-      <div key={k} className={big ? "rpxKpi rpxKpiBig" : "rpxKpi"}>
-        <span className="rpxKpiLabel">{METRIC_LABELS[k]}</span>
-        <strong>{formatMetric(k, cur)}</strong>
-        {d.compare && d.total.previous && <Delta k={k} cur={cur} prev={metricValue(k, d.total.previous)} />}
-      </div>
-    );
   };
 
   const Root = embedded ? "div" : "main";
@@ -319,10 +370,7 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
               ))}
             </ul>
           )}
-          <div className="rpxKpis">
-            <div className="rpxKpiRow rpxKpiRowBig">{primary.map((k) => kpi(k, true))}</div>
-            {secondary.length > 0 && <div className="rpxKpiRow">{secondary.map((k) => kpi(k, false))}</div>}
-          </div>
+          <MetricFlow d={d} metrics={metrics} />
           {d.taxes.spendWithTax !== null && (
             <p className="rpxTax">
               Investimento em mídia {formatMetric("spend", d.total.current.spend)}; com impostos <strong>{formatMetric("spend", d.taxes.spendWithTax)}</strong> (Meta {d.taxes.meta.toLocaleString("pt-BR")}%, Google {d.taxes.google.toLocaleString("pt-BR")}%). O valor com impostos é o que se aproxima da fatura.
