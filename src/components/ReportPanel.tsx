@@ -26,6 +26,58 @@ function CreativeImage({ src, alt, note }: { src: string | null; alt: string; no
   );
 }
 
+/** Square client logo with upload (agency view only). Images are shrunk to 256px and stored inline. */
+function LogoPicker({ logoUrl, fallback, onLogo }: { logoUrl: string | null; fallback: string; onLogo: (dataUrl: string | null) => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    setErr("");
+    if (!/^image\/(png|jpe?g|webp|svg\+xml|gif)$/.test(file.type)) return setErr("Use PNG, JPG, WEBP ou SVG.");
+    if (file.size > 5_000_000) return setErr("Imagem acima de 5 MB.");
+    setBusy(true);
+    try {
+      const url = URL.createObjectURL(file);
+      const img = await new Promise<HTMLImageElement>((ok, fail) => {
+        const i = new Image();
+        i.onload = () => ok(i);
+        i.onerror = () => fail(new Error("Não foi possível ler a imagem."));
+        i.src = url;
+      });
+      const size = 256;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d")!;
+      const scale = Math.min(size / (img.naturalWidth || size), size / (img.naturalHeight || size));
+      const w = (img.naturalWidth || size) * scale, h = (img.naturalHeight || size) * scale;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      URL.revokeObjectURL(url);
+      await onLogo(canvas.toDataURL("image/png"));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Não foi possível salvar o logo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="rpxLogoPick">
+      <label className={"rpxAvatar rpxAvatarEdit" + (logoUrl ? "" : " empty")} title={logoUrl ? "Trocar logo do cliente" : "Adicionar logo do cliente"}>
+        {logoUrl ? <img src={logoUrl} alt="" /> : <span className="rpxAddLogo">{busy ? "…" : <>+<small>Logo</small></>}</span>}
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" hidden onChange={(e) => void pick(e.target.files?.[0])} />
+        {logoUrl && <span className="rpxEditBadge">{busy ? "…" : "Trocar"}</span>}
+      </label>
+      {logoUrl && (
+        <button type="button" className="rpxLogoRemove" onClick={() => void onLogo(null)}>
+          Remover
+        </button>
+      )}
+      {err && <small className="rpxLogoErr">{err}</small>}
+      {!logoUrl && !err && <small className="rpxLogoHint">{fallback ? "Adicionar logo" : ""}</small>}
+    </div>
+  );
+}
+
 export type PanelData = Omit<FullReport, "errors"> & { partial: boolean };
 const PLATFORM = { meta: "Meta Ads", google: "Google Ads" } as const;
 const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
@@ -223,7 +275,7 @@ export function ReportPanel({ token }: { token: string }) {
  * The report itself. Used by the client's public panel and, embedded, by the agency's
  * "Visão geral" so both show exactly the same numbers and layout.
  */
-export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdfHref: string | null; embedded?: boolean }) {
+export function ReportView({ d, pdfHref, embedded = false, onLogo }: { d: PanelData; pdfHref: string | null; embedded?: boolean; onLogo?: ((dataUrl: string | null) => Promise<void>) | undefined }) {
   const has = (s: SectionKey) => d.sections.includes(s);
   const metrics = orderedMetrics(d.metrics, d.objective);
   const platforms = Object.keys(d.byPlatform) as Array<keyof typeof PLATFORM>;
@@ -270,13 +322,25 @@ export function ReportView({ d, pdfHref, embedded = false }: { d: PanelData; pdf
         <div className="rpxHeroBody">
           <div className="rpxIdentity">
             <div className="rpxWho">
-              <span className={"rpxAvatar" + (!d.logoUrl && platforms.length ? " rpxAvatarMark" : "")}>{d.logoUrl ? <img src={d.logoUrl} alt="" /> : platforms[0] ? <PlatformMark platform={platforms[0]} size={38} /> : initials(d.clientName)}</span>
+              {onLogo ? (
+                <LogoPicker logoUrl={d.logoUrl} fallback={initials(d.clientName)} onLogo={onLogo} />
+              ) : (
+                <span className="rpxAvatar">{d.logoUrl ? <img src={d.logoUrl} alt="" /> : initials(d.clientName)}</span>
+              )}
               <div className="rpxWhoText">
                 <span className="rpxIdLabel">Cliente</span>
                 <strong className="rpxClientName">
                   {d.clientName}
                 </strong>
-                <span className="rpxCampaignName">{d.campaignFilter ?? "Todas as campanhas"}</span>
+                <div className="rpxSubline">
+                  {platforms.map((p) => (
+                    <span key={p} className="rpxPlat">
+                      <PlatformMark platform={p} size={14} />
+                      {PLATFORM[p]}
+                    </span>
+                  ))}
+                  <span className="rpxCampaignName">{d.campaignFilter ?? "Todas as campanhas"}</span>
+                </div>
               </div>
             </div>
             <div className="rpxPeriodCard">

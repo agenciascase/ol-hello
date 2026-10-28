@@ -293,3 +293,18 @@ html:has(.rpx){scroll-behavior:smooth}
 .perf .rfMarks{display:flex;gap:6px;margin-bottom:2px}
 .perf .qcAcc .qcOpen{margin-left:auto;flex:none;opacity:1}
 .perf .qcAcc.taken{opacity:1}.perf .qcAcc.taken span{opacity:.6}
+
+/* Client logo upload (agency view) and platform/campaign line */
+.rpx .rpxLogoPick{display:grid;justify-items:center;gap:4px;flex:none}
+.rpx .rpxAvatarEdit{position:relative;cursor:pointer}
+.rpx .rpxAvatarEdit.empty{background:#ffffff10;border:2px dashed #8fe9b8;box-shadow:none;color:#bff5d6}
+.rpx .rpxAvatarEdit.empty:hover{background:#ffffff1c}
+.rpx .rpxAddLogo{display:grid;justify-items:center;line-height:1;font-size:24px;font-weight:700}
+.rpx .rpxAddLogo small{font-size:10.5px;font-weight:700;margin-top:3px;letter-spacing:.04em}
+.rpx .rpxEditBadge{position:absolute;inset:auto 0 0 0;background:#071b14cc;color:#eafff3;font-size:10px;font-weight:700;text-align:center;padding:3px 0;opacity:0;transition:opacity .15s}
+.rpx .rpxAvatarEdit:hover .rpxEditBadge,.rpx .rpxAvatarEdit:focus-within .rpxEditBadge{opacity:1}
+.rpx .rpxLogoRemove{border:0;background:none;color:#9fd8b9;font-size:10.5px;cursor:pointer;padding:0;text-decoration:underline}
+.rpx .rpxLogoErr{color:#ffb4b4;font-size:10.5px;max-width:110px;text-align:center}
+.rpx .rpxLogoHint{display:none}
+.rpx .rpxSubline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px}
+.rpx .rpxSubline .rpxPlat{padding:3px 9px;font-size:11.5px}

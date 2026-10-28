@@ -76,7 +76,7 @@ export const Route = createFileRoute("/api/integrations/overview")({
           });
           const { errors, ...rest } = report;
           return Response.json(
-            { ...rest, partial: errors.length > 0, errors, linkedClient: c ? String(c["name"]) : null, objectiveLabel: OBJECTIVES[objective].label },
+            { ...rest, partial: errors.length > 0, errors, linkedClient: c ? String(c["name"]) : null, linkedClientId: clientId, objectiveLabel: OBJECTIVES[objective].label },
             { headers: noStore },
           );
         } catch (e) {
