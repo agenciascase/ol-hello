@@ -322,7 +322,7 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
   /* Analysis */
   if (has("analysis")) {
     const blocks: Array<[string, string | null]> = [
-      ["Análise da equipe", report.analysis.notes],
+      ["Análise do período", report.analysis.notes],
       ["Ações realizadas no período", report.analysis.actions],
       ["Próximos passos", report.analysis.nextSteps],
     ];

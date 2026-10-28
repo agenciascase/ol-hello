@@ -452,7 +452,7 @@ export function ReportView({ d, pdfHref, embedded = false, onLogo }: { d: PanelD
         )}
 
         {sectionHasData["analysis"] && (
-          <Section id="analysis" title="Análise da equipe">
+          <Section id="analysis" title="Análise do período">
             <div className="rpxAnalysis">
               {d.analysis.notes && <p className="rpxAnalysisMain">{d.analysis.notes}</p>}
               <div className="rpxAnalysisCols">
