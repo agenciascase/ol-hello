@@ -12,7 +12,8 @@ export type MetricKey =
   | "roas"
   | "leads"
   | "reach"
-  | "frequency";
+  | "frequency"
+  | "calls";
 
 export type ReportTotals = {
   spend: number;
@@ -22,6 +23,8 @@ export type ReportTotals = {
   revenue: number;
   leads: number | null;
   reach: number | null;
+  /** Phone calls from Google Ads (call assets/ads); absent on Meta. */
+  calls?: number | null | undefined;
 };
 
 export const METRIC_LABELS: Record<MetricKey, string> = {
@@ -38,6 +41,7 @@ export const METRIC_LABELS: Record<MetricKey, string> = {
   leads: "Leads",
   reach: "Alcance",
   frequency: "Frequência",
+  calls: "Ligações",
 };
 
 /** Metrics where a lower value is better (used to colour the variation). */
@@ -73,6 +77,8 @@ export function metricValue(key: MetricKey, t: ReportTotals): number | null {
       return div(t.revenue, t.spend);
     case "frequency":
       return t.reach === null ? null : div(t.impressions, t.reach);
+    case "calls":
+      return t.calls ?? null;
   }
 }
 
