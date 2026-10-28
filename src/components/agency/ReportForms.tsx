@@ -82,7 +82,6 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
   const [compare, setCompare] = useState(config?.compare_previous ?? true);
   const [campaignMode, setCampaignMode] = useState<CampaignMode>(config?.campaign_mode === "active" || config?.campaign_mode === "selected" ? config.campaign_mode : "all");
   const [campaignIds, setCampaignIds] = useState<string[]>(config?.campaign_ids ?? []);
-  const [intro, setIntro] = useState(config?.intro_message ?? "");
   const [notes, setNotes] = useState(config?.manager_notes ?? "");
   const [channels, setChannels] = useState<string[]>(config?.channels ?? ["email"]);
   const [active, setActive] = useState(config?.active ?? true);
@@ -143,7 +142,7 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       campaign_filter: null,
       campaign_mode: campaignMode,
       campaign_ids: campaignMode === "selected" ? campaignIds : [],
-      intro_message: intro.trim() || null,
+      intro_message: null,
       manager_notes: notes.trim() || null,
       actions_taken: null,
       next_steps: null,
@@ -256,10 +255,6 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         <Chips<string> options={SECTIONS} value={sections} onChange={setSections} />
         <small>Seções sem dados no período são omitidas automaticamente.</small>
       </div>
-      <label className="rpField">
-        <span>Mensagem de abertura (opcional)</span>
-        <textarea value={intro} onChange={(e) => setIntro(e.target.value)} placeholder="Olá! Segue o resumo de performance do período." />
-      </label>
 
       <h3 className="rpFormGroup">Análise da equipe</h3>
       <p className="rpFormHint">Vai no topo do relatório e do e-mail. Atualize antes de cada envio; os destaques automáticos entram de qualquer forma.</p>
