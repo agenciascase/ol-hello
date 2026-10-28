@@ -34,7 +34,7 @@ export function periodLabel(code: string): string {
 }
 export const METRICS = [
   ["spend", "Investimento"], ["revenue", "Receita"], ["impressions", "Impressões"], ["clicks", "Cliques"], ["ctr", "CTR"], ["cpc", "CPC"], ["cpm", "CPM"],
-  ["conversions", "Conversões"], ["cpa", "CPA"], ["roas", "ROAS"], ["leads", "Leads"], ["reach", "Alcance"], ["frequency", "Frequência"],
+  ["conversions", "Conversões"], ["cpa", "CPA"], ["roas", "ROAS"], ["leads", "Leads"], ["reach", "Alcance"], ["frequency", "Frequência"], ["calls", "Ligações"],
 ] as const;
 export const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 

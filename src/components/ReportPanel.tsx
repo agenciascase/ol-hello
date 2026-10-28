@@ -119,7 +119,9 @@ function Delta({ k, cur, prev }: { k: MetricKey; cur: number | null; prev: numbe
 }
 
 /** Order of the summary numbers: reach and delivery first, then clicks, results and efficiency rates. */
-const SUMMARY_ORDER: MetricKey[] = ["spend", "reach", "impressions", "frequency", "clicks", "cpc", "conversions", "cpa", "ctr", "cpm", "leads", "revenue", "roas"];
+const SUMMARY_ORDER: MetricKey[] = ["spend", "reach", "impressions", "frequency", "clicks", "cpc", "conversions", "cpa", "calls", "ctr", "cpm", "leads", "revenue", "roas"];
+/** Metrics that only Meta reports. */
+const META_ONLY: MetricKey[] = ["reach", "frequency", "leads"];
 
 function Section({ id, title, note, children }: { id: string; title: string; note?: string | undefined; children: React.ReactNode }) {
   return (
@@ -293,7 +295,10 @@ export function ReportView({ d, pdfHref, embedded = false, onLogo }: { d: PanelD
     glossary: has("glossary"),
   };
 
-  const summary = [...SUMMARY_ORDER.filter((k) => metrics.includes(k)), ...metrics.filter((k) => !SUMMARY_ORDER.includes(k))];
+  const hasMeta = Boolean(d.byPlatform.meta), hasGoogle = Boolean(d.byPlatform.google);
+  // Google reports always show phone calls; Meta-only metrics stay out when there is no Meta.
+  const shown = [...metrics, ...(hasGoogle && !metrics.includes("calls") ? (["calls"] as MetricKey[]) : [])].filter((k) => hasMeta || !META_ONLY.includes(k));
+  const summary = [...SUMMARY_ORDER.filter((k) => shown.includes(k)), ...shown.filter((k) => !SUMMARY_ORDER.includes(k))];
   const kpi = (k: MetricKey, big: boolean) => {
     const cur = metricValue(k, d.total.current);
     return (

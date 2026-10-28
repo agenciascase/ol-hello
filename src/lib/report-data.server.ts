@@ -375,7 +375,7 @@ const gFilter = (filter: Filter) => {
 const between = (r: Range) => `segments.date BETWEEN '${r.since}' AND '${r.until}'`;
 
 async function googleCampaigns(token: string, customerId: string, range: Range, filter: Filter): Promise<CampaignRow[]> {
-  const rows = await gaql(token, customerId, `SELECT campaign.name, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value FROM campaign WHERE ${between(range)}${gFilter(filter)}`);
+  const rows = await gaql(token, customerId, `SELECT campaign.name, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.conversions, metrics.conversions_value, metrics.phone_calls FROM campaign WHERE ${between(range)}${gFilter(filter)}`);
   return rows.map((r) => ({
     platform: "google" as const,
     account: customerId,
@@ -387,6 +387,7 @@ async function googleCampaigns(token: string, customerId: string, range: Range, 
     revenue: gNum(r, "conversionsValue"),
     leads: null,
     reach: null,
+    calls: gNum(r, "phoneCalls"),
   }));
 }
 
@@ -446,6 +447,7 @@ function sum(rows: Totals[]): Totals {
     t.revenue += r.revenue;
     if (r.leads !== null) t.leads = (t.leads ?? 0) + r.leads;
     if (r.reach !== null) t.reach = (t.reach ?? 0) + r.reach;
+    if (r.calls !== null && r.calls !== undefined) t.calls = (t.calls ?? 0) + r.calls;
   }
   return t;
 }

@@ -228,6 +228,7 @@ export const GLOSSARY: Array<[string, string]> = [
   ["CPM", "Custo para exibir os anúncios mil vezes."],
   ["Conversões", "Ações valiosas registradas pelas plataformas: leads, conversas iniciadas, compras e outras configuradas."],
   ["Custo por conversão (CPA)", "Investimento dividido pelo número de conversões."],
+  ["Ligações", "Chamadas telefônicas feitas pelos anúncios do Google (botão ou número de telefone no anúncio)."],
   ["ROAS", "Receita atribuída dividida pelo investimento. 3,00x = R$ 3 de receita para cada R$ 1 investido."],
 ];
 
@@ -240,7 +241,7 @@ export function orderedMetrics(selected: string[], objective: Objective): Metric
   const primary = OBJECTIVES[objective].primary.filter((m) => valid.includes(m));
   return [...primary, ...valid.filter((m) => !primary.includes(m))];
 }
-const METRIC_KEYS: MetricKey[] = ["spend", "revenue", "impressions", "clicks", "ctr", "cpc", "cpm", "conversions", "cpa", "roas", "leads", "reach", "frequency"];
+const METRIC_KEYS: MetricKey[] = ["spend", "revenue", "impressions", "clicks", "ctr", "cpc", "cpm", "conversions", "cpa", "roas", "leads", "reach", "frequency", "calls"];
 const isKey = (m: string): m is MetricKey => (METRIC_KEYS as string[]).includes(m);
 
 export const STATUS_COLORS: Record<Status, { fg: string; bg: string; label: string }> = {
