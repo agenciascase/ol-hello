@@ -80,18 +80,16 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
   const level = detectLevel(sections);
   const [period, setPeriod] = useState<ReportPeriod>(config?.period ?? "last_7_days");
   const [compare, setCompare] = useState(config?.compare_previous ?? true);
-  const [filter, setFilter] = useState(config?.campaign_filter ?? "");
   const [campaignMode, setCampaignMode] = useState<CampaignMode>(config?.campaign_mode === "active" || config?.campaign_mode === "selected" ? config.campaign_mode : "all");
   const [campaignIds, setCampaignIds] = useState<string[]>(config?.campaign_ids ?? []);
   const [intro, setIntro] = useState(config?.intro_message ?? "");
   const [notes, setNotes] = useState(config?.manager_notes ?? "");
-  const [actions, setActions] = useState(config?.actions_taken ?? "");
-  const [nextSteps, setNextSteps] = useState(config?.next_steps ?? "");
   const [channels, setChannels] = useState<string[]>(config?.channels ?? ["email"]);
   const [active, setActive] = useState(config?.active ?? true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [drafting, setDrafting] = useState(false);
+  const [draftNote, setDraftNote] = useState("");
 
   function pickObjective(o: Objective) {
     setObjective(o);
@@ -105,15 +103,20 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
   }
 
   async function suggest() {
-    if (!config) return;
+    if (notes.trim() && !window.confirm("Substituir o texto atual da análise por uma nova?")) return;
     setDrafting(true);
     setError("");
+    setDraftNote("");
     try {
-      const r = await agencyApi<{ draft: string }>(`/api/integrations/reports/${config.id}/draft`);
-      if (!r.draft) setError("Ainda não há dados suficientes no período para sugerir uma análise.");
-      else setNotes((cur) => (cur.trim() ? cur.trim() + "\n\n" + r.draft : r.draft));
+      const r = await agencyApi<{ text: string; source: "ia" | "numeros"; note?: string }>(`/api/integrations/clients/${clientId}/analysis`, {
+        method: "POST",
+        body: { platforms, period, compare_previous: compare, campaign_mode: campaignMode, campaign_ids: campaignMode === "selected" ? campaignIds : [], objective, metrics },
+      });
+      if (!r.text) setError("Ainda não há dados suficientes no período para escrever a análise.");
+      else setNotes(r.text);
+      if (r.source === "numeros") setDraftNote(r.note ? r.note + " Usamos um texto montado a partir dos números." : "Texto montado a partir dos números.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Não foi possível sugerir a análise.");
+      setError(e instanceof Error ? e.message : "Não foi possível gerar a análise.");
     } finally {
       setDrafting(false);
     }
@@ -137,13 +140,13 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       sections: ALL_SECTIONS.filter((k) => sections.includes(k)),
       period,
       compare_previous: compare,
-      campaign_filter: filter.trim() || null,
+      campaign_filter: null,
       campaign_mode: campaignMode,
       campaign_ids: campaignMode === "selected" ? campaignIds : [],
       intro_message: intro.trim() || null,
       manager_notes: notes.trim() || null,
-      actions_taken: actions.trim() || null,
-      next_steps: nextSteps.trim() || null,
+      actions_taken: null,
+      next_steps: null,
       channels,
       active,
       updated_at: new Date().toISOString(),
@@ -254,10 +257,6 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         <small>Seções sem dados no período são omitidas automaticamente.</small>
       </div>
       <label className="rpField">
-        <span>Filtrar também pelo nome (opcional)</span>
-        <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Só campanhas cujo nome contém este texto, ex.: [LEADS]" />
-      </label>
-      <label className="rpField">
         <span>Mensagem de abertura (opcional)</span>
         <textarea value={intro} onChange={(e) => setIntro(e.target.value)} placeholder="Olá! Segue o resumo de performance do período." />
       </label>
@@ -267,24 +266,12 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       <div className="rpField">
         <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           Análise do período
-          {config && (
-            <button type="button" className="textLink" disabled={drafting} onClick={suggest}>
-              <Sparkles size={13} /> {drafting ? "Gerando sugestão…" : "Sugerir a partir dos números"}
-            </button>
-          )}
+          <button type="button" className="textLink" disabled={drafting} onClick={suggest}>
+            <Sparkles size={13} /> {drafting ? "Escrevendo a análise…" : notes.trim() ? "Gerar nova análise" : "Gerar análise do período"}
+          </button>
         </span>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="O que aconteceu no período e por quê." />
-        {!config && <small>Depois de salvar, você pode pedir uma sugestão de texto baseada nos números.</small>}
-      </div>
-      <div className="rpTwo">
-        <label className="rpField">
-          <span>O que fizemos no período</span>
-          <textarea value={actions} onChange={(e) => setActions(e.target.value)} placeholder="Testes, criativos novos, ajustes de verba…" />
-        </label>
-        <label className="rpField">
-          <span>Próximos passos</span>
-          <textarea value={nextSteps} onChange={(e) => setNextSteps(e.target.value)} placeholder="O que vamos fazer a seguir." />
-        </label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={6} placeholder="O que aconteceu no período e por quê." />
+        <small>{draftNote || "A análise usa os números da plataforma, do período e das campanhas escolhidos acima. Revise antes de salvar; você pode editar o texto à vontade."}</small>
       </div>
 
       <div className="rpTwo">
