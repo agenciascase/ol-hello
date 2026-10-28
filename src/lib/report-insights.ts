@@ -16,7 +16,7 @@ export const isObjective = (v: string): v is Objective => v in OBJECTIVES;
 export const SECTIONS = [
   ["highlights", "Destaques automáticos"],
   ["goals", "Metas e ritmo da verba"],
-  ["analysis", "Análise do gestor, ações e próximos passos"],
+  ["analysis", "Análise do período"],
   ["daily", "Evolução diária"],
   ["funnel", "Funil"],
   ["conversions", "Conversões por tipo"],

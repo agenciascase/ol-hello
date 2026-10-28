@@ -256,11 +256,11 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         <small>Seções sem dados no período são omitidas automaticamente.</small>
       </div>
 
-      <h3 className="rpFormGroup">Análise da equipe</h3>
+      <h3 className="rpFormGroup">Análise do período</h3>
       <p className="rpFormHint">Vai no topo do relatório e do e-mail. Atualize antes de cada envio; os destaques automáticos entram de qualquer forma.</p>
       <div className="rpField">
         <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-          Análise do período
+          Texto da análise
           <button type="button" className="textLink" disabled={drafting} onClick={suggest}>
             <Sparkles size={13} /> {drafting ? "Escrevendo a análise…" : notes.trim() ? "Gerar nova análise" : "Gerar análise do período"}
           </button>
