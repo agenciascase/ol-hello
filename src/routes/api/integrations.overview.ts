@@ -60,7 +60,7 @@ export const Route = createFileRoute("/api/integrations/overview")({
             config: {
               name: `${platform === "meta" ? "Meta Ads" : "Google Ads"} · ${accountName}`,
               platforms: [platform as string],
-              metrics: metricsFor(objective, "complete"),
+              metrics: platform === "google" ? [...metricsFor(objective, "complete"), "calls"] : metricsFor(objective, "complete"),
               period: "custom",
               range: { since: from, until: to },
               compare_previous: compare,

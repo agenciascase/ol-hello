@@ -71,11 +71,16 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
+/** Metrics only Meta reports (hidden for Google-only reports). */
+const META_ONLY: string[] = ["reach", "frequency", "leads"];
+/** Google reports start with phone calls selected; they only show when the period had calls. */
+const withCalls = (list: string[], platforms: string[]) => (platforms.includes("google") && !list.includes("calls") ? [...list, "calls"] : list);
+
 export function ReportConfigForm({ clientId, config, availablePlatforms, onClose, onSaved }: { clientId: string; config?: ReportConfigRow; availablePlatforms: string[]; onClose: () => void; onSaved: (id: string) => void }) {
   const [name, setName] = useState(config?.name ?? "Relatório semanal de performance");
   const [objective, setObjective] = useState<Objective>(config && isObjective(config.objective) ? config.objective : "leads");
   const [platforms, setPlatforms] = useState<string[]>(config?.platforms ?? (availablePlatforms.length ? availablePlatforms : ["meta", "google"]));
-  const [metrics, setMetrics] = useState<string[]>(config?.metrics ?? metricsFor("leads", "standard"));
+  const [metrics, setMetrics] = useState<string[]>(config?.metrics ?? withCalls(metricsFor("leads", "standard"), config?.platforms ?? availablePlatforms));
   const [sections, setSections] = useState<string[]>(config?.sections?.length ? config.sections : DETAIL_LEVELS.standard.sections);
   const level = detectLevel(sections);
   const [period, setPeriod] = useState<ReportPeriod>(config?.period ?? "last_7_days");
@@ -93,12 +98,12 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
   function pickObjective(o: Objective) {
     setObjective(o);
     // New reports follow the objective's metric preset; existing ones keep the agency's choice.
-    if (!config) setMetrics(metricsFor(o, level ?? "standard"));
+    if (!config) setMetrics(withCalls(metricsFor(o, level ?? "standard"), platforms));
   }
 
   function pickLevel(l: DetailLevel) {
     setSections(DETAIL_LEVELS[l].sections);
-    setMetrics(metricsFor(objective, l));
+    setMetrics(withCalls(metricsFor(objective, l), platforms));
   }
 
   async function suggest() {
@@ -209,6 +214,7 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
                 disabled={missing.length === value.length}
                 onClick={() => {
                   setPlatforms(value);
+                  setMetrics((cur) => withCalls(cur, value));
                   setCampaignIds((cur) => cur.filter((k) => value.some((v) => k.startsWith(v + ":"))));
                 }}
               >
@@ -247,8 +253,8 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       </label>
       <div className="rpField">
         <span>Métricas</span>
-        <Chips<string> options={METRICS} value={metrics} onChange={setMetrics} />
-        <small>As principais do objetivo aparecem em destaque. Alcance e frequência existem só na Meta.</small>
+        <Chips<string> options={METRICS.filter(([k]) => (platforms.includes("meta") || !META_ONLY.includes(k)) && (platforms.includes("google") || k !== "calls"))} value={metrics} onChange={setMetrics} />
+        <small>As principais do objetivo aparecem em destaque. Ligações (Google) só aparecem quando a conta recebeu ligações no período.</small>
       </div>
       <div className="rpField">
         <span>Seções do relatório</span>
