@@ -7,12 +7,14 @@ import { agencyApi } from "@/lib/agency-client";
 
 type Platform = "google" | "meta";
 type Found = { provider: Platform; account_id: string; name: string; currency: string | null; linkedTo: { id: string; name: string } | null };
-type Lookup = { provider: Platform; source: "conta" | "bm"; title: string | null; accounts: Found[] };
+type Lookup = { provider: Platform; source: "conta" | "bm"; title: string | null; accounts: Found[]; byName?: boolean };
 
 const HINT: Record<Platform, { label: string; placeholder: string; help: string }> = {
-  google: { label: "Número da conta Google Ads", placeholder: "Ex.: 123-456-7890", help: "O número de 10 dígitos que aparece no topo do Google Ads do cliente." },
-  meta: { label: "ID da BM ou da conta de anúncios", placeholder: "Ex.: 1914217738639420", help: "Em Configurações do negócio › Informações da empresa (BM) ou no Gerenciador de Anúncios (conta)." },
+  google: { label: "Nome ou número da conta Google Ads", placeholder: "Ex.: Porto Vistorias ou 123-456-7890", help: "Digite parte do nome da conta ou o número de 10 dígitos do topo do Google Ads." },
+  meta: { label: "Nome, ID da BM ou da conta de anúncios", placeholder: "Ex.: Porto Vistorias ou 1914217738639420", help: "Digite parte do nome da conta, o ID da BM ou o ID da conta de anúncios." },
 };
+/** Account name without the agency's "C.A - " prefix, as a client name. */
+const cleanName = (n: string) => n.trim().replace(/^C\.?\s?A\.?\s*(-\s*)?/i, "").replace(/\s*\(reserva[^)]*\)\s*$/i, "").trim() || n.trim();
 const fmt = (p: Platform, id: string) => (p === "google" ? id.replace(/^(\d{3})(\d{3})(\d{4})$/, "$1-$2-$3") : id.replace(/^act_/, ""));
 
 /** One-step client registration from a Google Ads account number or a Meta BM / ad account ID. */
@@ -26,16 +28,37 @@ export function QuickClientAdd({ onCreated }: { onCreated: (id: string) => void 
   const [picked, setPicked] = useState<string[]>([]);
   const [name, setName] = useState("");
 
+  async function searchByName(q: string) {
+    const term = q.replace(/[%_,()]/g, " ").trim();
+    const { data, error: e } = await supabase.from("ad_accounts_catalog").select("account_id,name,currency").eq("provider", platform).ilike("name", `%${term}%`).order("name").limit(30);
+    if (e) throw new Error(e.message);
+    const rows = (data ?? []) as Array<{ account_id: string; name: string; currency: string | null }>;
+    if (!rows.length) throw new Error(`Nenhuma conta ${platform === "google" ? "Google Ads" : "Meta Ads"} com “${q.trim()}” no nome. Confira a grafia ou clique em “Atualizar contas” em Integrações.`);
+    const { data: links } = await supabase.from("client_ad_accounts").select("account_id,client_id,clients(name)").eq("provider", platform).in("account_id", rows.map((r) => r.account_id));
+    const linked = new Map(((links ?? []) as unknown as Array<{ account_id: string; client_id: string; clients: { name: string } | null }>).map((l) => [l.account_id, { id: l.client_id, name: l.clients?.name ?? "cliente" }]));
+    const accounts: Found[] = rows.map((r) => ({ provider: platform, account_id: r.account_id, name: r.name, currency: r.currency, linkedTo: linked.get(r.account_id) ?? null }));
+    return { provider: platform, source: "conta" as const, title: null, accounts, byName: true };
+  }
+
   async function lookup() {
     if (!id.trim()) return;
     setBusy("lookup");
     setError("");
     setResult(null);
     try {
+      // Letters → search the synced accounts by name; digits → Google number / Meta BM or account ID.
+      if (/[a-zà-ú]/i.test(id.replace(/^act_/i, ""))) {
+        const r = await searchByName(id);
+        const free = r.accounts.filter((a) => !a.linkedTo);
+        setResult(r);
+        setPicked(free.length === 1 ? [free[0]!.account_id] : []);
+        setName(cleanName((free[0] ?? r.accounts[0])!.name));
+        return;
+      }
       const r = await agencyApi<Lookup>("/api/integrations/client-lookup?" + new URLSearchParams({ provider: platform, id: id.trim() }).toString());
       setResult(r);
       setPicked(r.accounts.filter((a) => !a.linkedTo).map((a) => a.account_id));
-      setName(r.title ?? r.accounts[0]?.name ?? "");
+      setName(cleanName(r.title ?? r.accounts[0]?.name ?? ""));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível consultar.");
     } finally {
@@ -60,7 +83,13 @@ export function QuickClientAdd({ onCreated }: { onCreated: (id: string) => void 
     onCreated(data.id);
   }
 
-  const toggle = (acc: string) => setPicked((cur) => (cur.includes(acc) ? cur.filter((x) => x !== acc) : [...cur, acc]));
+  const toggle = (acc: string) =>
+    setPicked((cur) => {
+      const next = cur.includes(acc) ? cur.filter((x) => x !== acc) : [...cur, acc];
+      // Suggest the client name from the first account picked in a name search.
+      if (result?.byName && next.length === 1 && cur.length === 0) setName(cleanName(result.accounts.find((a) => a.account_id === acc)?.name ?? name));
+      return next;
+    });
 
   return (
     <section className="panel qcBox" aria-label="Cadastrar cliente pela conta">
@@ -70,7 +99,7 @@ export function QuickClientAdd({ onCreated }: { onCreated: (id: string) => void 
         </span>
         <div>
           <h2>Cadastrar cliente pela conta</h2>
-          <p>Digite o número da conta do Google ou o ID da BM da Meta. Buscamos as contas e o nome automaticamente.</p>
+          <p>Digite o nome da conta, o número da conta do Google ou o ID da BM da Meta. Buscamos as contas e o nome automaticamente.</p>
         </div>
       </div>
 
@@ -96,7 +125,7 @@ export function QuickClientAdd({ onCreated }: { onCreated: (id: string) => void 
         </div>
         <label className="qcField">
           <span>{HINT[platform].label}</span>
-          <input value={id} onChange={(e) => setId(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void lookup()} placeholder={HINT[platform].placeholder} inputMode="numeric" />
+          <input value={id} onChange={(e) => setId(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void lookup()} placeholder={HINT[platform].placeholder} inputMode="text" />
           <small>{HINT[platform].help}</small>
         </label>
         <button type="button" className="primary qcGo" disabled={!id.trim() || busy !== ""} onClick={() => void lookup()}>
@@ -109,7 +138,11 @@ export function QuickClientAdd({ onCreated }: { onCreated: (id: string) => void 
       {result && (
         <div className="qcResult">
           <p className="qcFound">
-            {result.source === "bm" ? `BM ${result.title ?? ""} · ${result.accounts.length} conta${result.accounts.length === 1 ? "" : "s"} encontrada${result.accounts.length === 1 ? "" : "s"}` : "Conta encontrada"}
+            {result.byName
+              ? `${result.accounts.length} conta${result.accounts.length === 1 ? "" : "s"} com “${id.trim()}” no nome · marque as que são deste cliente`
+              : result.source === "bm"
+                ? `BM ${result.title ?? ""} · ${result.accounts.length} conta${result.accounts.length === 1 ? "" : "s"} encontrada${result.accounts.length === 1 ? "" : "s"}`
+                : "Conta encontrada"}
           </p>
           <div className="qcAccounts">
             {result.accounts.map((a) => (
@@ -120,9 +153,14 @@ export function QuickClientAdd({ onCreated }: { onCreated: (id: string) => void 
                   <small>
                     {fmt(a.provider, a.account_id)}
                     {a.currency ? " · " + a.currency : ""}
-                    {a.linkedTo ? ` · já vinculada a ${a.linkedTo.name}` : ""}
+                    {a.linkedTo ? ` · já é do cliente ${a.linkedTo.name}` : ""}
                   </small>
                 </span>
+                {a.linkedTo && (
+                  <button type="button" className="textLink qcOpen" onClick={() => onCreated(a.linkedTo!.id)}>
+                    Abrir cliente
+                  </button>
+                )}
               </label>
             ))}
           </div>

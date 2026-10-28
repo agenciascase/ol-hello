@@ -291,3 +291,5 @@ html:has(.rpx){scroll-behavior:smooth}
 .perf .rfPlatforms{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
 .perf .rfPlatform:disabled{opacity:.45;cursor:not-allowed}
 .perf .rfMarks{display:flex;gap:6px;margin-bottom:2px}
+.perf .qcAcc .qcOpen{margin-left:auto;flex:none;opacity:1}
+.perf .qcAcc.taken{opacity:1}.perf .qcAcc.taken span{opacity:.6}
