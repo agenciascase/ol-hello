@@ -160,12 +160,10 @@ export function AccountFilterBar({
       <div className="afRow">
         <div className="afSegment" role="tablist" aria-label="Plataforma">
           {(["google", "meta"] as Platform[]).map((p) => {
-            const s = p === "google" ? google : meta;
             return (
               <button key={p} type="button" role="tab" aria-selected={platform === p} className={"afSeg " + p} onClick={() => onPlatform(p)}>
                 <PlatformMark platform={p} />
                 {LABEL[p]}
-                <span>{s.loading && !s.accounts.length ? "…" : s.accounts.length}</span>
               </button>
             );
           })}
