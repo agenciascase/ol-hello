@@ -296,8 +296,9 @@ export function ReportView({ d, pdfHref, embedded = false, onLogo }: { d: PanelD
   };
 
   const hasMeta = Boolean(d.byPlatform.meta), hasGoogle = Boolean(d.byPlatform.google);
-  // Google reports always show phone calls; Meta-only metrics stay out when there is no Meta.
-  const shown = [...metrics, ...(hasGoogle && !metrics.includes("calls") ? (["calls"] as MetricKey[]) : [])].filter((k) => hasMeta || !META_ONLY.includes(k));
+  // Phone calls (Google) show when selected and the period had calls; Meta-only metrics need Meta.
+  const hadCalls = (d.total.current.calls ?? 0) > 0 || (d.total.previous?.calls ?? 0) > 0;
+  const shown = metrics.filter((k) => (hasMeta || !META_ONLY.includes(k)) && (k !== "calls" || (hasGoogle && hadCalls)));
   const summary = [...SUMMARY_ORDER.filter((k) => shown.includes(k)), ...shown.filter((k) => !SUMMARY_ORDER.includes(k))];
   const kpi = (k: MetricKey, big: boolean) => {
     const cur = metricValue(k, d.total.current);
