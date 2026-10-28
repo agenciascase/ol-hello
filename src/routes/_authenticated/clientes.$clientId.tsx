@@ -5,7 +5,7 @@ import { ArrowLeft, CalendarClock, Copy, Download, ExternalLink, FileBarChart2, 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
-import { CLIENT_COLUMNS, ClientForm, TIMEZONES, type ClientRow } from "@/components/agency/ClientForm";
+import { CLIENT_COLUMNS, ClientForm, type ClientRow } from "@/components/agency/ClientForm";
 import { AccountLinker } from "@/components/agency/AccountLinker";
 import { ReportConfigForm, ScheduleForm, type ReportConfigRow, type ScheduleRow } from "@/components/agency/ReportForms";
 import { agencyApi, agencyDownload } from "@/lib/agency-client";
@@ -98,14 +98,13 @@ function ClientDetailPage() {
 
   const { client, accounts, configs, deliveries } = data.data;
   const linkedPlatforms: string[] = Array.from(new Set<string>(accounts.map((a) => a.provider)));
-  const tzLabel = TIMEZONES.find(([v]) => v === client.timezone)?.[1] ?? client.timezone;
   const configName = (id: string) => configs.find((c) => c.id === id)?.name ?? "Relatório";
 
   return (
     <AgencyShell
       eyebrow="CLIENTE"
       title={client.name}
-      description={[client.owner_name, tzLabel, client.active ? null : "Inativo"].filter(Boolean).join(" · ")}
+      description={[client.owner_name, client.active ? null : "Inativo"].filter(Boolean).join(" · ")}
       actions={
         <>
           <Link to="/clientes" className="secondary">
