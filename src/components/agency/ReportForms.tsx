@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { agencyApi } from "@/lib/agency-client";
 import { ALL_SECTIONS, DETAIL_LEVELS, OBJECTIVES, SECTIONS, detectLevel, isObjective, metricsFor, type DetailLevel, type Objective } from "@/lib/report-insights";
 import { supabase } from "@/integrations/supabase/client";
 import { CampaignScope, type CampaignMode } from "./CampaignScope";
-import { METRICS, WEEKDAYS, computeNextRun, formatNextRun, periodLabel, resolvePeriod, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
+import { EMAIL, METRICS, WEEKDAYS, computeNextRun, formatNextRun, periodLabel, resolvePeriod, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
 import { DateRangePicker, presetLabel } from "./DateRangePicker";
 import { PlatformMark } from "./PlatformMark";
 
@@ -20,6 +20,8 @@ export type ReportConfigRow = {
   campaign_mode?: string | null;
   campaign_ids?: string[] | null;
   intro_message: string | null;
+  email_subject?: string | null;
+  email_to?: string[] | null;
   channels: string[];
   share_token: string | null;
   active: boolean;
@@ -89,6 +91,22 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
   const [campaignIds, setCampaignIds] = useState<string[]>(config?.campaign_ids ?? []);
   const [notes, setNotes] = useState(config?.manager_notes ?? "");
   const [channels, setChannels] = useState<string[]>(config?.channels ?? ["email"]);
+  const [emailTo, setEmailTo] = useState((config?.email_to ?? []).join(", "));
+  const [emailSubject, setEmailSubject] = useState(config?.email_subject ?? "");
+  const [emailMessage, setEmailMessage] = useState(config?.intro_message ?? "");
+  // Pre-fill recipients with the client's e-mails when the report has none of its own.
+  useEffect(() => {
+    if (config?.email_to?.length) return;
+    void supabase
+      .from("clients")
+      .select("emails")
+      .eq("id", clientId)
+      .maybeSingle()
+      .then(({ data }) => {
+        const list = ((data as { emails?: string[] } | null)?.emails ?? []).filter(Boolean);
+        if (list.length) setEmailTo((cur) => cur || list.join(", "));
+      });
+  }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [active, setActive] = useState(config?.active ?? true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -132,6 +150,12 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
     if (!platforms.length) return setError("Escolha pelo menos uma plataforma.");
     if (!metrics.length) return setError("Escolha pelo menos uma métrica.");
     if (!channels.length) return setError("Escolha pelo menos um canal de envio.");
+    const recipients: string[] = [...new Set<string>(emailTo.split(/[\s,;]+/).map((x) => x.trim().toLowerCase()).filter(Boolean))];
+    if (channels.includes("email")) {
+      const bad = recipients.find((x) => !EMAIL.test(x));
+      if (bad) return setError(`E-mail inválido: ${bad}`);
+      if (!recipients.length) return setError("Informe pelo menos um e-mail de destino.");
+    }
     if (campaignMode === "selected" && !campaignIds.length) return setError("Marque pelo menos uma campanha ou escolha outra opção em Campanhas do relatório.");
     setSaving(true);
     const ordered = METRICS.map(([k]) => k as string).filter((k) => metrics.includes(k));
@@ -147,7 +171,9 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       campaign_filter: null,
       campaign_mode: campaignMode,
       campaign_ids: campaignMode === "selected" ? campaignIds : [],
-      intro_message: null,
+      intro_message: channels.includes("email") ? emailMessage.trim() || null : null,
+      email_subject: channels.includes("email") ? emailSubject.trim().slice(0, 200) || null : null,
+      email_to: channels.includes("email") ? recipients : [],
       manager_notes: notes.trim() || null,
       actions_taken: null,
       next_steps: null,
@@ -284,6 +310,26 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /> Relatório ativo
         </label>
       </div>
+      {channels.includes("email") && (
+        <div className="rfEmail">
+          <h3 className="rpFormGroup">E-mail para o cliente</h3>
+          <label className="rpField">
+            <span>Enviar para</span>
+            <input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="cliente@empresa.com.br, financeiro@empresa.com.br" inputMode="email" />
+            <small>Separe vários e-mails com vírgula. Vem preenchido com os e-mails do cadastro do cliente.</small>
+          </label>
+          <label className="rpField">
+            <span>Assunto</span>
+            <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} maxLength={200} placeholder="Relatório {cliente} · {período}" />
+            <small>Pode usar {"{cliente}"} e {"{período}"}; eles são trocados pelo nome do cliente e pelas datas do relatório. Em branco, usamos o assunto padrão.</small>
+          </label>
+          <label className="rpField">
+            <span>Mensagem</span>
+            <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} rows={5} placeholder={"Olá! Tudo bem?\nSegue o relatório de performance do período. O PDF está em anexo e o painel completo pode ser aberto pelo botão abaixo."} />
+            <small>Vai no começo do e-mail, antes dos números. O PDF segue em anexo e o link do painel vai em um botão.</small>
+          </label>
+        </div>
+      )}
       {error && <p className="rpError">{error}</p>}
       <div className="rpModalFoot">
         <button className="secondary" type="button" onClick={onClose}>

@@ -377,7 +377,7 @@ export function ReportView({ d, pdfHref, embedded = false, onLogo }: { d: PanelD
       <div className="rpxWrap">
         {d.partial && <p className="rpxNotice">Parte dos dados não pôde ser atualizada agora. Os números abaixo podem estar incompletos; tente recarregar em alguns minutos.</p>}
 
-        <Section id="summary" title="Resumo do período" note={d.intro ?? undefined}>
+        <Section id="summary" title="Resumo do período">
           {has("highlights") && d.highlights.length > 0 && (
             <ul className="rpxHighlights">
               {d.highlights.map((h) => (
