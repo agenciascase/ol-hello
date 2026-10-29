@@ -222,10 +222,6 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
   );
   doc.y = doc.H - 150;
 
-  if (report.intro) {
-    paragraph(report.intro, 10.5, C.ink);
-    doc.y -= 8;
-  }
   for (const e of report.errors) {
     doc.ensure(14);
     doc.text(M, doc.y - 9, fit("Atenção: " + e, 8.5, W), 8.5, { color: C.bad });

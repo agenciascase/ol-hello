@@ -134,11 +134,14 @@ export async function deliverReport(configId: string, opts: { trigger: "schedule
     throw new Error("Nenhum dado pôde ser consultado: " + report.errors.join(" | "));
 
   if (channels.includes("email")) {
-    const emails = (clientRow?.emails ?? []).filter(Boolean);
+    const own = ((config as { email_to?: string[] | null }).email_to ?? []).filter(Boolean);
+    const emails = own.length ? own : (clientRow?.emails ?? []).filter(Boolean);
+    const customSubject = ((config as { email_subject?: string | null }).email_subject ?? "").trim();
+    const subject = customSubject ? customSubject.replace(/\{cliente\}/gi, client.name).replace(/\{per[ií]odo\}/gi, periodText(report)) : `Relatório ${client.name} · ${periodText(report)}`;
     if (emails.length) {
       try {
         if (!delivery.email) throw new Error("E-mail ainda não conectado. Conecte em Integrações.");
-        await sendEmailWith(delivery.email, emails, `Relatório ${client.name} · ${periodText(report)}`, reportEmailHtml(report, panelUrl), { filename, content: pdf });
+        await sendEmailWith(delivery.email, emails, subject, reportEmailHtml(report, panelUrl), { filename, content: pdf });
         for (const e of emails) results.push({ channel: "email", recipient: e, status: "sent", error: null });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Falha no envio";

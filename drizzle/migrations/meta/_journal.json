@@ -50,6 +50,13 @@
       "when": 1793212800000,
       "tag": "0006_report_period_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793299200000,
+      "tag": "0007_report_email_fields",
+      "breakpoints": true
     }
   ]
 }
