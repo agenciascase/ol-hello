@@ -308,3 +308,14 @@ html:has(.rpx){scroll-behavior:smooth}
 .rpx .rpxLogoHint{display:none}
 .rpx .rpxSubline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px}
 .rpx .rpxSubline .rpxPlat{padding:3px 9px;font-size:11.5px}
+
+/* Quick report from the client list */
+.perf .qrCardBtn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid #bfe3cd;background:#f2fcf6;color:#0a7a45;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px;cursor:pointer}
+.perf .qrCardBtn:hover{background:#e3f7ec}
+.perf .qrCardBtn:disabled{opacity:.45;cursor:not-allowed}
+.perf .qrDone{max-width:560px}
+.perf .qrText{color:var(--muted);margin:0 0 14px}
+.perf .qrLink{display:flex;gap:8px}
+.perf .qrLink input{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font:inherit;color:#18212d;background:#fafcfb}
+.perf .qrActions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.perf .qrActions a.secondary{text-decoration:none}

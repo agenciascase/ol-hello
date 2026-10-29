@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { FileBarChart2, Link2, Mail, MessageCircle, Plus, Search } from "lucide-react";
+import { FileBarChart2, FilePlus2, Link2, Mail, MessageCircle, Plus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
 import { CLIENT_COLUMNS, ClientForm, type ClientRow } from "@/components/agency/ClientForm";
 import { QuickClientAdd } from "@/components/agency/QuickClientAdd";
+import { QuickReport } from "@/components/agency/QuickReport";
 
 export const Route = createFileRoute("/_authenticated/clientes/")({ component: ClientsPage });
 
@@ -16,6 +17,7 @@ function ClientsPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"active" | "inactive" | "all">("active");
   const [creating, setCreating] = useState(false);
+  const [reportFor, setReportFor] = useState<{ id: string; name: string; platforms: string[] } | null>(null);
   const clients = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
@@ -108,11 +110,28 @@ function ClientsPage() {
                   <span className="rpBadge">
                     <MessageCircle size={11} /> {c.whatsapp_numbers.length}
                   </span>
+                  <button
+                    type="button"
+                    className="qrCardBtn"
+                    disabled={meta + google === 0}
+                    title={meta + google === 0 ? "Vincule uma conta de anúncio primeiro" : "Gerar relatório sem abrir o cliente"}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setReportFor({ id: c.id, name: c.name, platforms: [...new Set(c.client_ad_accounts.map((a) => a.provider))] });
+                    }}
+                  >
+                    <FilePlus2 size={14} /> Gerar relatório
+                  </button>
                 </div>
               </Link>
             );
           })}
         </div>
+      )}
+
+      {reportFor && (
+        <QuickReport client={reportFor} platforms={reportFor.platforms} onClose={() => setReportFor(null)} onDone={() => void clients.refetch()} />
       )}
 
       {creating && (
