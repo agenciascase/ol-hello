@@ -685,7 +685,7 @@ export async function loadConfigForReport(by: { token?: string; id?: string }) {
   const db = await admin();
   let q = db
     .from("report_configs")
-    .select("id,name,platforms,metrics,period,compare_previous,campaign_filter,campaign_mode,campaign_ids,intro_message,email_subject,email_to,channels,active,client_id,updated_at,share_token,objective,sections,manager_notes,actions_taken,next_steps");
+    .select("id,name,platforms,metrics,period,compare_previous,campaign_filter,campaign_mode,campaign_ids,intro_message,email_subject,email_to,whatsapp_to,channels,active,client_id,updated_at,share_token,objective,sections,manager_notes,actions_taken,next_steps");
   q = by.token ? q.eq("share_token", by.token) : q.eq("id", by.id ?? "");
   const { data: config } = await q.maybeSingle();
   if (!config) return null;

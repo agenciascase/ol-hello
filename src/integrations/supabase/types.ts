@@ -226,6 +226,7 @@ export type Database = {
           campaign_mode: string
           email_subject: string | null
           email_to: string[]
+          whatsapp_to: string[]
           channels: string[]
           client_id: string
           compare_previous: boolean
@@ -252,6 +253,7 @@ export type Database = {
           campaign_mode?: string
           email_subject?: string | null
           email_to?: string[]
+          whatsapp_to?: string[]
           channels?: string[]
           client_id: string
           compare_previous?: boolean
@@ -278,6 +280,7 @@ export type Database = {
           campaign_mode?: string
           email_subject?: string | null
           email_to?: string[]
+          whatsapp_to?: string[]
           channels?: string[]
           client_id?: string
           compare_previous?: boolean

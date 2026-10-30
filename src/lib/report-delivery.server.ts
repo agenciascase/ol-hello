@@ -150,7 +150,8 @@ export async function deliverReport(configId: string, opts: { trigger: "schedule
     }
   }
   if (channels.includes("whatsapp")) {
-    for (const phone of (clientRow?.whatsapp_numbers ?? []).filter(Boolean)) {
+    const ownPhones = ((config as { whatsapp_to?: string[] | null }).whatsapp_to ?? []).filter(Boolean);
+    for (const phone of ownPhones.length ? ownPhones : (clientRow?.whatsapp_numbers ?? []).filter(Boolean)) {
       try {
         if (!delivery.whatsapp) throw new Error("WhatsApp ainda não conectado. Conecte em Integrações.");
         await sendWhatsApp(delivery.whatsapp, phone, report, panelUrl, reportPdfUrl(token), filename);

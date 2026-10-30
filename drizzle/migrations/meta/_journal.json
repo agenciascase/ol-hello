@@ -57,6 +57,13 @@
       "when": 1793299200000,
       "tag": "0007_report_email_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793385600000,
+      "tag": "0008_report_whatsapp_to",
+      "breakpoints": true
     }
   ]
 }

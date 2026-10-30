@@ -4,7 +4,8 @@ import { agencyApi } from "@/lib/agency-client";
 import { ALL_SECTIONS, DETAIL_LEVELS, OBJECTIVES, SECTIONS, detectLevel, isObjective, metricsFor, type DetailLevel, type Objective } from "@/lib/report-insights";
 import { supabase } from "@/integrations/supabase/client";
 import { CampaignScope, type CampaignMode } from "./CampaignScope";
-import { EMAIL, METRICS, WEEKDAYS, computeNextRun, formatNextRun, periodLabel, resolvePeriod, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
+import { normalisePhone } from "./ClientForm";
+import { E164, EMAIL, METRICS, WEEKDAYS, computeNextRun, formatNextRun, periodLabel, resolvePeriod, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
 import { DateRangePicker, presetLabel } from "./DateRangePicker";
 import { PlatformMark } from "./PlatformMark";
 
@@ -22,6 +23,7 @@ export type ReportConfigRow = {
   intro_message: string | null;
   email_subject?: string | null;
   email_to?: string[] | null;
+  whatsapp_to?: string[] | null;
   channels: string[];
   share_token: string | null;
   active: boolean;
@@ -94,17 +96,21 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
   const [emailTo, setEmailTo] = useState((config?.email_to ?? []).join(", "));
   const [emailSubject, setEmailSubject] = useState(config?.email_subject ?? "");
   const [emailMessage, setEmailMessage] = useState(config?.intro_message ?? "");
+  const [whatsTo, setWhatsTo] = useState((config?.whatsapp_to ?? []).join(", "));
   // Pre-fill recipients with the client's e-mails when the report has none of its own.
   useEffect(() => {
-    if (config?.email_to?.length) return;
+    if (config?.email_to?.length && config?.whatsapp_to?.length) return;
     void supabase
       .from("clients")
-      .select("emails")
+      .select("emails,whatsapp_numbers")
       .eq("id", clientId)
       .maybeSingle()
       .then(({ data }) => {
-        const list = ((data as { emails?: string[] } | null)?.emails ?? []).filter(Boolean);
-        if (list.length) setEmailTo((cur) => cur || list.join(", "));
+        const row = data as { emails?: string[]; whatsapp_numbers?: string[] } | null;
+        const list = (row?.emails ?? []).filter(Boolean);
+        if (list.length && !config?.email_to?.length) setEmailTo((cur) => cur || list.join(", "));
+        const phones = (row?.whatsapp_numbers ?? []).filter(Boolean);
+        if (phones.length && !config?.whatsapp_to?.length) setWhatsTo((cur) => cur || phones.join(", "));
       });
   }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [active, setActive] = useState(config?.active ?? true);
@@ -156,6 +162,12 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       if (bad) return setError(`E-mail inválido: ${bad}`);
       if (!recipients.length) return setError("Informe pelo menos um e-mail de destino.");
     }
+    const phones: string[] = [...new Set<string>(whatsTo.split(/[,;\n]+/).map((x) => x.trim()).filter(Boolean).map(normalisePhone))];
+    if (channels.includes("whatsapp")) {
+      const badPhone = phones.find((x) => !E164.test(x));
+      if (badPhone) return setError(`Número de WhatsApp inválido: ${badPhone}. Use DDD + número, ex.: 14 99999-9999.`);
+      if (!phones.length) return setError("Informe pelo menos um número de WhatsApp.");
+    }
     if (campaignMode === "selected" && !campaignIds.length) return setError("Marque pelo menos uma campanha ou escolha outra opção em Campanhas do relatório.");
     setSaving(true);
     const ordered = METRICS.map(([k]) => k as string).filter((k) => metrics.includes(k));
@@ -174,6 +186,7 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       intro_message: channels.includes("email") ? emailMessage.trim() || null : null,
       email_subject: channels.includes("email") ? emailSubject.trim().slice(0, 200) || null : null,
       email_to: channels.includes("email") ? recipients : [],
+      whatsapp_to: channels.includes("whatsapp") ? phones : [],
       manager_notes: notes.trim() || null,
       actions_taken: null,
       next_steps: null,
@@ -328,6 +341,26 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
             <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} rows={5} placeholder={"Olá! Tudo bem?\nSegue o relatório de performance do período. O PDF está em anexo e o painel completo pode ser aberto pelo botão abaixo."} />
             <small>Vai no começo do e-mail, antes dos números. O PDF segue em anexo e o link do painel vai em um botão.</small>
           </label>
+        </div>
+      )}
+      {channels.includes("whatsapp") && (
+        <div className="rfEmail">
+          <h3 className="rpFormGroup">WhatsApp para o cliente</h3>
+          <label className="rpField">
+            <span>Enviar para</span>
+            <input value={whatsTo} onChange={(e) => setWhatsTo(e.target.value)} placeholder="14 99999-9999, 14 98888-8888" inputMode="tel" />
+            <small>Com DDD; separe vários números com vírgula. Vem preenchido com o WhatsApp do cadastro do cliente.</small>
+          </label>
+          <div className="rpField">
+            <span>Mensagem que o cliente recebe</span>
+            <div className="rfWaPreview">
+              <div className="rfWaDoc">📄 Relatório em PDF</div>
+              <p>
+                Olá! Segue o relatório de performance de <b>{"{nome do cliente}"}</b> referente a <b>{"{período}"}</b>. Acompanhe também o painel completo: <b>{"{link do painel}"}</b>
+              </p>
+            </div>
+            <small>Pela API oficial da Meta, o texto é o modelo aprovado no WhatsApp Business; o nome, o período, o link e o PDF entram sozinhos em cada envio.</small>
+          </div>
         </div>
       )}
       {error && <p className="rpError">{error}</p>}

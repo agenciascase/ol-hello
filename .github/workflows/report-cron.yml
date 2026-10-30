@@ -1,0 +1,28 @@
+name: Envio automático de relatórios
+
+# Calls the report scheduler every 15 minutes. It sends every report whose
+# programmed day/time has arrived (e-mail and/or WhatsApp) and skips the rest.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: report-cron
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Chamar o agendador
+        env:
+          APP_URL: ${{ vars.REPORTS_APP_URL || 'https://ola-create-something.lovable.app' }}
+          CRON_SECRET: ${{ secrets.SCASE_CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "Secret SCASE_CRON_SECRET não configurado."; exit 1; fi
+          status=$(curl -sS -o response.json -w "%{http_code}" --max-time 280 \
+            -X POST "$APP_URL/api/cron/reports" -H "Authorization: Bearer $CRON_SECRET")
+          echo "HTTP $status"; cat response.json; echo
+          test "$status" -lt 400
