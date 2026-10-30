@@ -96,20 +96,59 @@ async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, 
     if (!res.ok) throw new Error("Z-API recusou o envio (" + res.status + ").");
     return;
   }
-  // Business-initiated messages must use an approved template. Body variables: {{1}} cliente, {{2}} período, {{3}} link do painel.
+  // Business-initiated messages must use an approved template. The template is read from Meta first so the
+  // message matches it exactly (document header or not, number and kind of variables); the configured
+  // layout (document header + {{1}} cliente, {{2}} período, {{3}} link) is the fallback.
+  const shape = await templateShape(cfg).catch(() => null);
+  const clean = (t: string) => t.replace(/[\t\n\r]+/g, " ").replace(/ {4,}/g, " ").trim();
+  const values = [clean(r.clientName), clean(periodText(r)), panelUrl];
   const components: unknown[] = [];
-  if (cfg.documentHeader) components.push({ type: "header", parameters: [{ type: "document", document: { link: pdfUrl, filename } }] });
-  components.push({ type: "body", parameters: [{ type: "text", text: r.clientName }, { type: "text", text: periodText(r) }, { type: "text", text: panelUrl }] });
+  const withDoc = shape ? shape.header === "DOCUMENT" : cfg.documentHeader;
+  if (withDoc) components.push({ type: "header", parameters: [{ type: "document", document: { link: pdfUrl, filename } }] });
+  if (shape?.named?.length) {
+    components.push({ type: "body", parameters: shape.named.map((name, i) => ({ type: "text", parameter_name: name, text: values[i] ?? values[values.length - 1] })) });
+  } else {
+    const n = shape ? shape.bodyVars : 3;
+    if (n > 0) components.push({ type: "body", parameters: Array.from({ length: n }, (_, i) => ({ type: "text", text: values[i] ?? values[values.length - 1] })) });
+  }
   const res = await fetch(`https://graph.facebook.com/v24.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`, {
     method: "POST",
     headers: { authorization: "Bearer " + cfg.token, "content-type": "application/json" },
-    body: JSON.stringify({ messaging_product: "whatsapp", to: digits, type: "template", template: { name: cfg.templateName, language: { code: cfg.language || "pt_BR" }, components } }),
+    body: JSON.stringify({ messaging_product: "whatsapp", to: digits, type: "template", template: { name: cfg.templateName, language: { code: shape?.language || cfg.language || "pt_BR" }, components } }),
     cache: "no-store",
   });
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
-    throw new Error("WhatsApp recusou o envio (" + res.status + ")" + (body.error?.message ? ": " + body.error.message : ""));
+    const body = (await res.json().catch(() => ({}))) as { error?: { message?: string; error_data?: { details?: string } } };
+    const detail = [body.error?.message, body.error?.error_data?.details].filter(Boolean).join(" — ");
+    const hint = shape ? ` [modelo na Meta: ${shape.status}, cabeçalho ${shape.header ?? "nenhum"}, ${shape.named?.length ?? shape.bodyVars} variáveis]` : "";
+    throw new Error("WhatsApp recusou o envio (" + res.status + ")" + (detail ? ": " + detail : "") + hint);
   }
+}
+
+type TemplateShape = { status: string; language: string; header: string | null; bodyVars: number; named: string[] | null };
+
+/** Reads the template definition from the WhatsApp Business Account(s) the token can manage. */
+async function templateShape(cfg: Extract<WhatsAppConfig, { provider: "meta" }>): Promise<TemplateShape | null> {
+  const g = async <T,>(path: string) => {
+    const res = await fetch("https://graph.facebook.com/v24.0/" + path, { headers: { authorization: "Bearer " + cfg.token }, cache: "no-store" });
+    return res.ok ? ((await res.json()) as T) : null;
+  };
+  const dbg = await g<{ data?: { granular_scopes?: Array<{ scope: string; target_ids?: string[] }> } }>(`debug_token?input_token=${encodeURIComponent(cfg.token)}`);
+  const wabas = [...new Set((dbg?.data?.granular_scopes ?? []).filter((x) => x.scope.startsWith("whatsapp_business")).flatMap((x) => x.target_ids ?? []))];
+  type Tpl = { name: string; status: string; language: string; parameter_format?: string; components?: Array<{ type: string; format?: string; text?: string }> };
+  const found: Tpl[] = [];
+  for (const waba of wabas.slice(0, 10)) {
+    const list = await g<{ data?: Tpl[] }>(`${waba}/message_templates?name=${encodeURIComponent(cfg.templateName)}&fields=name,status,language,parameter_format,components&limit=50`);
+    found.push(...(list?.data ?? []).filter((t) => t.name === cfg.templateName));
+  }
+  if (!found.length) return null;
+  const lang = cfg.language || "pt_BR";
+  const t = found.find((x) => x.status === "APPROVED" && x.language === lang) ?? found.find((x) => x.status === "APPROVED") ?? found[0]!;
+  const header = t.components?.find((c) => c.type === "HEADER");
+  const body = t.components?.find((c) => c.type === "BODY")?.text ?? "";
+  const named = t.parameter_format === "NAMED" ? [...new Set([...body.matchAll(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/gi)].map((m) => m[1]!))] : null;
+  const bodyVars = new Set([...body.matchAll(/\{\{\s*(\d+)\s*\}\}/g)].map((m) => m[1])).size;
+  return { status: t.status, language: t.language, header: header ? (header.format ?? "TEXT") : null, bodyVars, named };
 }
 
 export type DeliveryResult = { channel: "email" | "whatsapp"; recipient: string; status: "sent" | "failed"; error: string | null };
