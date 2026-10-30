@@ -356,7 +356,7 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
             <div className="rfWaPreview">
               <div className="rfWaDoc">📄 Relatório em PDF</div>
               <p>
-                Olá! Segue o relatório de performance de <b>{"{nome do cliente}"}</b> referente a <b>{"{período}"}</b>. Acompanhe também o painel completo: <b>{"{link do painel}"}</b>
+                Olá! Segue o relatório de performance de <b>{"{nome do cliente}"}</b> referente a <b>{"{período}"}</b>. Acompanhe também o painel completo: <b>{"{link do painel}"}</b>. Depois nos dê um feedback em relação a esses números!
               </p>
             </div>
             <small>Pela API oficial da Meta, o texto é o modelo aprovado no WhatsApp Business; o nome, o período, o link e o PDF entram sozinhos em cada envio.</small>
