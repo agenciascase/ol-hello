@@ -319,3 +319,7 @@ html:has(.rpx){scroll-behavior:smooth}
 .perf .qrLink input{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:11px 12px;font:inherit;color:#18212d;background:#fafcfb}
 .perf .qrActions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
 .perf .qrActions a.secondary{text-decoration:none}
+
+.perf .rfWaPreview{background:#e7f8dd;border:1px solid #cfeac0;border-radius:12px 12px 12px 4px;padding:10px 12px;max-width:440px;font-size:13px;color:#1b2b1f;display:grid;gap:8px}
+.perf .rfWaDoc{background:#fff;border-radius:8px;padding:8px 10px;font-weight:700;font-size:12.5px}
+.perf .rfWaPreview p{margin:0;line-height:1.45}
