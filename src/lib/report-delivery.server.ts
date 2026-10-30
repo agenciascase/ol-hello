@@ -111,12 +111,19 @@ async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, 
     const n = shape ? shape.bodyVars : 3;
     if (n > 0) components.push({ type: "body", parameters: Array.from({ length: n }, (_, i) => ({ type: "text", text: values[i] ?? values[values.length - 1] })) });
   }
-  const res = await fetch(`https://graph.facebook.com/v24.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`, {
-    method: "POST",
-    headers: { authorization: "Bearer " + cfg.token, "content-type": "application/json" },
-    body: JSON.stringify({ messaging_product: "whatsapp", to: digits, type: "template", template: { name: cfg.templateName, language: { code: shape?.language || cfg.language || "pt_BR" }, components } }),
-    cache: "no-store",
-  });
+  const send = (comps: unknown[]) =>
+    fetch(`https://graph.facebook.com/v24.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`, {
+      method: "POST",
+      headers: { authorization: "Bearer " + cfg.token, "content-type": "application/json" },
+      body: JSON.stringify({ messaging_product: "whatsapp", to: digits, type: "template", template: { name: cfg.templateName, language: { code: shape?.language || cfg.language || "pt_BR" }, components: comps } }),
+      cache: "no-store",
+    });
+  let res = await send(components);
+  if (!res.ok && withDoc) {
+    // The approved version has no header (e.g. an edit adding the PDF is still under review): send without it.
+    const first = (await res.clone().json().catch(() => ({}))) as { error?: { error_data?: { details?: string } } };
+    if (/header/i.test(first.error?.error_data?.details ?? "")) res = await send(components.filter((c) => (c as { type: string }).type !== "header"));
+  }
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: { message?: string; error_data?: { details?: string } } };
     const detail = [body.error?.message, body.error?.error_data?.details].filter(Boolean).join(" — ");
