@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Moon, RefreshCw, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
@@ -83,7 +83,7 @@ type Doc = {
   avisos?: string[];
   atualizado_em?: string;
 };
-type Cartao = Doc & { id: string; erro: string | null };
+type Cartao = Doc & { id: string; erro: string | null; versao?: string };
 type Pedido = {
   id: string;
   client_id: string;
@@ -494,19 +494,54 @@ function avisoRecarga(c: Doc, s: Saldo) {
 
 /* ───────────── página ───────────── */
 
+// Os números são atualizados nos minutos 07, 22, 37 e 52; a rodada leva uns 3 minutos.
+// A página confere logo depois: nos minutos 10, 25, 40 e 55.
+const CONFERENCIAS = [10, 25, 40, 55];
+function msAteProximaConferencia() {
+  const agora = new Date();
+  const m = agora.getMinutes() + agora.getSeconds() / 60;
+  const prox = CONFERENCIAS.find((a) => a > m) ?? CONFERENCIAS[0]! + 60;
+  return Math.round((prox - m) * 60_000) + 1000;
+}
+
 function GestorPage() {
   const qc = useQueryClient();
+  const cartoes = useRef(new Map<string, Cartao>());
   const painel = useQuery({
     queryKey: ["gestor-painel"],
-    refetchInterval: 60_000,
+    refetchInterval: () => msAteProximaConferencia(),
+    // Economia de tráfego: confere só logo depois de cada atualização (4 vezes por hora),
+    // pergunta primeiro "o que mudou?" e baixa de novo apenas os cartões atualizados.
     queryFn: async () => {
-      const { data, error } = await db
-        .from("gestor_painel")
-        .select("client_id,data,erro,updated_at");
+      const { data: indice, error } = await db.from("gestor_painel").select("client_id,updated_at");
       if (error) throw new Error(error.message);
-      return ((data ?? []) as Array<{ client_id: string; data: Doc; erro: string | null }>).map(
-        (r) => ({ ...r.data, id: r.client_id, erro: r.erro }),
-      ) as Cartao[];
+      const lista = (indice ?? []) as Array<{ client_id: string; updated_at: string }>;
+      const guardados = cartoes.current;
+      const existentes = new Set(lista.map((r) => r.client_id));
+      for (const id of [...guardados.keys()]) if (!existentes.has(id)) guardados.delete(id);
+      const mudaram = lista
+        .filter((r) => guardados.get(r.client_id)?.versao !== r.updated_at)
+        .map((r) => r.client_id);
+      for (let i = 0; i < mudaram.length; i += 40) {
+        const { data, error: erro } = await db
+          .from("gestor_painel")
+          .select("client_id,data,erro,updated_at")
+          .in("client_id", mudaram.slice(i, i + 40));
+        if (erro) throw new Error(erro.message);
+        for (const r of (data ?? []) as Array<{
+          client_id: string;
+          data: Doc;
+          erro: string | null;
+          updated_at: string;
+        }>)
+          guardados.set(r.client_id, {
+            ...r.data,
+            id: r.client_id,
+            erro: r.erro,
+            versao: r.updated_at,
+          });
+      }
+      return [...guardados.values()];
     },
   });
   const pedidos = useQuery({
