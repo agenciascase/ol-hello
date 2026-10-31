@@ -18,6 +18,8 @@ async function ownSecretMatches(request: Request) {
 
 async function run(request: Request) {
   if (!(await ownSecretMatches(request))) {
+    // HUB (Hostinger): sem o agendador da Lovable, quem não tem o SCASE_CRON_SECRET recebe 401.
+    if (!process.env["LOVABLE_CRON_SECRET"]) return Response.json({ error: "Não autorizado" }, { status: 401 });
     const denied = await authenticateCronRequest(request);
     if (denied) return denied;
   }

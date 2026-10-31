@@ -157,6 +157,11 @@ type Pedido = {
 // As tabelas do Gestor ainda não estão nos tipos gerados do Supabase.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as unknown as { from: (t: string) => any };
+// HUB: depois de registrar um pedido, avisa o servidor, que chama a tarefa do Claude.
+// Se falhar, o Cron da Hostinger chama de novo em até 15 min (o pedido já está salvo).
+function avisarClaude() {
+  void agencyApi("/api/gestor/avisar", { method: "POST" }).catch(() => undefined);
+}
 
 const GESTORES = ["Augusto Venâncio", "Alecsander Chipoletti", "Matheus Aracema"];
 const gestoresDe = (c: Doc) => (c.gestor ? c.gestor.split(/\s*[,;·]\s*/).filter(Boolean) : []);
@@ -1165,6 +1170,7 @@ function Ficha({
     }
     setConfirmar(null);
     recarregar();
+    avisarClaude();
     avisar(
       `${itens.length} otimização(ões) na fila do Claude. Ele só executa o que você confirmou aqui e grava o que mudou e como desfazer.`,
     );
@@ -1672,6 +1678,7 @@ function PedirAlteracao({
     }
     setTexto("");
     recarregar();
+    avisarClaude();
     avisar(
       "Pedido na fila do Claude. Ele te mostra o plano antes de mexer em qualquer coisa que não seja simples.",
     );
@@ -1811,6 +1818,7 @@ function SubirCampanha({
     }
     setRevisar(false);
     recarregar();
+    avisarClaude();
     avisar(
       "Pedido na fila do Claude. Ele cria a campanha pausada e avisa aqui quando estiver pronta para você revisar.",
     );
@@ -1826,6 +1834,7 @@ function SubirCampanha({
     }
     setAtivar(null);
     recarregar();
+    avisarClaude();
     avisar("Ativação na fila do Claude.");
   }
 

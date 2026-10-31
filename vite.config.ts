@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // HUB na Hostinger: servidor Node comum (npm run build → node .output/server/index.mjs).
+  // Dentro da Lovable o pacote acima força cloudflare-module de qualquer jeito.
+  nitro: { preset: "node-server" },
 });

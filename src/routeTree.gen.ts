@@ -13,8 +13,43 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedGestorRouteImport } from './routes/_authenticated/gestor'
+import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
+import { Route as ApiAdImageRouteImport } from './routes/api.ad-image'
+import { Route as ApiGoogleLiveReportRouteImport } from './routes/api.google-live-report'
+import { Route as ApiReportLiveRouteImport } from './routes/api.report-live'
+import { Route as ApiReportPdfRouteImport } from './routes/api.report-pdf'
+import { Route as LiveTokenRouteImport } from './routes/live.$token'
+import { Route as ShareTokenRouteImport } from './routes/share.$token'
+import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
+import { Route as AuthenticatedClientesClientIdRouteImport } from './routes/_authenticated/clientes.$clientId'
+import { Route as ApiAgentePedidosRouteImport } from './routes/api/agente.pedidos'
+import { Route as ApiCronGestorRouteImport } from './routes/api/cron.gestor'
+import { Route as ApiCronHubRouteImport } from './routes/api/cron.hub'
+import { Route as ApiCronReportsRouteImport } from './routes/api/cron.reports'
+import { Route as ApiGestorAvisarRouteImport } from './routes/api/gestor.avisar'
+import { Route as ApiHubAcessoRouteImport } from './routes/api/hub.acesso'
+import { Route as ApiIntegrationsClientLookupRouteImport } from './routes/api/integrations.client-lookup'
+import { Route as ApiIntegrationsOverviewRouteImport } from './routes/api/integrations.overview'
+import { Route as ApiIntegrationsSessionRouteImport } from './routes/api/integrations.session'
+import { Route as ApiIntegrationsStatusRouteImport } from './routes/api/integrations.status'
+import { Route as ApiIntegrationsSyncAccountsRouteImport } from './routes/api/integrations.sync-accounts'
 import { Route as ApiIntegrationsProviderCallbackRouteImport } from './routes/api/integrations.$provider.callback'
 import { Route as ApiIntegrationsProviderStartRouteImport } from './routes/api/integrations.$provider.start'
+import { Route as ApiIntegrationsChannelsChannelRouteImport } from './routes/api/integrations.channels.$channel'
+import { Route as ApiIntegrationsGoogleAccountsRouteImport } from './routes/api/integrations.google.accounts'
+import { Route as ApiIntegrationsGoogleCampaignsRouteImport } from './routes/api/integrations.google.campaigns'
+import { Route as ApiIntegrationsGoogleMonthlyRouteImport } from './routes/api/integrations.google.monthly'
+import { Route as ApiIntegrationsMetaAccountsRouteImport } from './routes/api/integrations.meta.accounts'
+import { Route as ApiIntegrationsMetaCallbackRouteImport } from './routes/api/integrations.meta.callback'
+import { Route as ApiIntegrationsMetaCampaignsRouteImport } from './routes/api/integrations.meta.campaigns'
+import { Route as ApiIntegrationsMetaStartRouteImport } from './routes/api/integrations.meta.start'
+import { Route as ApiIntegrationsClientsIdAnalysisRouteImport } from './routes/api/integrations.clients.$id.analysis'
+import { Route as ApiIntegrationsClientsIdCampaignsRouteImport } from './routes/api/integrations.clients.$id.campaigns'
+import { Route as ApiIntegrationsReportsIdDraftRouteImport } from './routes/api/integrations.reports.$id.draft'
+import { Route as ApiIntegrationsReportsIdPdfRouteImport } from './routes/api/integrations.reports.$id.pdf'
+import { Route as ApiIntegrationsReportsIdSendRouteImport } from './routes/api/integrations.reports.$id.send'
+import { Route as ApiIntegrationsReportsIdShareRouteImport } from './routes/api/integrations.reports.$id.share'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,6 +70,116 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGestorRoute = AuthenticatedGestorRouteImport.update({
+  id: '/gestor',
+  path: '/gestor',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedIntegracoesRoute =
+  AuthenticatedIntegracoesRouteImport.update({
+    id: '/integracoes',
+    path: '/integracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiAdImageRoute = ApiAdImageRouteImport.update({
+  id: '/api/ad-image',
+  path: '/api/ad-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGoogleLiveReportRoute = ApiGoogleLiveReportRouteImport.update({
+  id: '/api/google-live-report',
+  path: '/api/google-live-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReportLiveRoute = ApiReportLiveRouteImport.update({
+  id: '/api/report-live',
+  path: '/api/report-live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReportPdfRoute = ApiReportPdfRouteImport.update({
+  id: '/api/report-pdf',
+  path: '/api/report-pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveTokenRoute = LiveTokenRouteImport.update({
+  id: '/live/$token',
+  path: '/live/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareTokenRoute = ShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedClientesIndexRoute =
+  AuthenticatedClientesIndexRouteImport.update({
+    id: '/clientes/',
+    path: '/clientes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClientesClientIdRoute =
+  AuthenticatedClientesClientIdRouteImport.update({
+    id: '/clientes/$clientId',
+    path: '/clientes/$clientId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiAgentePedidosRoute = ApiAgentePedidosRouteImport.update({
+  id: '/api/agente/pedidos',
+  path: '/api/agente/pedidos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronGestorRoute = ApiCronGestorRouteImport.update({
+  id: '/api/cron/gestor',
+  path: '/api/cron/gestor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronHubRoute = ApiCronHubRouteImport.update({
+  id: '/api/cron/hub',
+  path: '/api/cron/hub',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronReportsRoute = ApiCronReportsRouteImport.update({
+  id: '/api/cron/reports',
+  path: '/api/cron/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGestorAvisarRoute = ApiGestorAvisarRouteImport.update({
+  id: '/api/gestor/avisar',
+  path: '/api/gestor/avisar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHubAcessoRoute = ApiHubAcessoRouteImport.update({
+  id: '/api/hub/acesso',
+  path: '/api/hub/acesso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntegrationsClientLookupRoute =
+  ApiIntegrationsClientLookupRouteImport.update({
+    id: '/api/integrations/client-lookup',
+    path: '/api/integrations/client-lookup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsOverviewRoute = ApiIntegrationsOverviewRouteImport.update({
+  id: '/api/integrations/overview',
+  path: '/api/integrations/overview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntegrationsSessionRoute = ApiIntegrationsSessionRouteImport.update({
+  id: '/api/integrations/session',
+  path: '/api/integrations/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntegrationsStatusRoute = ApiIntegrationsStatusRouteImport.update({
+  id: '/api/integrations/status',
+  path: '/api/integrations/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIntegrationsSyncAccountsRoute =
+  ApiIntegrationsSyncAccountsRouteImport.update({
+    id: '/api/integrations/sync-accounts',
+    path: '/api/integrations/sync-accounts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiIntegrationsProviderCallbackRoute =
   ApiIntegrationsProviderCallbackRouteImport.update({
     id: '/api/integrations/$provider/callback',
@@ -47,20 +192,174 @@ const ApiIntegrationsProviderStartRoute =
     path: '/api/integrations/$provider/start',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiIntegrationsChannelsChannelRoute =
+  ApiIntegrationsChannelsChannelRouteImport.update({
+    id: '/api/integrations/channels/$channel',
+    path: '/api/integrations/channels/$channel',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsGoogleAccountsRoute =
+  ApiIntegrationsGoogleAccountsRouteImport.update({
+    id: '/api/integrations/google/accounts',
+    path: '/api/integrations/google/accounts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsGoogleCampaignsRoute =
+  ApiIntegrationsGoogleCampaignsRouteImport.update({
+    id: '/api/integrations/google/campaigns',
+    path: '/api/integrations/google/campaigns',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsGoogleMonthlyRoute =
+  ApiIntegrationsGoogleMonthlyRouteImport.update({
+    id: '/api/integrations/google/monthly',
+    path: '/api/integrations/google/monthly',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsMetaAccountsRoute =
+  ApiIntegrationsMetaAccountsRouteImport.update({
+    id: '/api/integrations/meta/accounts',
+    path: '/api/integrations/meta/accounts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsMetaCallbackRoute =
+  ApiIntegrationsMetaCallbackRouteImport.update({
+    id: '/api/integrations/meta/callback',
+    path: '/api/integrations/meta/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsMetaCampaignsRoute =
+  ApiIntegrationsMetaCampaignsRouteImport.update({
+    id: '/api/integrations/meta/campaigns',
+    path: '/api/integrations/meta/campaigns',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsMetaStartRoute =
+  ApiIntegrationsMetaStartRouteImport.update({
+    id: '/api/integrations/meta/start',
+    path: '/api/integrations/meta/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsClientsIdAnalysisRoute =
+  ApiIntegrationsClientsIdAnalysisRouteImport.update({
+    id: '/api/integrations/clients/$id/analysis',
+    path: '/api/integrations/clients/$id/analysis',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsClientsIdCampaignsRoute =
+  ApiIntegrationsClientsIdCampaignsRouteImport.update({
+    id: '/api/integrations/clients/$id/campaigns',
+    path: '/api/integrations/clients/$id/campaigns',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsReportsIdDraftRoute =
+  ApiIntegrationsReportsIdDraftRouteImport.update({
+    id: '/api/integrations/reports/$id/draft',
+    path: '/api/integrations/reports/$id/draft',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsReportsIdPdfRoute =
+  ApiIntegrationsReportsIdPdfRouteImport.update({
+    id: '/api/integrations/reports/$id/pdf',
+    path: '/api/integrations/reports/$id/pdf',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsReportsIdSendRoute =
+  ApiIntegrationsReportsIdSendRouteImport.update({
+    id: '/api/integrations/reports/$id/send',
+    path: '/api/integrations/reports/$id/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsReportsIdShareRoute =
+  ApiIntegrationsReportsIdShareRouteImport.update({
+    id: '/api/integrations/reports/$id/share',
+    path: '/api/integrations/reports/$id/share',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/gestor': typeof AuthenticatedGestorRoute
+  '/integracoes': typeof AuthenticatedIntegracoesRoute
+  '/api/ad-image': typeof ApiAdImageRoute
+  '/api/google-live-report': typeof ApiGoogleLiveReportRoute
+  '/api/report-live': typeof ApiReportLiveRoute
+  '/api/report-pdf': typeof ApiReportPdfRoute
+  '/live/$token': typeof LiveTokenRoute
+  '/share/$token': typeof ShareTokenRoute
+  '/clientes/$clientId': typeof AuthenticatedClientesClientIdRoute
+  '/api/agente/pedidos': typeof ApiAgentePedidosRoute
+  '/api/cron/gestor': typeof ApiCronGestorRoute
+  '/api/cron/hub': typeof ApiCronHubRoute
+  '/api/cron/reports': typeof ApiCronReportsRoute
+  '/api/gestor/avisar': typeof ApiGestorAvisarRoute
+  '/api/hub/acesso': typeof ApiHubAcessoRoute
+  '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
+  '/api/integrations/overview': typeof ApiIntegrationsOverviewRoute
+  '/api/integrations/session': typeof ApiIntegrationsSessionRoute
+  '/api/integrations/status': typeof ApiIntegrationsStatusRoute
+  '/api/integrations/sync-accounts': typeof ApiIntegrationsSyncAccountsRoute
+  '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
   '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
+  '/api/integrations/channels/$channel': typeof ApiIntegrationsChannelsChannelRoute
+  '/api/integrations/google/accounts': typeof ApiIntegrationsGoogleAccountsRoute
+  '/api/integrations/google/campaigns': typeof ApiIntegrationsGoogleCampaignsRoute
+  '/api/integrations/google/monthly': typeof ApiIntegrationsGoogleMonthlyRoute
+  '/api/integrations/meta/accounts': typeof ApiIntegrationsMetaAccountsRoute
+  '/api/integrations/meta/callback': typeof ApiIntegrationsMetaCallbackRoute
+  '/api/integrations/meta/campaigns': typeof ApiIntegrationsMetaCampaignsRoute
+  '/api/integrations/meta/start': typeof ApiIntegrationsMetaStartRoute
+  '/api/integrations/clients/$id/analysis': typeof ApiIntegrationsClientsIdAnalysisRoute
+  '/api/integrations/clients/$id/campaigns': typeof ApiIntegrationsClientsIdCampaignsRoute
+  '/api/integrations/reports/$id/draft': typeof ApiIntegrationsReportsIdDraftRoute
+  '/api/integrations/reports/$id/pdf': typeof ApiIntegrationsReportsIdPdfRoute
+  '/api/integrations/reports/$id/send': typeof ApiIntegrationsReportsIdSendRoute
+  '/api/integrations/reports/$id/share': typeof ApiIntegrationsReportsIdShareRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/gestor': typeof AuthenticatedGestorRoute
+  '/integracoes': typeof AuthenticatedIntegracoesRoute
+  '/api/ad-image': typeof ApiAdImageRoute
+  '/api/google-live-report': typeof ApiGoogleLiveReportRoute
+  '/api/report-live': typeof ApiReportLiveRoute
+  '/api/report-pdf': typeof ApiReportPdfRoute
+  '/live/$token': typeof LiveTokenRoute
+  '/share/$token': typeof ShareTokenRoute
+  '/clientes/$clientId': typeof AuthenticatedClientesClientIdRoute
+  '/api/agente/pedidos': typeof ApiAgentePedidosRoute
+  '/api/cron/gestor': typeof ApiCronGestorRoute
+  '/api/cron/hub': typeof ApiCronHubRoute
+  '/api/cron/reports': typeof ApiCronReportsRoute
+  '/api/gestor/avisar': typeof ApiGestorAvisarRoute
+  '/api/hub/acesso': typeof ApiHubAcessoRoute
+  '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
+  '/api/integrations/overview': typeof ApiIntegrationsOverviewRoute
+  '/api/integrations/session': typeof ApiIntegrationsSessionRoute
+  '/api/integrations/status': typeof ApiIntegrationsStatusRoute
+  '/api/integrations/sync-accounts': typeof ApiIntegrationsSyncAccountsRoute
+  '/clientes': typeof AuthenticatedClientesIndexRoute
   '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
   '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
+  '/api/integrations/channels/$channel': typeof ApiIntegrationsChannelsChannelRoute
+  '/api/integrations/google/accounts': typeof ApiIntegrationsGoogleAccountsRoute
+  '/api/integrations/google/campaigns': typeof ApiIntegrationsGoogleCampaignsRoute
+  '/api/integrations/google/monthly': typeof ApiIntegrationsGoogleMonthlyRoute
+  '/api/integrations/meta/accounts': typeof ApiIntegrationsMetaAccountsRoute
+  '/api/integrations/meta/callback': typeof ApiIntegrationsMetaCallbackRoute
+  '/api/integrations/meta/campaigns': typeof ApiIntegrationsMetaCampaignsRoute
+  '/api/integrations/meta/start': typeof ApiIntegrationsMetaStartRoute
+  '/api/integrations/clients/$id/analysis': typeof ApiIntegrationsClientsIdAnalysisRoute
+  '/api/integrations/clients/$id/campaigns': typeof ApiIntegrationsClientsIdCampaignsRoute
+  '/api/integrations/reports/$id/draft': typeof ApiIntegrationsReportsIdDraftRoute
+  '/api/integrations/reports/$id/pdf': typeof ApiIntegrationsReportsIdPdfRoute
+  '/api/integrations/reports/$id/send': typeof ApiIntegrationsReportsIdSendRoute
+  '/api/integrations/reports/$id/share': typeof ApiIntegrationsReportsIdShareRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,8 +367,43 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/gestor': typeof AuthenticatedGestorRoute
+  '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
+  '/api/ad-image': typeof ApiAdImageRoute
+  '/api/google-live-report': typeof ApiGoogleLiveReportRoute
+  '/api/report-live': typeof ApiReportLiveRoute
+  '/api/report-pdf': typeof ApiReportPdfRoute
+  '/live/$token': typeof LiveTokenRoute
+  '/share/$token': typeof ShareTokenRoute
+  '/_authenticated/clientes/$clientId': typeof AuthenticatedClientesClientIdRoute
+  '/api/agente/pedidos': typeof ApiAgentePedidosRoute
+  '/api/cron/gestor': typeof ApiCronGestorRoute
+  '/api/cron/hub': typeof ApiCronHubRoute
+  '/api/cron/reports': typeof ApiCronReportsRoute
+  '/api/gestor/avisar': typeof ApiGestorAvisarRoute
+  '/api/hub/acesso': typeof ApiHubAcessoRoute
+  '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
+  '/api/integrations/overview': typeof ApiIntegrationsOverviewRoute
+  '/api/integrations/session': typeof ApiIntegrationsSessionRoute
+  '/api/integrations/status': typeof ApiIntegrationsStatusRoute
+  '/api/integrations/sync-accounts': typeof ApiIntegrationsSyncAccountsRoute
+  '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
   '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
+  '/api/integrations/channels/$channel': typeof ApiIntegrationsChannelsChannelRoute
+  '/api/integrations/google/accounts': typeof ApiIntegrationsGoogleAccountsRoute
+  '/api/integrations/google/campaigns': typeof ApiIntegrationsGoogleCampaignsRoute
+  '/api/integrations/google/monthly': typeof ApiIntegrationsGoogleMonthlyRoute
+  '/api/integrations/meta/accounts': typeof ApiIntegrationsMetaAccountsRoute
+  '/api/integrations/meta/callback': typeof ApiIntegrationsMetaCallbackRoute
+  '/api/integrations/meta/campaigns': typeof ApiIntegrationsMetaCampaignsRoute
+  '/api/integrations/meta/start': typeof ApiIntegrationsMetaStartRoute
+  '/api/integrations/clients/$id/analysis': typeof ApiIntegrationsClientsIdAnalysisRoute
+  '/api/integrations/clients/$id/campaigns': typeof ApiIntegrationsClientsIdCampaignsRoute
+  '/api/integrations/reports/$id/draft': typeof ApiIntegrationsReportsIdDraftRoute
+  '/api/integrations/reports/$id/pdf': typeof ApiIntegrationsReportsIdPdfRoute
+  '/api/integrations/reports/$id/send': typeof ApiIntegrationsReportsIdSendRoute
+  '/api/integrations/reports/$id/share': typeof ApiIntegrationsReportsIdShareRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -77,31 +411,167 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/gestor'
+    | '/integracoes'
+    | '/api/ad-image'
+    | '/api/google-live-report'
+    | '/api/report-live'
+    | '/api/report-pdf'
+    | '/live/$token'
+    | '/share/$token'
+    | '/clientes/$clientId'
+    | '/api/agente/pedidos'
+    | '/api/cron/gestor'
+    | '/api/cron/hub'
+    | '/api/cron/reports'
+    | '/api/gestor/avisar'
+    | '/api/hub/acesso'
+    | '/api/integrations/client-lookup'
+    | '/api/integrations/overview'
+    | '/api/integrations/session'
+    | '/api/integrations/status'
+    | '/api/integrations/sync-accounts'
+    | '/clientes/'
     | '/api/integrations/$provider/callback'
     | '/api/integrations/$provider/start'
+    | '/api/integrations/channels/$channel'
+    | '/api/integrations/google/accounts'
+    | '/api/integrations/google/campaigns'
+    | '/api/integrations/google/monthly'
+    | '/api/integrations/meta/accounts'
+    | '/api/integrations/meta/callback'
+    | '/api/integrations/meta/campaigns'
+    | '/api/integrations/meta/start'
+    | '/api/integrations/clients/$id/analysis'
+    | '/api/integrations/clients/$id/campaigns'
+    | '/api/integrations/reports/$id/draft'
+    | '/api/integrations/reports/$id/pdf'
+    | '/api/integrations/reports/$id/send'
+    | '/api/integrations/reports/$id/share'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/gestor'
+    | '/integracoes'
+    | '/api/ad-image'
+    | '/api/google-live-report'
+    | '/api/report-live'
+    | '/api/report-pdf'
+    | '/live/$token'
+    | '/share/$token'
+    | '/clientes/$clientId'
+    | '/api/agente/pedidos'
+    | '/api/cron/gestor'
+    | '/api/cron/hub'
+    | '/api/cron/reports'
+    | '/api/gestor/avisar'
+    | '/api/hub/acesso'
+    | '/api/integrations/client-lookup'
+    | '/api/integrations/overview'
+    | '/api/integrations/session'
+    | '/api/integrations/status'
+    | '/api/integrations/sync-accounts'
+    | '/clientes'
     | '/api/integrations/$provider/callback'
     | '/api/integrations/$provider/start'
+    | '/api/integrations/channels/$channel'
+    | '/api/integrations/google/accounts'
+    | '/api/integrations/google/campaigns'
+    | '/api/integrations/google/monthly'
+    | '/api/integrations/meta/accounts'
+    | '/api/integrations/meta/callback'
+    | '/api/integrations/meta/campaigns'
+    | '/api/integrations/meta/start'
+    | '/api/integrations/clients/$id/analysis'
+    | '/api/integrations/clients/$id/campaigns'
+    | '/api/integrations/reports/$id/draft'
+    | '/api/integrations/reports/$id/pdf'
+    | '/api/integrations/reports/$id/send'
+    | '/api/integrations/reports/$id/share'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/gestor'
+    | '/_authenticated/integracoes'
+    | '/api/ad-image'
+    | '/api/google-live-report'
+    | '/api/report-live'
+    | '/api/report-pdf'
+    | '/live/$token'
+    | '/share/$token'
+    | '/_authenticated/clientes/$clientId'
+    | '/api/agente/pedidos'
+    | '/api/cron/gestor'
+    | '/api/cron/hub'
+    | '/api/cron/reports'
+    | '/api/gestor/avisar'
+    | '/api/hub/acesso'
+    | '/api/integrations/client-lookup'
+    | '/api/integrations/overview'
+    | '/api/integrations/session'
+    | '/api/integrations/status'
+    | '/api/integrations/sync-accounts'
+    | '/_authenticated/clientes/'
     | '/api/integrations/$provider/callback'
     | '/api/integrations/$provider/start'
+    | '/api/integrations/channels/$channel'
+    | '/api/integrations/google/accounts'
+    | '/api/integrations/google/campaigns'
+    | '/api/integrations/google/monthly'
+    | '/api/integrations/meta/accounts'
+    | '/api/integrations/meta/callback'
+    | '/api/integrations/meta/campaigns'
+    | '/api/integrations/meta/start'
+    | '/api/integrations/clients/$id/analysis'
+    | '/api/integrations/clients/$id/campaigns'
+    | '/api/integrations/reports/$id/draft'
+    | '/api/integrations/reports/$id/pdf'
+    | '/api/integrations/reports/$id/send'
+    | '/api/integrations/reports/$id/share'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiAdImageRoute: typeof ApiAdImageRoute
+  ApiGoogleLiveReportRoute: typeof ApiGoogleLiveReportRoute
+  ApiReportLiveRoute: typeof ApiReportLiveRoute
+  ApiReportPdfRoute: typeof ApiReportPdfRoute
+  LiveTokenRoute: typeof LiveTokenRoute
+  ShareTokenRoute: typeof ShareTokenRoute
+  ApiAgentePedidosRoute: typeof ApiAgentePedidosRoute
+  ApiCronGestorRoute: typeof ApiCronGestorRoute
+  ApiCronHubRoute: typeof ApiCronHubRoute
+  ApiCronReportsRoute: typeof ApiCronReportsRoute
+  ApiGestorAvisarRoute: typeof ApiGestorAvisarRoute
+  ApiHubAcessoRoute: typeof ApiHubAcessoRoute
+  ApiIntegrationsClientLookupRoute: typeof ApiIntegrationsClientLookupRoute
+  ApiIntegrationsOverviewRoute: typeof ApiIntegrationsOverviewRoute
+  ApiIntegrationsSessionRoute: typeof ApiIntegrationsSessionRoute
+  ApiIntegrationsStatusRoute: typeof ApiIntegrationsStatusRoute
+  ApiIntegrationsSyncAccountsRoute: typeof ApiIntegrationsSyncAccountsRoute
   ApiIntegrationsProviderCallbackRoute: typeof ApiIntegrationsProviderCallbackRoute
   ApiIntegrationsProviderStartRoute: typeof ApiIntegrationsProviderStartRoute
+  ApiIntegrationsChannelsChannelRoute: typeof ApiIntegrationsChannelsChannelRoute
+  ApiIntegrationsGoogleAccountsRoute: typeof ApiIntegrationsGoogleAccountsRoute
+  ApiIntegrationsGoogleCampaignsRoute: typeof ApiIntegrationsGoogleCampaignsRoute
+  ApiIntegrationsGoogleMonthlyRoute: typeof ApiIntegrationsGoogleMonthlyRoute
+  ApiIntegrationsMetaAccountsRoute: typeof ApiIntegrationsMetaAccountsRoute
+  ApiIntegrationsMetaCallbackRoute: typeof ApiIntegrationsMetaCallbackRoute
+  ApiIntegrationsMetaCampaignsRoute: typeof ApiIntegrationsMetaCampaignsRoute
+  ApiIntegrationsMetaStartRoute: typeof ApiIntegrationsMetaStartRoute
+  ApiIntegrationsClientsIdAnalysisRoute: typeof ApiIntegrationsClientsIdAnalysisRoute
+  ApiIntegrationsClientsIdCampaignsRoute: typeof ApiIntegrationsClientsIdCampaignsRoute
+  ApiIntegrationsReportsIdDraftRoute: typeof ApiIntegrationsReportsIdDraftRoute
+  ApiIntegrationsReportsIdPdfRoute: typeof ApiIntegrationsReportsIdPdfRoute
+  ApiIntegrationsReportsIdSendRoute: typeof ApiIntegrationsReportsIdSendRoute
+  ApiIntegrationsReportsIdShareRoute: typeof ApiIntegrationsReportsIdShareRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +604,153 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/gestor': {
+      id: '/_authenticated/gestor'
+      path: '/gestor'
+      fullPath: '/gestor'
+      preLoaderRoute: typeof AuthenticatedGestorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/integracoes': {
+      id: '/_authenticated/integracoes'
+      path: '/integracoes'
+      fullPath: '/integracoes'
+      preLoaderRoute: typeof AuthenticatedIntegracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/ad-image': {
+      id: '/api/ad-image'
+      path: '/api/ad-image'
+      fullPath: '/api/ad-image'
+      preLoaderRoute: typeof ApiAdImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/google-live-report': {
+      id: '/api/google-live-report'
+      path: '/api/google-live-report'
+      fullPath: '/api/google-live-report'
+      preLoaderRoute: typeof ApiGoogleLiveReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/report-live': {
+      id: '/api/report-live'
+      path: '/api/report-live'
+      fullPath: '/api/report-live'
+      preLoaderRoute: typeof ApiReportLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/report-pdf': {
+      id: '/api/report-pdf'
+      path: '/api/report-pdf'
+      fullPath: '/api/report-pdf'
+      preLoaderRoute: typeof ApiReportPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live/$token': {
+      id: '/live/$token'
+      path: '/live/$token'
+      fullPath: '/live/$token'
+      preLoaderRoute: typeof LiveTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/clientes/': {
+      id: '/_authenticated/clientes/'
+      path: '/clientes'
+      fullPath: '/clientes/'
+      preLoaderRoute: typeof AuthenticatedClientesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clientes/$clientId': {
+      id: '/_authenticated/clientes/$clientId'
+      path: '/clientes/$clientId'
+      fullPath: '/clientes/$clientId'
+      preLoaderRoute: typeof AuthenticatedClientesClientIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/agente/pedidos': {
+      id: '/api/agente/pedidos'
+      path: '/api/agente/pedidos'
+      fullPath: '/api/agente/pedidos'
+      preLoaderRoute: typeof ApiAgentePedidosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/gestor': {
+      id: '/api/cron/gestor'
+      path: '/api/cron/gestor'
+      fullPath: '/api/cron/gestor'
+      preLoaderRoute: typeof ApiCronGestorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/hub': {
+      id: '/api/cron/hub'
+      path: '/api/cron/hub'
+      fullPath: '/api/cron/hub'
+      preLoaderRoute: typeof ApiCronHubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/reports': {
+      id: '/api/cron/reports'
+      path: '/api/cron/reports'
+      fullPath: '/api/cron/reports'
+      preLoaderRoute: typeof ApiCronReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gestor/avisar': {
+      id: '/api/gestor/avisar'
+      path: '/api/gestor/avisar'
+      fullPath: '/api/gestor/avisar'
+      preLoaderRoute: typeof ApiGestorAvisarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/hub/acesso': {
+      id: '/api/hub/acesso'
+      path: '/api/hub/acesso'
+      fullPath: '/api/hub/acesso'
+      preLoaderRoute: typeof ApiHubAcessoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/client-lookup': {
+      id: '/api/integrations/client-lookup'
+      path: '/api/integrations/client-lookup'
+      fullPath: '/api/integrations/client-lookup'
+      preLoaderRoute: typeof ApiIntegrationsClientLookupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/overview': {
+      id: '/api/integrations/overview'
+      path: '/api/integrations/overview'
+      fullPath: '/api/integrations/overview'
+      preLoaderRoute: typeof ApiIntegrationsOverviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/session': {
+      id: '/api/integrations/session'
+      path: '/api/integrations/session'
+      fullPath: '/api/integrations/session'
+      preLoaderRoute: typeof ApiIntegrationsSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/status': {
+      id: '/api/integrations/status'
+      path: '/api/integrations/status'
+      fullPath: '/api/integrations/status'
+      preLoaderRoute: typeof ApiIntegrationsStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/sync-accounts': {
+      id: '/api/integrations/sync-accounts'
+      path: '/api/integrations/sync-accounts'
+      fullPath: '/api/integrations/sync-accounts'
+      preLoaderRoute: typeof ApiIntegrationsSyncAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/$provider/callback': {
       id: '/api/integrations/$provider/callback'
       path: '/api/integrations/$provider/callback'
@@ -148,15 +765,121 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsProviderStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/channels/$channel': {
+      id: '/api/integrations/channels/$channel'
+      path: '/api/integrations/channels/$channel'
+      fullPath: '/api/integrations/channels/$channel'
+      preLoaderRoute: typeof ApiIntegrationsChannelsChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/google/accounts': {
+      id: '/api/integrations/google/accounts'
+      path: '/api/integrations/google/accounts'
+      fullPath: '/api/integrations/google/accounts'
+      preLoaderRoute: typeof ApiIntegrationsGoogleAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/google/campaigns': {
+      id: '/api/integrations/google/campaigns'
+      path: '/api/integrations/google/campaigns'
+      fullPath: '/api/integrations/google/campaigns'
+      preLoaderRoute: typeof ApiIntegrationsGoogleCampaignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/google/monthly': {
+      id: '/api/integrations/google/monthly'
+      path: '/api/integrations/google/monthly'
+      fullPath: '/api/integrations/google/monthly'
+      preLoaderRoute: typeof ApiIntegrationsGoogleMonthlyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/meta/accounts': {
+      id: '/api/integrations/meta/accounts'
+      path: '/api/integrations/meta/accounts'
+      fullPath: '/api/integrations/meta/accounts'
+      preLoaderRoute: typeof ApiIntegrationsMetaAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/meta/callback': {
+      id: '/api/integrations/meta/callback'
+      path: '/api/integrations/meta/callback'
+      fullPath: '/api/integrations/meta/callback'
+      preLoaderRoute: typeof ApiIntegrationsMetaCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/meta/campaigns': {
+      id: '/api/integrations/meta/campaigns'
+      path: '/api/integrations/meta/campaigns'
+      fullPath: '/api/integrations/meta/campaigns'
+      preLoaderRoute: typeof ApiIntegrationsMetaCampaignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/meta/start': {
+      id: '/api/integrations/meta/start'
+      path: '/api/integrations/meta/start'
+      fullPath: '/api/integrations/meta/start'
+      preLoaderRoute: typeof ApiIntegrationsMetaStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/clients/$id/analysis': {
+      id: '/api/integrations/clients/$id/analysis'
+      path: '/api/integrations/clients/$id/analysis'
+      fullPath: '/api/integrations/clients/$id/analysis'
+      preLoaderRoute: typeof ApiIntegrationsClientsIdAnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/clients/$id/campaigns': {
+      id: '/api/integrations/clients/$id/campaigns'
+      path: '/api/integrations/clients/$id/campaigns'
+      fullPath: '/api/integrations/clients/$id/campaigns'
+      preLoaderRoute: typeof ApiIntegrationsClientsIdCampaignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/reports/$id/draft': {
+      id: '/api/integrations/reports/$id/draft'
+      path: '/api/integrations/reports/$id/draft'
+      fullPath: '/api/integrations/reports/$id/draft'
+      preLoaderRoute: typeof ApiIntegrationsReportsIdDraftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/reports/$id/pdf': {
+      id: '/api/integrations/reports/$id/pdf'
+      path: '/api/integrations/reports/$id/pdf'
+      fullPath: '/api/integrations/reports/$id/pdf'
+      preLoaderRoute: typeof ApiIntegrationsReportsIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/reports/$id/send': {
+      id: '/api/integrations/reports/$id/send'
+      path: '/api/integrations/reports/$id/send'
+      fullPath: '/api/integrations/reports/$id/send'
+      preLoaderRoute: typeof ApiIntegrationsReportsIdSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/reports/$id/share': {
+      id: '/api/integrations/reports/$id/share'
+      path: '/api/integrations/reports/$id/share'
+      fullPath: '/api/integrations/reports/$id/share'
+      preLoaderRoute: typeof ApiIntegrationsReportsIdShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedGestorRoute: typeof AuthenticatedGestorRoute
+  AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
+  AuthenticatedClientesClientIdRoute: typeof AuthenticatedClientesClientIdRoute
+  AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedGestorRoute: AuthenticatedGestorRoute,
+  AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
+  AuthenticatedClientesClientIdRoute: AuthenticatedClientesClientIdRoute,
+  AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -166,8 +889,40 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiAdImageRoute: ApiAdImageRoute,
+  ApiGoogleLiveReportRoute: ApiGoogleLiveReportRoute,
+  ApiReportLiveRoute: ApiReportLiveRoute,
+  ApiReportPdfRoute: ApiReportPdfRoute,
+  LiveTokenRoute: LiveTokenRoute,
+  ShareTokenRoute: ShareTokenRoute,
+  ApiAgentePedidosRoute: ApiAgentePedidosRoute,
+  ApiCronGestorRoute: ApiCronGestorRoute,
+  ApiCronHubRoute: ApiCronHubRoute,
+  ApiCronReportsRoute: ApiCronReportsRoute,
+  ApiGestorAvisarRoute: ApiGestorAvisarRoute,
+  ApiHubAcessoRoute: ApiHubAcessoRoute,
+  ApiIntegrationsClientLookupRoute: ApiIntegrationsClientLookupRoute,
+  ApiIntegrationsOverviewRoute: ApiIntegrationsOverviewRoute,
+  ApiIntegrationsSessionRoute: ApiIntegrationsSessionRoute,
+  ApiIntegrationsStatusRoute: ApiIntegrationsStatusRoute,
+  ApiIntegrationsSyncAccountsRoute: ApiIntegrationsSyncAccountsRoute,
   ApiIntegrationsProviderCallbackRoute: ApiIntegrationsProviderCallbackRoute,
   ApiIntegrationsProviderStartRoute: ApiIntegrationsProviderStartRoute,
+  ApiIntegrationsChannelsChannelRoute: ApiIntegrationsChannelsChannelRoute,
+  ApiIntegrationsGoogleAccountsRoute: ApiIntegrationsGoogleAccountsRoute,
+  ApiIntegrationsGoogleCampaignsRoute: ApiIntegrationsGoogleCampaignsRoute,
+  ApiIntegrationsGoogleMonthlyRoute: ApiIntegrationsGoogleMonthlyRoute,
+  ApiIntegrationsMetaAccountsRoute: ApiIntegrationsMetaAccountsRoute,
+  ApiIntegrationsMetaCallbackRoute: ApiIntegrationsMetaCallbackRoute,
+  ApiIntegrationsMetaCampaignsRoute: ApiIntegrationsMetaCampaignsRoute,
+  ApiIntegrationsMetaStartRoute: ApiIntegrationsMetaStartRoute,
+  ApiIntegrationsClientsIdAnalysisRoute: ApiIntegrationsClientsIdAnalysisRoute,
+  ApiIntegrationsClientsIdCampaignsRoute:
+    ApiIntegrationsClientsIdCampaignsRoute,
+  ApiIntegrationsReportsIdDraftRoute: ApiIntegrationsReportsIdDraftRoute,
+  ApiIntegrationsReportsIdPdfRoute: ApiIntegrationsReportsIdPdfRoute,
+  ApiIntegrationsReportsIdSendRoute: ApiIntegrationsReportsIdSendRoute,
+  ApiIntegrationsReportsIdShareRoute: ApiIntegrationsReportsIdShareRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
