@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
-import { RefreshCw } from "lucide-react";
+import { Moon, RefreshCw, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
 import { agencyApi } from "@/lib/agency-client";
@@ -536,6 +536,22 @@ function GestorPage() {
   const [sel, setSel] = useState<string | null>(null);
   const [flash, setFlash] = useState<{ t: string; k: string } | null>(null);
   const [atualizando, setAtualizando] = useState(false);
+  const [tema, setTema] = useState<"light" | "dark">(() => {
+    try {
+      return window.localStorage.getItem("scase.tema") === "dark" ? "dark" : "light";
+    } catch {
+      return "light";
+    }
+  });
+  const trocarTema = () => {
+    const t = tema === "dark" ? "light" : "dark";
+    setTema(t);
+    try {
+      window.localStorage.setItem("scase.tema", t);
+    } catch {
+      /* sem armazenamento */
+    }
+  };
 
   const todos = useMemo(() => (painel.data ?? []).filter((c) => c.kpi && c.nome), [painel.data]);
   const comErro = (painel.data ?? []).filter((c) => !c.kpi && c.erro);
@@ -659,15 +675,27 @@ function GestorPage() {
       title="Gestor IA"
       description={`Um cartão por cliente: saldo, números e melhorias. Atualiza sozinho a cada 15 minutos, das 6h às 22h${ultima ? ` · última atualização ${quando(ultima)}` : ""}.`}
       stats={stats}
+      className={tema === "dark" ? "agDark" : undefined}
       actions={
-        <button
-          className="secondary"
-          onClick={() => void atualizarAgora(sel ?? undefined)}
-          disabled={atualizando}
-        >
-          <RefreshCw size={16} />{" "}
-          {atualizando ? "Atualizando…" : sel ? "Atualizar este cliente" : "Atualizar agora"}
-        </button>
+        <>
+          <button
+            className="secondary"
+            type="button"
+            onClick={trocarTema}
+            aria-label={tema === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+          >
+            {tema === "dark" ? <Sun size={16} /> : <Moon size={16} />}{" "}
+            {tema === "dark" ? "Claro" : "Escuro"}
+          </button>
+          <button
+            className="secondary"
+            onClick={() => void atualizarAgora(sel ?? undefined)}
+            disabled={atualizando}
+          >
+            <RefreshCw size={16} />{" "}
+            {atualizando ? "Atualizando…" : sel ? "Atualizar este cliente" : "Atualizar agora"}
+          </button>
+        </>
       }
     >
       <div className="sg">

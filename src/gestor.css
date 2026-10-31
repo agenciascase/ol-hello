@@ -3,6 +3,7 @@
   --sg-surface: #fff;
   --sg-sunken: #eef3f0;
   --sg-ink: #0e2619;
+  --sg-on-ink: #fff;
   --sg-muted: #5c6f64;
   --sg-line: #e1eae4;
   --sg-accent: #0f8a4f;
@@ -143,7 +144,7 @@
 }
 .sg .filters button[aria-pressed="true"] {
   background: var(--sg-ink);
-  color: #fff;
+  color: var(--sg-on-ink);
   border-color: var(--sg-ink);
 }
 .sg .vis {
@@ -178,7 +179,7 @@
 }
 .sg .seg button[aria-pressed="true"] {
   background: var(--sg-ink);
-  color: #fff;
+  color: var(--sg-on-ink);
 }
 .sg .mets {
   display: flex;
@@ -843,4 +844,44 @@
   .sg * {
     transition: none !important;
   }
+}
+
+/* Tema escuro (botão Claro/Escuro no topo; a escolha vale também para a página Dashboards) */
+.ag.agDark {
+  --mist: #091611;
+  --ink: #eaf6ef;
+  --slate: #a5bcb0;
+  --hair: #284536;
+  --line: #284536;
+  --muted: #a5bcb0;
+  background: #091611;
+  color: #eaf6ef;
+  color-scheme: dark;
+}
+.ag.agDark .agEmpty {
+  background: #11241b;
+}
+.agDark .sg {
+  --sg-surface: #11241b;
+  --sg-sunken: #1a3226;
+  --sg-ink: #eaf6ef;
+  --sg-on-ink: #0b1712;
+  --sg-muted: #a0b8aa;
+  --sg-line: #2b4939;
+  --sg-accent: #2fd785;
+  --sg-accent-ink: #052317;
+  --sg-accent-soft: #173a2a;
+  --sg-line2: #f0a94a;
+  --sg-meta: #a49bff;
+  --sg-google: #6cbcf2;
+  --sg-good: #4cc787;
+  --sg-good-soft: #173527;
+  --sg-bad: #ff8a7a;
+  --sg-bad-soft: #3d1f1c;
+  --sg-warn: #f0b354;
+  --sg-warn-soft: #3a2d15;
+  color-scheme: dark;
+}
+.agDark .sg .cc.critico {
+  border-color: color-mix(in srgb, var(--sg-bad) 45%, var(--sg-line));
 }

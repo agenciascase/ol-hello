@@ -36,9 +36,11 @@ export function AgencyShell({
   description,
   actions,
   stats,
+  className,
   children,
 }: {
   title: string;
+  className?: string | undefined;
   eyebrow?: string;
   description?: string;
   actions?: ReactNode;
@@ -51,7 +53,7 @@ export function AgencyShell({
   const admin = useQuery({ queryKey: ["agency-is-admin"], queryFn: currentUserIsAdmin, staleTime: 5 * 60_000 });
 
   return (
-    <div className="perf ag">
+    <div className={"perf ag" + (className ? " " + className : "")}>
       {open && <div className="agShade" onClick={() => setOpen(false)} />}
       <AgencySidebar
         active={pathname.startsWith("/integracoes") ? "integrations" : pathname.startsWith("/clientes") ? "clients" : pathname.startsWith("/gestor") ? "gestor" : "dashboard"}
