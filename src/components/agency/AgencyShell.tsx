@@ -54,7 +54,7 @@ export function AgencyShell({
     <div className="perf ag">
       {open && <div className="agShade" onClick={() => setOpen(false)} />}
       <AgencySidebar
-        active={pathname.startsWith("/integracoes") ? "integrations" : pathname.startsWith("/clientes") ? "clients" : "dashboard"}
+        active={pathname.startsWith("/integracoes") ? "integrations" : pathname.startsWith("/clientes") ? "clients" : pathname.startsWith("/gestor") ? "gestor" : "dashboard"}
         open={open}
         onClose={() => setOpen(false)}
         user={{ name: "Agência SCASE", subtitle: "Sair da conta", initials: "SC" }}
