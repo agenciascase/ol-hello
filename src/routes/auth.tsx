@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, MailCheck, ShieldCheck, BarChart3, Target, TrendingUp, Mail, LockKeyhole, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, ShieldCheck, BarChart3, Target, TrendingUp, Mail, LockKeyhole, Eye, EyeOff, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import "../performance.css";
 
@@ -11,10 +11,10 @@ export const Route = createFileRoute("/auth")({
   }),
   head: () => ({
     meta: [
-      { title: "Entrar — SCASE Performance" },
-      { name: "description", content: "Acesse o painel de performance de campanhas da SCASE" },
-      { property: "og:title", content: "Entrar — SCASE Performance" },
-      { property: "og:description", content: "Acesse o painel de performance de campanhas da SCASE" },
+      { title: "Entrar — SCASE HUB" },
+      { name: "description", content: "HUB da SCASE: clientes, campanhas, otimizações e relatórios num lugar só" },
+      { property: "og:title", content: "Entrar — SCASE HUB" },
+      { property: "og:description", content: "HUB da SCASE: clientes, campanhas, otimizações e relatórios num lugar só" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -30,109 +30,92 @@ function Brand() {
   );
 }
 
+// Acesso do HUB: uma conta só. No primeiro acesso a senha é criada; depois só existe "Entrar".
+// Não há cadastro, troca nem recuperação de senha pelo sistema.
 function AuthPage() {
   const navigate = useNavigate();
-  const { redirect: redirectTo, mode: searchMode } = Route.useSearch();
+  const { redirect: redirectTo } = Route.useSearch();
   const destination = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
 
-  const [mode, setMode] = useState<"signin" | "signup" | "check-email" | "forgot" | "reset" | "sent-reset">(searchMode === "reset" ? "reset" : "signin");
-  const [fullName, setFullName] = useState("");
-  const [company, setCompany] = useState("");
-  const [email, setEmail] = useState("");
+  const [mode, setMode] = useState<"carregando" | "criar" | "entrar">("carregando");
+  const [email, setEmail] = useState("agenciascase@gmail.com");
   const [password, setPassword] = useState("");
+  const [confirmacao, setConfirmacao] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session && searchMode !== "reset") navigate({ to: destination, replace: true });
+      if (data.session) navigate({ to: destination, replace: true });
     });
   }, [navigate, destination]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setMode("reset");
-    });
-    return () => subscription.unsubscribe();
+    fetch("/api/hub/acesso", { cache: "no-store" })
+      .then((r) => r.json() as Promise<{ email?: string; senhaCriada?: boolean }>)
+      .then((d) => {
+        if (d.email) setEmail(d.email);
+        setMode(d.senhaCriada === false ? "criar" : "entrar");
+      })
+      .catch(() => setMode("entrar"));
   }, []);
 
-  async function handleForgotPassword(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: window.location.origin + "/auth?mode=reset",
-    });
-    setBusy(false);
-    if (resetError) {
-      setError("Não foi possível solicitar a recuperação. Aguarde um pouco e tente novamente.");
-      return;
+  async function entrar(senha: string) {
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (signInError) {
+      setError(
+        /rate limit|too many/i.test(signInError.message)
+          ? "Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo."
+          : "Senha incorreta. Confira e tente de novo.",
+      );
+      return false;
     }
-    setMode("sent-reset");
-  }
-
-  async function handleNewPassword(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    setBusy(false);
-    if (updateError) {
-      setError("O link pode estar inválido ou expirado. Solicite uma nova recuperação de senha.");
-      return;
-    }
-    setPassword("");
-    navigate({ to: "/dashboard", replace: true });
+    navigate({ to: destination, replace: true });
+    return true;
   }
 
   async function handleSignIn(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    await entrar(password);
     setBusy(false);
-    if (signInError) {
-      setError("E-mail ou senha incorretos. Confira os dados e tente novamente.");
-      return;
-    }
-    navigate({ to: destination, replace: true });
   }
 
-  async function handleSignUp(e: FormEvent) {
+  async function handleCriar(e: FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, company },
-        emailRedirectTo: window.location.origin,
-      },
-    });
+    if (password.length < 10) return setError("A senha precisa ter pelo menos 10 caracteres.");
+    if (password !== confirmacao) return setError("As duas senhas não são iguais.");
+    setBusy(true);
+    const r = await fetch("/api/hub/acesso", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ senha: password }) });
+    const d = (await r.json().catch(() => ({}))) as { error?: string };
+    if (!r.ok) {
+      setBusy(false);
+      if (r.status === 409) setMode("entrar");
+      setError(d.error || "Não consegui criar a senha agora. Tente de novo.");
+      return;
+    }
+    await entrar(password);
     setBusy(false);
-    if (signUpError) {
-      setError(
-        signUpError.message.includes("already registered")
-          ? "Este e-mail já possui cadastro. Entre com sua senha."
-          : "Não foi possível criar a conta. Confira os dados e tente novamente."
-      );
-      return;
-    }
-    if (data.session) {
-      navigate({ to: destination, replace: true });
-      return;
-    }
-    setMode("check-email");
   }
+
+  const campoSenha = (valor: string, mudar: (v: string) => void, rotulo: string, dica: string, auto: string) => (
+    <label>{rotulo}
+      <span className="loginInputWrap"><LockKeyhole size={19} aria-hidden="true" />
+        <input placeholder={dica} type={showPassword ? "text" : "password"} autoComplete={auto} minLength={mode === "criar" ? 10 : 1} value={valor} onChange={(e) => mudar(e.target.value)} required />
+        <button className="passwordToggle" type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
+      </span>
+    </label>
+  );
 
   return (
     <div className="perf login">
       <div className="loginAside">
         <Brand />
         <div>
-          <span className="loginTag">INTELIGÊNCIA EM PERFORMANCE</span>
+          <span className="loginTag">SCASE HUB · INTELIGÊNCIA EM PERFORMANCE</span>
           <h1>
             Dados claros.
             <br />
@@ -140,7 +123,7 @@ function AuthPage() {
             <br />
             <em>Resultados reais.</em>
           </h1>
-          <p>Google Ads, Meta Ads e inteligência estratégica no mesmo lugar.</p>
+          <p>Clientes, campanhas, otimizações e relatórios do Google Ads e da Meta Ads no mesmo lugar.</p>
           <div className="loginBenefits" aria-label="Benefícios da plataforma">
             <div><span><BarChart3 size={23} /></span><strong>Mais<br/>desempenho</strong></div>
             <div><span><Target size={23} /></span><strong>Decisões<br/>mais rápidas</strong></div>
@@ -152,118 +135,52 @@ function AuthPage() {
             <div className="loginDonutCard"><i className="loginDonut" /><span><b /><b /><b /></span></div>
           </div>
         </div>
-        <small>© 2026 SCASE • Plataforma de performance</small>
+        <small>© 2026 SCASE • HUB de performance</small>
       </div>
       <div className="loginArea">
         <div className="loginCard">
-          {mode === "forgot" || mode === "sent-reset" ? (
+          {mode === "carregando" ? (
+            <p className="loginSubtitle">Verificando acesso…</p>
+          ) : mode === "criar" ? (
             <>
-              <span className="eyebrow">RECUPERAÇÃO DE ACESSO</span>
-              <h2>{mode === "forgot" ? "Esqueceu sua senha?" : "Confira seu e-mail"}</h2>
-              <p>{mode === "forgot"
-                ? "Informe o e-mail da sua conta para receber um link de redefinição."
-                : "Se existir uma conta cadastrada para este e-mail, enviaremos as instruções para redefinir sua senha."}</p>
-              {mode === "forgot" && (
-                <form onSubmit={handleForgotPassword}>
-                  <label>E-mail
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="voce@empresa.com.br" />
-                  </label>
-                  {error && <div className="demoNote authError">{error}</div>}
-                  <button className="primary full" type="submit" disabled={busy}>{busy ? "Enviando…" : "Enviar link de recuperação"}</button>
-                </form>
-              )}
-              <button className="secondary full" type="button" onClick={() => { setMode("signin"); setError(null); }}>Voltar para o login</button>
-            </>
-          ) : mode === "reset" ? (
-            <>
-              <span className="eyebrow">RECUPERAÇÃO DE ACESSO</span>
-              <h2>Defina uma nova senha</h2>
-              <p>Digite sua nova senha após abrir o link de recuperação recebido por e-mail.</p>
-              <form onSubmit={handleNewPassword}>
-                <label>Nova senha
-                  <input type="password" minLength={8} value={password} onChange={e => setPassword(e.target.value)} required placeholder="Mínimo de 8 caracteres" />
+              <span className="eyebrow">PRIMEIRO ACESSO</span>
+              <h2 className="loginTitle">Crie a senha do HUB</h2>
+              <p className="loginSubtitle">Esta senha é criada uma única vez e não pode ser trocada nem recuperada depois. Guarde em um lugar seguro.</p>
+              <form onSubmit={handleCriar}>
+                <label>E-mail
+                  <span className="loginInputWrap"><Mail size={19} aria-hidden="true" />
+                    <input type="email" value={email} readOnly aria-readonly="true" />
+                  </span>
                 </label>
+                {campoSenha(password, setPassword, "Senha", "Mínimo de 10 caracteres", "new-password")}
+                {campoSenha(confirmacao, setConfirmacao, "Repita a senha", "Digite a mesma senha", "new-password")}
                 {error && <div className="demoNote authError">{error}</div>}
-                <button className="primary full" type="submit" disabled={busy}>{busy ? "Salvando…" : "Atualizar senha"}</button>
+                <button className="primary full" type="submit" disabled={busy}>
+                  {busy ? "Aguarde…" : "Criar senha e entrar"} <KeyRound size={19} />
+                </button>
               </form>
-              <button className="secondary full" type="button" onClick={() => {setMode("forgot"); setError(null);}}>Solicitar outro link</button>
-            </>
-          ) : mode === "check-email" ? (
-            <>
-              <span className="eyebrow">QUASE LÁ</span>
-              <h2>Confirme seu e-mail</h2>
-              <p>
-                Enviamos um link de confirmação para <strong>{email}</strong>. Abra o e-mail e clique no link para
-                ativar sua conta.
-              </p>
               <div className="demoNote">
-                <MailCheck size={16} /> Depois de confirmar, volte aqui e entre com sua senha.
+                <ShieldCheck size={16} /> Depois de criada, só esta senha abre o HUB.
               </div>
-              <button className="secondary full" onClick={() => setMode("signin")}>
-                Voltar para o login
-              </button>
             </>
           ) : (
             <>
-              <h2 className="loginTitle">{mode === "signin" ? "Acesse sua conta" : "Crie sua conta"}</h2>
-              <p className="loginSubtitle">
-                {mode === "signin"
-                  ? "Entre na sua plataforma e acompanhe o desempenho das suas campanhas."
-                  : "Cadastre-se para acompanhar o desempenho das suas campanhas."}
-              </p>
-              <form onSubmit={mode === "signin" ? handleSignIn : handleSignUp}>
-                {mode === "signup" && (
-                  <>
-                    <label>
-                      Nome completo
-                      <input
-                        placeholder="Seu nome"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                      />
-                    </label>
-                    <label>
-                      Empresa
-                      <input
-                        placeholder="Nome da empresa"
-                        value={company}
-                        onChange={(e) => setCompany(e.target.value)}
-                        required
-                      />
-                    </label>
-                  </>
-                )}
-
+              <h2 className="loginTitle">Acesse o HUB</h2>
+              <p className="loginSubtitle">Clientes, campanhas, otimizações e relatórios da Scase num lugar só.</p>
+              <form onSubmit={handleSignIn}>
                 <label>E-mail
                   <span className="loginInputWrap"><Mail size={19} aria-hidden="true" />
-                    <input placeholder="Seu e-mail" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <input type="email" autoComplete="username" value={email} readOnly aria-readonly="true" />
                   </span>
                 </label>
-                <label>Senha
-                  <span className="loginInputWrap"><LockKeyhole size={19} aria-hidden="true" />
-                    <input placeholder={mode === "signup" ? "Mínimo de 6 caracteres" : "Sua senha"} type={showPassword ? "text" : "password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    <button className="passwordToggle" type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
-                  </span>
-                </label>
-                {mode === "signin" && <button className="forgotLink" type="button" onClick={() => { setMode("forgot"); setError(null); }}>Esqueceu sua senha?</button>}
+                {campoSenha(password, setPassword, "Senha", "Sua senha", "current-password")}
                 {error && <div className="demoNote authError">{error}</div>}
                 <button className="primary full" type="submit" disabled={busy}>
-                  {busy ? "Aguarde…" : mode === "signin" ? "Entrar" : "Criar conta"} <ArrowRight size={19} />
+                  {busy ? "Aguarde…" : "Entrar"} <ArrowRight size={19} />
                 </button>
               </form>
-              <div className="loginDivider">ou</div>
-              <button
-                className="secondary full"
-                onClick={() => {
-                  setMode(mode === "signin" ? "signup" : "signin");
-                  setError(null);
-                }}
-              >
-                {mode === "signin" ? "Ainda não tenho conta" : "Já tenho conta"}
-              </button>
               <div className="demoNote">
-                <ShieldCheck size={16} /> Acesso protegido. Seus dados ficam visíveis apenas para você.
+                <ShieldCheck size={16} /> Acesso exclusivo da equipe Scase. Conexão protegida.
               </div>
             </>
           )}
