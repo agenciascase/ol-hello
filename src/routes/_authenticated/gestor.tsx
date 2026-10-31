@@ -602,18 +602,32 @@ function GestorPage() {
   async function atualizarAgora(id?: string) {
     setAtualizando(true);
     try {
-      const r = await agencyApi<{ feitos: number; erros: unknown[]; restantes: number }>(
-        `/api/cron/gestor?limite=6${id ? "&cliente=" + id : ""}`,
-        { method: "POST" },
-      );
-      await qc.invalidateQueries({ queryKey: ["gestor-painel"] });
-      avisar(
-        id
-          ? r.feitos
+      type Lote = { feitos: number; erros: unknown[]; restantes: number };
+      if (id) {
+        const r = await agencyApi<Lote>(`/api/cron/gestor?cliente=${id}`, { method: "POST" });
+        await qc.invalidateQueries({ queryKey: ["gestor-painel"] });
+        avisar(
+          r.feitos
             ? "Cliente atualizado agora."
-            : "Não consegui atualizar este cliente agora. Veja o aviso no topo da ficha."
-          : `${r.feitos} cliente(s) atualizados agora.${r.restantes ? ` Os outros ${r.restantes} entram na próxima rodada automática.` : ""}`,
-        r.feitos ? "ok" : "err",
+            : "Não consegui atualizar este cliente agora. Veja o aviso no topo da ficha.",
+          r.feitos ? "ok" : "err",
+        );
+        return;
+      }
+      // Todos os clientes, em lotes (o servidor pula quem foi atualizado nos últimos 2 minutos).
+      let feitos = 0,
+        erros = 0;
+      for (let rodada = 0; rodada < 60; rodada++) {
+        const r = await agencyApi<Lote>("/api/cron/gestor?limite=6&idade=2", { method: "POST" });
+        feitos += r.feitos;
+        erros += r.erros.length;
+        await qc.invalidateQueries({ queryKey: ["gestor-painel"] });
+        if (!r.restantes || (!r.feitos && !r.erros.length)) break;
+        setFlash({ t: `Atualizando… ${feitos + erros} feitos, faltam ${r.restantes}.`, k: "info" });
+      }
+      avisar(
+        `${feitos} cliente(s) atualizados agora.${erros ? ` ${erros} com erro na leitura (aviso no cartão).` : ""}`,
+        feitos ? "ok" : "err",
       );
     } catch (e) {
       avisar(e instanceof Error ? e.message : "Não consegui atualizar agora.", "err");
@@ -642,8 +656,8 @@ function GestorPage() {
 
   return (
     <AgencyShell
-      title="Gestor"
-      description={`Um cartão por cliente: saldo, números e melhorias. Atualiza sozinho a cada 30 minutos, das 6h às 22h${ultima ? ` · última atualização ${quando(ultima)}` : ""}.`}
+      title="Gestor IA"
+      description={`Um cartão por cliente: saldo, números e melhorias. Atualiza sozinho a cada 15 minutos, das 6h às 22h${ultima ? ` · última atualização ${quando(ultima)}` : ""}.`}
       stats={stats}
       actions={
         <button

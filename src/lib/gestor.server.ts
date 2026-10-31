@@ -8,7 +8,7 @@ import { googleAdsVersion, googleHeaders } from "./ads-oauth.server";
 
 const GRAPH = "https://graph.facebook.com/v24.0/";
 const FUSO = "America/Sao_Paulo";
-const IDADE_PADRAO_MIN = 25; // cartão mais novo que isso não é refeito na rodada automática
+const IDADE_PADRAO_MIN = 12; // cartão mais novo que isso não é refeito na rodada automática
 
 /* ───────────── tipos ───────────── */
 

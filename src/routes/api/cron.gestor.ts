@@ -39,6 +39,9 @@ async function rodar(request: Request) {
   try {
     const r = await sincronizarGestor({
       limite: Number(url.searchParams.get("limite") ?? 4),
+      ...(url.searchParams.get("idade")
+        ? { idadeMin: Math.max(1, Number(url.searchParams.get("idade")) || 12) }
+        : {}),
       ...(cliente ? { clienteId: cliente } : {}),
     });
     return Response.json(
