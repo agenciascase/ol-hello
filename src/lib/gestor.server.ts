@@ -891,6 +891,73 @@ type Banco = { from: (t: string) => any };
  * Atualiza até `limite` cartões, começando pelos mais antigos (ou só `clienteId`).
  * Pensado para ser chamado em sequência pelo agendador até `restantes` chegar a zero.
  */
+/**
+ * Resumo do cartão para a lista do Gestor IA (bem menor que o documento completo):
+ * a lista baixa só isto; campanhas, textos das sugestões e avaliação completa vêm ao abrir o cliente.
+ */
+export function resumir(doc: PainelDoc) {
+  const d = doc as unknown as {
+    nome: string;
+    plataformas?: string[];
+    gestor?: string | null;
+    moeda?: string;
+    periodo?: unknown;
+    saldo?: unknown;
+    kpi?: unknown;
+    saude?: string;
+    avaliacao?: { nota?: number | null };
+    avisos?: string[];
+    atualizado_em?: string;
+    sugestoes?: Array<{ id?: number; execucao?: string }>;
+    serie?: Array<{
+      dia: string;
+      gasto: number;
+      resultado: number;
+      cliques: number;
+      impressoes: number;
+    }>;
+  };
+  const serie = d.serie ?? [];
+  return {
+    nome: d.nome,
+    plataformas: d.plataformas ?? [],
+    gestor: d.gestor ?? null,
+    moeda: d.moeda ?? "BRL",
+    periodo: d.periodo ?? null,
+    saldo: d.saldo ?? [],
+    kpi: d.kpi ?? null,
+    saude: d.saude ?? "ok",
+    avaliacao: { nota: d.avaliacao?.nota ?? null },
+    sugestoes: (d.sugestoes ?? []).map((x) => ({ id: x.id, execucao: x.execucao })),
+    serie: {
+      de: serie[0]?.dia ?? null,
+      g: serie.map((x) => x.gasto),
+      r: serie.map((x) => x.resultado),
+      c: serie.map((x) => x.cliques),
+      i: serie.map((x) => x.impressoes),
+    },
+    avisos: d.avisos ?? [],
+    atualizado_em: d.atualizado_em ?? null,
+  };
+}
+
+/** Impressão digital do conteúdo (sem a hora): igual = nada mudou, não precisa gravar nem baixar de novo. */
+async function impressao(doc: PainelDoc) {
+  const { atualizado_em: _hora, ...resto } = doc as PainelDoc & { atualizado_em?: string };
+  void _hora;
+  const bytes = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(JSON.stringify(resto)),
+  );
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Atualiza até `limite` cartões, começando pelos conferidos há mais tempo (ou só `clienteId`).
+ * Cartão que não mudou só tem a hora da conferência anotada (`conferido_em`); o conteúdo e o
+ * `updated_at` só mudam quando os números mudam, então a página não baixa de novo à toa.
+ * Pensado para ser chamado em sequência pelo agendador até `restantes` chegar a zero.
+ */
 export async function sincronizarGestor(
   opts: { limite?: number; clienteId?: string; idadeMin?: number } = {},
 ) {
@@ -903,17 +970,21 @@ export async function sincronizarGestor(
       .from("clients")
       .select("id,name,gestor,active,client_ad_accounts(provider,account_id,account_name)")
       .eq("active", true),
-    sb.from("gestor_painel").select("client_id,updated_at"),
+    sb.from("gestor_painel").select("client_id,conferido_em,hash"),
     sb.from("ad_accounts_catalog").select("account_id,currency"),
   ]);
   if (clientes.error) throw new Error("Clientes: " + clientes.error.message);
   if (painel.error) throw new Error("Tabela gestor_painel: " + painel.error.message);
+  const linhas =
+    (painel.data as Array<{
+      client_id: string;
+      conferido_em: string | null;
+      hash: string | null;
+    }> | null) ?? [];
   const quando = new Map(
-    ((painel.data as Array<{ client_id: string; updated_at: string }> | null) ?? []).map((p) => [
-      p.client_id,
-      Date.parse(p.updated_at),
-    ]),
+    linhas.map((p) => [p.client_id, p.conferido_em ? Date.parse(p.conferido_em) : 0]),
   );
+  const hashes = new Map(linhas.map((p) => [p.client_id, p.hash]));
   const moedas = Object.fromEntries(
     ((catalogo.data as Array<{ account_id: string; currency: string }> | null) ?? []).map((c) => [
       c.account_id,
@@ -937,20 +1008,36 @@ export async function sincronizarGestor(
   const tokens = await agencyTokens();
   const feitos: string[] = [],
     erros: Array<{ nome: string; erro: string }> = [];
+  let iguais = 0;
   await Promise.all(
     lote.map(async (c) => {
+      const hora = new Date().toISOString();
       try {
         const doc = await montarCartao(
           { id: c.id, name: c.name, gestor: c.gestor, contas: c.client_ad_accounts, moedas },
           tokens,
         );
-        const r = await sb
-          .from("gestor_painel")
-          .upsert(
-            { client_id: c.id, data: doc, erro: null, updated_at: new Date().toISOString() },
-            { onConflict: "client_id" },
-          );
+        const hash = await impressao(doc);
+        const r =
+          hashes.get(c.id) === hash
+            ? await sb
+                .from("gestor_painel")
+                .update({ conferido_em: hora, erro: null })
+                .eq("client_id", c.id)
+            : await sb.from("gestor_painel").upsert(
+                {
+                  client_id: c.id,
+                  data: doc,
+                  resumo: resumir(doc),
+                  hash,
+                  erro: null,
+                  updated_at: hora,
+                  conferido_em: hora,
+                },
+                { onConflict: "client_id" },
+              );
         if (r.error) throw new Error(r.error.message);
+        if (hashes.get(c.id) === hash) iguais++;
         feitos.push(c.name);
       } catch (e) {
         const erro = (e instanceof Error ? e.message : "erro").slice(0, 400);
@@ -959,15 +1046,17 @@ export async function sincronizarGestor(
         if (quando.has(c.id))
           await sb
             .from("gestor_painel")
-            .update({ erro, updated_at: new Date().toISOString() })
+            .update({ erro, conferido_em: hora, updated_at: hora })
             .eq("client_id", c.id);
         else
           await sb.from("gestor_painel").upsert(
             {
               client_id: c.id,
               data: { nome: c.name },
+              resumo: { nome: c.name },
               erro,
-              updated_at: new Date().toISOString(),
+              updated_at: hora,
+              conferido_em: hora,
             },
             { onConflict: "client_id" },
           );
@@ -976,6 +1065,7 @@ export async function sincronizarGestor(
   );
   return {
     feitos: feitos.length,
+    sem_mudanca: iguais,
     erros,
     restantes: Math.max(fila.length - lote.length, 0),
     total: todos.length,

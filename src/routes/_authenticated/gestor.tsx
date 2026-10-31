@@ -84,6 +84,63 @@ type Doc = {
   atualizado_em?: string;
 };
 type Cartao = Doc & { id: string; erro: string | null; versao?: string };
+// Versão pequena do cartão gravada pelo servidor (coluna resumo): é o que a lista baixa.
+type Resumo = {
+  nome: string;
+  plataformas?: string[];
+  gestor?: string | null;
+  moeda?: string;
+  periodo?: { de: string; ate: string } | null;
+  saldo?: Saldo[];
+  kpi?: Kpi | null;
+  saude?: string;
+  avaliacao?: { nota: number | null };
+  sugestoes?: Array<{ id: number; execucao?: string }>;
+  serie?: { de: string | null; g: number[]; r: number[]; c: number[]; i: number[] };
+  avisos?: string[];
+  atualizado_em?: string | null;
+};
+function expandir(r: Resumo): Doc {
+  const serie: Ponto[] = [];
+  const s = r.serie;
+  if (s?.de) {
+    const base = new Date(s.de + "T12:00:00Z");
+    s.g.forEach((g, k) => {
+      const d = new Date(base);
+      d.setUTCDate(d.getUTCDate() + k);
+      serie.push({
+        dia: d.toISOString().slice(0, 10),
+        gasto: g,
+        resultado: s.r[k] ?? 0,
+        cliques: s.c[k] ?? 0,
+        impressoes: s.i[k] ?? 0,
+      });
+    });
+  }
+  return {
+    nome: r.nome,
+    plataformas: r.plataformas ?? [],
+    gestor: r.gestor ?? null,
+    moeda: r.moeda ?? "BRL",
+    ...(r.periodo ? { periodo: r.periodo } : {}),
+    saldo: r.saldo ?? [],
+    ...(r.kpi ? { kpi: r.kpi } : {}),
+    saude: r.saude ?? "ok",
+    serie,
+    diario: serie.slice(-31, -1),
+    avaliacao: { nota: r.avaliacao?.nota ?? null, resumo: "", fortes: [], melhorar: [] },
+    sugestoes: (r.sugestoes ?? []).map((x) => ({
+      id: x.id,
+      prioridade: "",
+      titulo: "",
+      motivo: "",
+      campanha: "",
+      ...(x.execucao ? { execucao: x.execucao } : {}),
+    })),
+    avisos: r.avisos ?? [],
+    ...(r.atualizado_em ? { atualizado_em: r.atualizado_em } : {}),
+  };
+}
 type Pedido = {
   id: string;
   client_id: string;
@@ -507,39 +564,52 @@ function msAteProximaConferencia() {
 function GestorPage() {
   const qc = useQueryClient();
   const cartoes = useRef(new Map<string, Cartao>());
+  const ultimaConferencia = useRef<string | null>(null);
   const painel = useQuery({
     queryKey: ["gestor-painel"],
     refetchInterval: () => msAteProximaConferencia(),
     // Economia de tráfego: confere só logo depois de cada atualização (4 vezes por hora),
     // pergunta primeiro "o que mudou?" e baixa de novo apenas os cartões atualizados.
     queryFn: async () => {
-      const { data: indice, error } = await db.from("gestor_painel").select("client_id,updated_at");
+      const { data: indice, error } = await db
+        .from("gestor_painel")
+        .select("client_id,updated_at,conferido_em");
       if (error) throw new Error(error.message);
-      const lista = (indice ?? []) as Array<{ client_id: string; updated_at: string }>;
+      const lista = (indice ?? []) as Array<{
+        client_id: string;
+        updated_at: string;
+        conferido_em: string | null;
+      }>;
+      ultimaConferencia.current =
+        lista
+          .map((r) => r.conferido_em ?? r.updated_at)
+          .sort()
+          .pop() ?? null;
       const guardados = cartoes.current;
       const existentes = new Set(lista.map((r) => r.client_id));
       for (const id of [...guardados.keys()]) if (!existentes.has(id)) guardados.delete(id);
       const mudaram = lista
         .filter((r) => guardados.get(r.client_id)?.versao !== r.updated_at)
         .map((r) => r.client_id);
-      for (let i = 0; i < mudaram.length; i += 40) {
+      for (let i = 0; i < mudaram.length; i += 50) {
         const { data, error: erro } = await db
           .from("gestor_painel")
-          .select("client_id,data,erro,updated_at")
-          .in("client_id", mudaram.slice(i, i + 40));
+          .select("client_id,resumo,erro,updated_at")
+          .in("client_id", mudaram.slice(i, i + 50));
         if (erro) throw new Error(erro.message);
         for (const r of (data ?? []) as Array<{
           client_id: string;
-          data: Doc;
+          resumo: Resumo | null;
           erro: string | null;
           updated_at: string;
         }>)
-          guardados.set(r.client_id, {
-            ...r.data,
-            id: r.client_id,
-            erro: r.erro,
-            versao: r.updated_at,
-          });
+          if (r.resumo)
+            guardados.set(r.client_id, {
+              ...expandir(r.resumo),
+              id: r.client_id,
+              erro: r.erro,
+              versao: r.updated_at,
+            });
       }
       return [...guardados.values()];
     },
@@ -632,10 +702,7 @@ function GestorPage() {
   const js = reais.map((c) => janela(c, per)).filter((j): j is NonNullable<typeof j> => !!j);
   const gasto = js.reduce((s, j) => s + j.atual.gasto, 0);
   const gastoAnt = js.every((j) => j.ant) ? js.reduce((s, j) => s + (j.ant?.gasto ?? 0), 0) : 0;
-  const ultima = todos
-    .map((c) => c.atualizado_em ?? "")
-    .sort()
-    .pop();
+  const ultima = ultimaConferencia.current ?? undefined;
   const cliente = sel ? (todos.find((c) => c.id === sel) ?? null) : null;
 
   const avisar = (t: string, k = "ok") => {
@@ -746,8 +813,8 @@ function GestorPage() {
             Não consegui ler os cartões: {(painel.error as Error).message}
           </div>
         ) : cliente ? (
-          <Ficha
-            c={cliente}
+          <FichaCompleta
+            base={cliente}
             pedidos={pedidosDe(cliente.id)}
             per={per}
             setPer={escolher(setPer, "per")}
@@ -1010,6 +1077,41 @@ function BarraVis({
 }
 
 /* ───────────── ficha do cliente ───────────── */
+
+// Abre o cliente: baixa o cartão completo (campanhas, sugestões, avaliação) só deste cliente.
+function FichaCompleta({
+  base,
+  ...resto
+}: Omit<Parameters<typeof Ficha>[0], "c"> & { base: Cartao }) {
+  const ficha = useQuery({
+    queryKey: ["gestor-ficha", base.id, base.versao ?? ""],
+    staleTime: Infinity,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("gestor_painel")
+        .select("data,erro,updated_at")
+        .eq("client_id", base.id)
+        .single();
+      if (error) throw new Error(error.message);
+      const r = data as { data: Doc; erro: string | null; updated_at: string };
+      return { ...r.data, id: base.id, erro: r.erro, versao: r.updated_at } as Cartao;
+    },
+  });
+  if (!ficha.data)
+    return (
+      <>
+        <button className="back" onClick={resto.onVoltar}>
+          ← Todos os clientes
+        </button>
+        <div className="card empty">
+          {ficha.error
+            ? "Não consegui abrir este cliente: " + (ficha.error as Error).message
+            : `Abrindo ${base.nome}…`}
+        </div>
+      </>
+    );
+  return <Ficha c={ficha.data} {...resto} />;
+}
 
 function Ficha({
   c,
