@@ -40,6 +40,7 @@ function AuthPage() {
 
   const [mode, setMode] = useState<"carregando" | "criar" | "entrar" | "indisponivel">("carregando");
   const [email, setEmail] = useState("");
+  const [detalhe, setDetalhe] = useState<string[]>([]);
   const [codigo, setCodigo] = useState("");
   const [password, setPassword] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -55,10 +56,11 @@ function AuthPage() {
 
   useEffect(() => {
     fetch("/api/hub/acesso", { cache: "no-store" })
-      .then((r) => r.json() as Promise<{ senhaCriada?: boolean }>)
-      .then((d) =>
-        setMode(d.senhaCriada === false ? "criar" : d.senhaCriada === true ? "entrar" : "indisponivel"),
-      )
+      .then((r) => r.json() as Promise<{ senhaCriada?: boolean; detalhe?: string[] }>)
+      .then((d) => {
+        setDetalhe(Array.isArray(d.detalhe) ? d.detalhe : []);
+        setMode(d.senhaCriada === false ? "criar" : d.senhaCriada === true ? "entrar" : "indisponivel");
+      })
       .catch(() => setMode("indisponivel"));
   }, []);
 
@@ -171,6 +173,14 @@ function AuthPage() {
             <>
               <h2 className="loginTitle">HUB indisponível</h2>
               <p className="loginSubtitle">O HUB não conseguiu falar com o banco de dados. Tente de novo em alguns minutos; se continuar, confira as variáveis do servidor na Hostinger.</p>
+              {detalhe.length > 0 && (
+                <div className="demoNote authError">
+                  <strong>O que conferir:</strong>
+                  <ul style={{ margin: "6px 0 0 18px", padding: 0 }}>
+                    {detalhe.map((d) => <li key={d}>{d}</li>)}
+                  </ul>
+                </div>
+              )}
             </>
           ) : mode === "criar" ? (
             <>

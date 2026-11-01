@@ -10,6 +10,7 @@ import {
   limparErros,
   MSG_BLOQUEIO,
   origemConfere,
+  problemasDeConfiguracao,
   senhaJaCriada,
 } from "../../lib/hub-acesso.server";
 
@@ -22,8 +23,13 @@ const SENHA_MIN = 10;
 async function estado() {
   try {
     return json({ senhaCriada: await senhaJaCriada() });
-  } catch {
-    return json({ error: "O HUB não conseguiu falar com o banco de dados." }, 503);
+  } catch (e) {
+    // diz o que conferir na Hostinger (nunca mostra valores)
+    const problemas = problemasDeConfiguracao();
+    const detalhe = problemas.length
+      ? problemas
+      : [e instanceof Error ? e.message.slice(0, 200) : "erro desconhecido"];
+    return json({ error: "O HUB não conseguiu falar com o banco de dados.", detalhe }, 503);
   }
 }
 

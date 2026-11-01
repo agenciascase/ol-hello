@@ -16,8 +16,40 @@ export async function banco() {
 export async function senhaJaCriada() {
   const db = await banco();
   const { data, error } = await db.auth.admin.listUsers({ page: 1, perPage: 1 });
-  if (error) throw new Error("Não consegui consultar o acesso.");
+  if (error) throw new Error("Supabase respondeu: " + (error.message || "erro sem mensagem"));
   return (data.users ?? []).length > 0;
+}
+
+/**
+ * Diagnóstico das variáveis do banco, SEM mostrar valores: só diz o que está faltando ou com cara errada.
+ * Aparece na tela "HUB indisponível" para o dono corrigir na Hostinger.
+ */
+export function problemasDeConfiguracao() {
+  const p: string[] = [];
+  const bruto = (n: string) => process.env[n] ?? "";
+  const url = bruto("SUPABASE_URL");
+  const pub = bruto("SUPABASE_PUBLISHABLE_KEY");
+  const sec = bruto("SUPABASE_SERVICE_ROLE_KEY");
+  const sobra = (v: string) => v !== v.trim() || /["']/.test(v);
+  if (!url) p.push("SUPABASE_URL está vazia ou não existe.");
+  else if (sobra(url)) p.push("SUPABASE_URL tem espaço ou aspas sobrando.");
+  else if (!/^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(url))
+    p.push("SUPABASE_URL não está no formato https://xxxx.supabase.co.");
+  if (!pub) p.push("SUPABASE_PUBLISHABLE_KEY está vazia ou não existe.");
+  else if (sobra(pub)) p.push("SUPABASE_PUBLISHABLE_KEY tem espaço ou aspas sobrando.");
+  else if (!pub.startsWith("sb_publishable_") && !pub.startsWith("eyJ"))
+    p.push("SUPABASE_PUBLISHABLE_KEY deveria começar com sb_publishable_.");
+  if (!sec) p.push("SUPABASE_SERVICE_ROLE_KEY está vazia ou não existe.");
+  else if (sobra(sec)) p.push("SUPABASE_SERVICE_ROLE_KEY tem espaço ou aspas sobrando.");
+  else if (sec.startsWith("sbp_"))
+    p.push("SUPABASE_SERVICE_ROLE_KEY é a chave PESSOAL (sbp_). Use a Secret key (sb_secret_).");
+  else if (sec.startsWith("sb_publishable_"))
+    p.push("SUPABASE_SERVICE_ROLE_KEY é a chave PÚBLICA. Use a Secret key (sb_secret_).");
+  else if (!sec.startsWith("sb_secret_") && !sec.startsWith("eyJ"))
+    p.push("SUPABASE_SERVICE_ROLE_KEY deveria começar com sb_secret_.");
+  else if (sec.startsWith("sb_secret_") && sec.length < 30)
+    p.push("SUPABASE_SERVICE_ROLE_KEY parece incompleta (copie de novo pelo botão de copiar).");
+  return p;
 }
 
 export const json = (corpo: unknown, status = 200) =>
