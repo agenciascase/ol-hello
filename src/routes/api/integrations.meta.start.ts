@@ -3,10 +3,10 @@ import {randomBytes} from "node:crypto";
 import {adminUserId} from "../../lib/ads-credentials.server";
 import {authUrl} from "../../lib/ads-oauth.server";
 import {sessionCookieName} from "../../lib/integration-security.server";
+import { origemDoSite } from "../../lib/origem.server";
 export const Route=createFileRoute("/api/integrations/meta/start")({server:{handlers:{
  POST:async({request})=>{
-  const origin=request.headers.get("origin");
-  if(origin!==new URL(request.url).origin)return Response.json({error:"Origem não autorizada."},{status:403});
+  if(!origemDoSite(request))return Response.json({error:"Origem não autorizada."},{status:403});
   const jwt=request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   if(!jwt||!(await adminUserId(request)))return Response.json({error:"Sua sessão administrativa não foi autorizada. Confirme seu acesso à SCASE."},{status:403});
   try{

@@ -6,6 +6,8 @@
  * o SCASE_CRON_SECRET), para que ninguém de fora crie a senha antes do dono.
  * Proteção contra tentativas: 5 erros por IP em 15 min, ou 30 erros no total, bloqueiam por 15 min.
  */
+import { origemDoSite } from "./origem.server";
+
 export const emailDoHub = () =>
   (process.env["HUB_EMAIL"] || "agenciascase@gmail.com").toLowerCase();
 
@@ -56,7 +58,7 @@ export const json = (corpo: unknown, status = 200) =>
   Response.json(corpo, { status, headers: { "Cache-Control": "no-store" } });
 
 export function origemConfere(request: Request) {
-  return request.headers.get("origin") === new URL(request.url).origin;
+  return origemDoSite(request);
 }
 
 // ---------- limite de tentativas ----------

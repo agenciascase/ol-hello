@@ -1,13 +1,14 @@
 /** Shared guards for the agency's admin-only API routes. */
 import { isAuthenticatedAgencyAdmin, NOT_READY } from "./integration-security.server";
+import { origemDoSite } from "./origem.server";
 
 export const noStore = { "Cache-Control": "no-store" };
 
 /** Returns a Response to send back when the caller is not an agency admin, or null when allowed. */
 export async function requireAgencyAdmin(request: Request, opts: { mutating?: boolean } = {}): Promise<Response | null> {
   if (opts.mutating) {
-    const origin = request.headers.get("origin");
-    if (origin && origin !== new URL(request.url).origin) return Response.json({ error: "Origem não autorizada" }, { status: 403, headers: noStore });
+    // sem Origin continua aceito (como antes); com Origin, tem que ser o próprio site
+    if (!origemDoSite(request, true)) return Response.json({ error: "Origem não autorizada" }, { status: 403, headers: noStore });
   }
   if (!(await isAuthenticatedAgencyAdmin(request))) return Response.json({ error: NOT_READY }, { status: 403, headers: noStore });
   return null;
