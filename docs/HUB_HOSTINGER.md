@@ -76,8 +76,9 @@ Todas as chamadas usam a mesma chave (`SCASE_CRON_SECRET`):
 
 - Cadastro de novos usuários: **desligado**.
 - URL Configuration → Site URL `https://hub.agenciascase.com.br`; Redirect URLs `https://hub.agenciascase.com.br/**`.
-- A tela de login NÃO mostra o e-mail: pede só a senha e o servidor completa o resto (`/api/hub/entrar`).
-- Primeiro acesso: "Crie a senha do HUB" pede o **código de instalação** = valor do `SCASE_CRON_SECRET`
+- A tela de login pede **e-mail e senha**, com o campo de e-mail **em branco** (não vem preenchido). O servidor confere
+  os dois (`/api/hub/entrar`) e não diz qual está errado.
+- Primeiro acesso: "Crie a senha do HUB" pede o e-mail, o **código de instalação** = valor do `SCASE_CRON_SECRET`
   (ou `HUB_CODIGO_INSTALACAO`, se existir). Depois disso o sistema recusa criar outra senha.
 - 5 senhas erradas seguidas (por IP) ou 30 no total bloqueiam o login por 15 minutos.
 - Para recomeçar: apagar o usuário em Supabase → Authentication → Users.

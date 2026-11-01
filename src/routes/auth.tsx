@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, ShieldCheck, BarChart3, Target, TrendingUp, LockKeyhole, Eye, EyeOff, KeyRound } from "lucide-react";
+import { ArrowRight, ShieldCheck, BarChart3, Target, TrendingUp, Mail, LockKeyhole, Eye, EyeOff, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import "../performance.css";
 
@@ -30,15 +30,16 @@ function Brand() {
   );
 }
 
-// Acesso do HUB: uma conta só, e o e-mail dela NÃO aparece (fica só no servidor).
-// A tela pede só a senha. No primeiro acesso a senha é criada com o código de instalação;
-// depois só existe "Entrar". Não há cadastro, troca nem recuperação de senha pelo sistema.
+// Acesso do HUB: uma conta só. A tela pede e-mail e senha, com o e-mail EM BRANCO (não vem preenchido).
+// No primeiro acesso a senha é criada com o código de instalação; depois só existe "Entrar".
+// Não há cadastro, troca nem recuperação de senha pelo sistema.
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo } = Route.useSearch();
   const destination = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
 
   const [mode, setMode] = useState<"carregando" | "criar" | "entrar" | "indisponivel">("carregando");
+  const [email, setEmail] = useState("");
   const [codigo, setCodigo] = useState("");
   const [password, setPassword] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -63,10 +64,11 @@ function AuthPage() {
 
   // O servidor completa o e-mail e devolve a sessão; o navegador nunca vê o e-mail.
   async function entrar(senha: string) {
+    // o servidor confere e-mail e senha e devolve a sessão
     const r = await fetch("/api/hub/entrar", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ senha }),
+      body: JSON.stringify({ email: email.trim(), senha }),
     }).catch(() => null);
     const d = (await r?.json().catch(() => ({}))) as {
       access_token?: string;
@@ -102,9 +104,10 @@ function AuthPage() {
     setError(null);
     if (password.length < 10) return setError("A senha precisa ter pelo menos 10 caracteres.");
     if (password !== confirmacao) return setError("As duas senhas não são iguais.");
+    if (!email.trim()) return setError("Digite o e-mail.");
     if (!codigo.trim()) return setError("Digite o código de instalação.");
     setBusy(true);
-    const r = await fetch("/api/hub/acesso", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ senha: password, codigo: codigo.trim() }) });
+    const r = await fetch("/api/hub/acesso", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: email.trim(), senha: password, codigo: codigo.trim() }) });
     const d = (await r.json().catch(() => ({}))) as { error?: string };
     if (!r.ok) {
       setBusy(false);
@@ -121,6 +124,14 @@ function AuthPage() {
       <span className="loginInputWrap"><LockKeyhole size={19} aria-hidden="true" />
         <input placeholder={dica} type={showPassword ? "text" : "password"} autoComplete={auto} minLength={mode === "criar" ? 10 : 1} value={valor} onChange={(e) => mudar(e.target.value)} required />
         <button className="passwordToggle" type="button" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
+      </span>
+    </label>
+  );
+
+  const campoEmail = (
+    <label>E-mail
+      <span className="loginInputWrap"><Mail size={19} aria-hidden="true" />
+        <input type="email" placeholder="Seu e-mail" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </span>
     </label>
   );
@@ -167,6 +178,7 @@ function AuthPage() {
               <h2 className="loginTitle">Crie a senha do HUB</h2>
               <p className="loginSubtitle">Esta senha é criada uma única vez e não pode ser trocada nem recuperada depois. Guarde em um lugar seguro.</p>
               <form onSubmit={handleCriar}>
+                {campoEmail}
                 {campoSenha(codigo, setCodigo, "Código de instalação", "O código que está no servidor", "off")}
                 {campoSenha(password, setPassword, "Senha", "Mínimo de 10 caracteres", "new-password")}
                 {campoSenha(confirmacao, setConfirmacao, "Repita a senha", "Digite a mesma senha", "new-password")}
@@ -184,6 +196,7 @@ function AuthPage() {
               <h2 className="loginTitle">Acesse o HUB</h2>
               <p className="loginSubtitle">Clientes, campanhas, otimizações e relatórios da Scase num lugar só.</p>
               <form onSubmit={handleSignIn}>
+                {campoEmail}
                 {campoSenha(password, setPassword, "Senha", "Sua senha", "current-password")}
                 {error && <div className="demoNote authError">{error}</div>}
                 <button className="primary full" type="submit" disabled={busy}>

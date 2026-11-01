@@ -15,7 +15,7 @@ import {
 
 // Acesso único do HUB (o e-mail fica só no servidor).
 // GET  → diz só se a senha já foi criada.
-// POST → { senha, codigo } cria a senha uma única vez (primeiro acesso), com o código de instalação.
+// POST → { email, senha, codigo } cria a senha uma única vez (primeiro acesso), com o código de instalação.
 //        Depois disso recusa sempre: não existe trocar nem recuperar senha pelo sistema.
 const SENHA_MIN = 10;
 
@@ -30,14 +30,21 @@ async function estado() {
 async function criar(request: Request) {
   if (!origemConfere(request)) return json({ error: "Origem não autorizada" }, 403);
   if (bloqueado(request)) return json({ error: MSG_BLOQUEIO }, 429);
-  const corpo = (await request.json().catch(() => ({}))) as { senha?: unknown; codigo?: unknown };
+  const corpo = (await request.json().catch(() => ({}))) as {
+    email?: unknown;
+    senha?: unknown;
+    codigo?: unknown;
+  };
+  const email = typeof corpo.email === "string" ? corpo.email.trim().toLowerCase() : "";
   const senha = typeof corpo.senha === "string" ? corpo.senha : "";
   const codigo = typeof corpo.codigo === "string" ? corpo.codigo.trim() : "";
   const esperado = codigoDeInstalacao();
   if (!esperado) return json({ error: "Código de instalação não configurado no servidor." }, 503);
-  if (!(await iguais(codigo, esperado))) {
+  // e-mail e código conferidos juntos, com a mesma resposta (não dá pista de qual está errado)
+  const codigoOk = await iguais(codigo, esperado);
+  if (!codigoOk || email !== emailDoHub()) {
     anotarErro(request);
-    return json({ error: "Código de instalação incorreto." }, 403);
+    return json({ error: "E-mail ou código de instalação incorretos." }, 403);
   }
   if (senha.length < SENHA_MIN || senha.length > 128)
     return json({ error: `A senha precisa ter de ${SENHA_MIN} a 128 caracteres.` }, 400);

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   anotarErro,
   bloqueado,
+  emailDoHub,
   json,
   limparErros,
   loginComSenha,
@@ -9,7 +10,7 @@ import {
   origemConfere,
 } from "../../lib/hub-acesso.server";
 
-// Entrar no HUB só com a senha: o servidor completa o e-mail (que nunca vai para o navegador)
+// Entrar no HUB com e-mail e senha digitados (o e-mail não vem preenchido na tela).
 // e devolve a sessão. Erros seguidos bloqueiam por 15 minutos.
 export const Route = createFileRoute("/api/hub/entrar")({
   server: {
@@ -17,14 +18,20 @@ export const Route = createFileRoute("/api/hub/entrar")({
       POST: async ({ request }) => {
         if (!origemConfere(request)) return json({ error: "Origem não autorizada" }, 403);
         if (bloqueado(request)) return json({ error: MSG_BLOQUEIO }, 429);
-        const corpo = (await request.json().catch(() => ({}))) as { senha?: unknown };
+        const corpo = (await request.json().catch(() => ({}))) as {
+          email?: unknown;
+          senha?: unknown;
+        };
+        const email = typeof corpo.email === "string" ? corpo.email.trim().toLowerCase() : "";
         const senha = typeof corpo.senha === "string" ? corpo.senha : "";
-        if (!senha || senha.length > 128) return json({ error: "Digite a senha." }, 400);
+        if (!email || !senha || senha.length > 128)
+          return json({ error: "Digite o e-mail e a senha." }, 400);
         try {
-          const sessao = await loginComSenha(senha);
+          // e-mail diferente da conta do HUB: mesma resposta de senha errada (não dá pista)
+          const sessao = email === emailDoHub() ? await loginComSenha(senha) : null;
           if (!sessao) {
             anotarErro(request);
-            return json({ error: "Senha incorreta. Confira e tente de novo." }, 401);
+            return json({ error: "E-mail ou senha incorretos. Confira e tente de novo." }, 401);
           }
           limparErros(request);
           return json(sessao);
