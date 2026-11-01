@@ -33,7 +33,7 @@ entrada `app.js`.
 | `SCASE_CRON_SECRET` | **secreta**: chave do Cron | texto aleatório novo, 24+ caracteres |
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | conectar o Google Ads | cliente OAuth **"Aplicativo da Web"** novo no projeto Google Cloud "Agente de Trafego" (o do ambiente do Claude é "App para computador" e não aceita retorno de site) |
 | `META_APP_ID`, `META_APP_SECRET` | conectar a Meta | app da Meta (developers.facebook.com) |
-| `AGENTE_TOKEN` | **secreta**: a tarefa do Claude lê e responde os pedidos | senha nova (48 letras e números); o mesmo valor vai em `SCASE_PAINEL_TOKEN` no ambiente "Agente de tráfego" do Claude |
+| `AGENTE_TOKEN` | **secreta**: a tarefa do Claude lê e responde os pedidos | mesmo valor de `SCASE_PAINEL_TOKEN` no ambiente "Agente de tráfego" do Claude |
 | `ROTINA_URL` | chamar a tarefa do Claude | `https://api.anthropic.com/v1/claude_code/routines/trig_01HXJbgqbmwru6XFQhJivsnD/fire` |
 | `ROTINA_TOKEN` | **secreta**: chamar a tarefa do Claude | claude.ai/code/routines → tarefa → Edit → Trigger → API → Generate token |
 
