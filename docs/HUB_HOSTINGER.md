@@ -31,14 +31,13 @@ entrada `app.js`.
 | `APP_ORIGIN` | endereço público (links e retorno do login Meta/Google) | `https://hub.agenciascase.com.br` |
 | `SCASE_TOKEN_ENCRYPTION_KEY` | **secreta**: criptografa as conexões Meta/Google e os canais de envio | texto aleatório novo, 32+ caracteres |
 | `SCASE_CRON_SECRET` | **secreta**: chave do Cron | texto aleatório novo, 24+ caracteres |
-| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | conectar o Google Ads | Google Cloud → Credenciais (cliente OAuth) |
-| `GOOGLE_ADS_DEVELOPER_TOKEN` | **secreta**: API do Google Ads | Google Ads (MCC) → Central de API |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` | conectar o Google Ads | cliente OAuth **"Aplicativo da Web"** novo no projeto Google Cloud "Agente de Trafego" (o do ambiente do Claude é "App para computador" e não aceita retorno de site) |
 | `META_APP_ID`, `META_APP_SECRET` | conectar a Meta | app da Meta (developers.facebook.com) |
-| `AGENTE_TOKEN` | **secreta**: a tarefa do Claude lê e responde os pedidos | mesmo valor de `SCASE_PAINEL_TOKEN` no ambiente "Agente de tráfego" do Claude |
+| `AGENTE_TOKEN` | **secreta**: a tarefa do Claude lê e responde os pedidos | senha nova (48 letras e números); o mesmo valor vai em `SCASE_PAINEL_TOKEN` no ambiente "Agente de tráfego" do Claude |
 | `ROTINA_URL` | chamar a tarefa do Claude | `https://api.anthropic.com/v1/claude_code/routines/trig_01HXJbgqbmwru6XFQhJivsnD/fire` |
 | `ROTINA_TOKEN` | **secreta**: chamar a tarefa do Claude | claude.ai/code/routines → tarefa → Edit → Trigger → API → Generate token |
 
-Opcionais: `GOOGLE_ADS_API_VERSION` (padrão v26), `META_LOGIN_CONFIG_ID`, `ANTHROPIC_API_KEY`
+Opcionais: `GOOGLE_ADS_DEVELOPER_TOKEN` (o projeto Google Cloud "Agente de Trafego" já tem acesso aprovado à API), `GOOGLE_ADS_API_VERSION` (padrão v26), `META_LOGIN_CONFIG_ID`, `ANTHROPIC_API_KEY`
 (texto de análise dos relatórios; sem ela o texto é montado dos números), `HUB_BACKUP_DIR`
 (padrão `~/hub-backups`), `HUB_EMAIL` (padrão agenciascase@gmail.com).
 E-mail (Resend) e WhatsApp (Z-API ou Meta) são conectados na página **Integrações** do HUB
