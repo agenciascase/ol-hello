@@ -29,6 +29,7 @@ import { Route as ApiCronHubRouteImport } from './routes/api/cron.hub'
 import { Route as ApiCronReportsRouteImport } from './routes/api/cron.reports'
 import { Route as ApiGestorAvisarRouteImport } from './routes/api/gestor.avisar'
 import { Route as ApiHubAcessoRouteImport } from './routes/api/hub.acesso'
+import { Route as ApiHubEntrarRouteImport } from './routes/api/hub.entrar'
 import { Route as ApiIntegrationsClientLookupRouteImport } from './routes/api/integrations.client-lookup'
 import { Route as ApiIntegrationsOverviewRouteImport } from './routes/api/integrations.overview'
 import { Route as ApiIntegrationsSessionRouteImport } from './routes/api/integrations.session'
@@ -151,6 +152,11 @@ const ApiGestorAvisarRoute = ApiGestorAvisarRouteImport.update({
 const ApiHubAcessoRoute = ApiHubAcessoRouteImport.update({
   id: '/api/hub/acesso',
   path: '/api/hub/acesso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHubEntrarRoute = ApiHubEntrarRouteImport.update({
+  id: '/api/hub/entrar',
+  path: '/api/hub/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIntegrationsClientLookupRoute =
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/reports': typeof ApiCronReportsRoute
   '/api/gestor/avisar': typeof ApiGestorAvisarRoute
   '/api/hub/acesso': typeof ApiHubAcessoRoute
+  '/api/hub/entrar': typeof ApiHubEntrarRoute
   '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
   '/api/integrations/overview': typeof ApiIntegrationsOverviewRoute
   '/api/integrations/session': typeof ApiIntegrationsSessionRoute
@@ -338,6 +345,7 @@ export interface FileRoutesByTo {
   '/api/cron/reports': typeof ApiCronReportsRoute
   '/api/gestor/avisar': typeof ApiGestorAvisarRoute
   '/api/hub/acesso': typeof ApiHubAcessoRoute
+  '/api/hub/entrar': typeof ApiHubEntrarRoute
   '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
   '/api/integrations/overview': typeof ApiIntegrationsOverviewRoute
   '/api/integrations/session': typeof ApiIntegrationsSessionRoute
@@ -382,6 +390,7 @@ export interface FileRoutesById {
   '/api/cron/reports': typeof ApiCronReportsRoute
   '/api/gestor/avisar': typeof ApiGestorAvisarRoute
   '/api/hub/acesso': typeof ApiHubAcessoRoute
+  '/api/hub/entrar': typeof ApiHubEntrarRoute
   '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
   '/api/integrations/overview': typeof ApiIntegrationsOverviewRoute
   '/api/integrations/session': typeof ApiIntegrationsSessionRoute
@@ -426,6 +435,7 @@ export interface FileRouteTypes {
     | '/api/cron/reports'
     | '/api/gestor/avisar'
     | '/api/hub/acesso'
+    | '/api/hub/entrar'
     | '/api/integrations/client-lookup'
     | '/api/integrations/overview'
     | '/api/integrations/session'
@@ -468,6 +478,7 @@ export interface FileRouteTypes {
     | '/api/cron/reports'
     | '/api/gestor/avisar'
     | '/api/hub/acesso'
+    | '/api/hub/entrar'
     | '/api/integrations/client-lookup'
     | '/api/integrations/overview'
     | '/api/integrations/session'
@@ -511,6 +522,7 @@ export interface FileRouteTypes {
     | '/api/cron/reports'
     | '/api/gestor/avisar'
     | '/api/hub/acesso'
+    | '/api/hub/entrar'
     | '/api/integrations/client-lookup'
     | '/api/integrations/overview'
     | '/api/integrations/session'
@@ -551,6 +563,7 @@ export interface RootRouteChildren {
   ApiCronReportsRoute: typeof ApiCronReportsRoute
   ApiGestorAvisarRoute: typeof ApiGestorAvisarRoute
   ApiHubAcessoRoute: typeof ApiHubAcessoRoute
+  ApiHubEntrarRoute: typeof ApiHubEntrarRoute
   ApiIntegrationsClientLookupRoute: typeof ApiIntegrationsClientLookupRoute
   ApiIntegrationsOverviewRoute: typeof ApiIntegrationsOverviewRoute
   ApiIntegrationsSessionRoute: typeof ApiIntegrationsSessionRoute
@@ -714,6 +727,13 @@ declare module '@tanstack/react-router' {
       path: '/api/hub/acesso'
       fullPath: '/api/hub/acesso'
       preLoaderRoute: typeof ApiHubAcessoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/hub/entrar': {
+      id: '/api/hub/entrar'
+      path: '/api/hub/entrar'
+      fullPath: '/api/hub/entrar'
+      preLoaderRoute: typeof ApiHubEntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/integrations/client-lookup': {
@@ -901,6 +921,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronReportsRoute: ApiCronReportsRoute,
   ApiGestorAvisarRoute: ApiGestorAvisarRoute,
   ApiHubAcessoRoute: ApiHubAcessoRoute,
+  ApiHubEntrarRoute: ApiHubEntrarRoute,
   ApiIntegrationsClientLookupRoute: ApiIntegrationsClientLookupRoute,
   ApiIntegrationsOverviewRoute: ApiIntegrationsOverviewRoute,
   ApiIntegrationsSessionRoute: ApiIntegrationsSessionRoute,

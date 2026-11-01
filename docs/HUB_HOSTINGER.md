@@ -39,7 +39,7 @@ entrada `app.js`.
 
 Opcionais: `GOOGLE_ADS_DEVELOPER_TOKEN` (o projeto Google Cloud "Agente de Trafego" já tem acesso aprovado à API), `GOOGLE_ADS_API_VERSION` (padrão v26), `META_LOGIN_CONFIG_ID`, `ANTHROPIC_API_KEY`
 (texto de análise dos relatórios; sem ela o texto é montado dos números), `HUB_BACKUP_DIR`
-(padrão `~/hub-backups`), `HUB_EMAIL` (padrão agenciascase@gmail.com).
+(padrão `~/hub-backups`), `HUB_EMAIL` (e-mail da conta única; fica só no servidor).
 E-mail (Resend) e WhatsApp (Z-API ou Meta) são conectados na página **Integrações** do HUB
 (ficam criptografados no banco); as variáveis `RESEND_API_KEY`, `REPORT_EMAIL_FROM`, `ZAPI_*` e
 `WHATSAPP_*` só servem de reserva.
@@ -76,8 +76,11 @@ Todas as chamadas usam a mesma chave (`SCASE_CRON_SECRET`):
 
 - Cadastro de novos usuários: **desligado**.
 - URL Configuration → Site URL `https://hub.agenciascase.com.br`; Redirect URLs `https://hub.agenciascase.com.br/**`.
-- Primeiro acesso ao HUB cria a senha do agenciascase@gmail.com (mínimo 10 caracteres). Depois disso
-  o sistema recusa criar outra. Para recomeçar: apagar o usuário em Supabase → Authentication → Users.
+- A tela de login NÃO mostra o e-mail: pede só a senha e o servidor completa o resto (`/api/hub/entrar`).
+- Primeiro acesso: "Crie a senha do HUB" pede o **código de instalação** = valor do `SCASE_CRON_SECRET`
+  (ou `HUB_CODIGO_INSTALACAO`, se existir). Depois disso o sistema recusa criar outra senha.
+- 5 senhas erradas seguidas (por IP) ou 30 no total bloqueiam o login por 15 minutos.
+- Para recomeçar: apagar o usuário em Supabase → Authentication → Users.
 
 ## Retorno do login da Meta e do Google
 

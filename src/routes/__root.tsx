@@ -80,21 +80,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SCASE Performance" },
+      { title: "SCASE HUB" },
       { name: "description", content: "Painel de performance de campanhas Google Ads e Meta Ads da SCASE" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "SCASE Performance" },
+      { name: "author", content: "SCASE" },
+      { property: "og:title", content: "SCASE HUB" },
       { property: "og:description", content: "Painel de performance de campanhas Google Ads e Meta Ads da SCASE" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      // Símbolo da SCASE (no lugar do ícone da Lovable)
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,

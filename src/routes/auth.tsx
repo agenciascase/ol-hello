@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, ShieldCheck, BarChart3, Target, TrendingUp, Mail, LockKeyhole, Eye, EyeOff, KeyRound } from "lucide-react";
+import { ArrowRight, ShieldCheck, BarChart3, Target, TrendingUp, LockKeyhole, Eye, EyeOff, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import "../performance.css";
 
@@ -30,15 +30,16 @@ function Brand() {
   );
 }
 
-// Acesso do HUB: uma conta só. No primeiro acesso a senha é criada; depois só existe "Entrar".
-// Não há cadastro, troca nem recuperação de senha pelo sistema.
+// Acesso do HUB: uma conta só, e o e-mail dela NÃO aparece (fica só no servidor).
+// A tela pede só a senha. No primeiro acesso a senha é criada com o código de instalação;
+// depois só existe "Entrar". Não há cadastro, troca nem recuperação de senha pelo sistema.
 function AuthPage() {
   const navigate = useNavigate();
   const { redirect: redirectTo } = Route.useSearch();
   const destination = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/dashboard";
 
-  const [mode, setMode] = useState<"carregando" | "criar" | "entrar">("carregando");
-  const [email, setEmail] = useState("agenciascase@gmail.com");
+  const [mode, setMode] = useState<"carregando" | "criar" | "entrar" | "indisponivel">("carregando");
+  const [codigo, setCodigo] = useState("");
   const [password, setPassword] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -53,22 +54,35 @@ function AuthPage() {
 
   useEffect(() => {
     fetch("/api/hub/acesso", { cache: "no-store" })
-      .then((r) => r.json() as Promise<{ email?: string; senhaCriada?: boolean }>)
-      .then((d) => {
-        if (d.email) setEmail(d.email);
-        setMode(d.senhaCriada === false ? "criar" : "entrar");
-      })
-      .catch(() => setMode("entrar"));
+      .then((r) => r.json() as Promise<{ senhaCriada?: boolean }>)
+      .then((d) =>
+        setMode(d.senhaCriada === false ? "criar" : d.senhaCriada === true ? "entrar" : "indisponivel"),
+      )
+      .catch(() => setMode("indisponivel"));
   }, []);
 
+  // O servidor completa o e-mail e devolve a sessão; o navegador nunca vê o e-mail.
   async function entrar(senha: string) {
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: senha });
-    if (signInError) {
-      setError(
-        /rate limit|too many/i.test(signInError.message)
-          ? "Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo."
-          : "Senha incorreta. Confira e tente de novo.",
-      );
+    const r = await fetch("/api/hub/entrar", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ senha }),
+    }).catch(() => null);
+    const d = (await r?.json().catch(() => ({}))) as {
+      access_token?: string;
+      refresh_token?: string;
+      error?: string;
+    } | undefined;
+    if (!r?.ok || !d?.access_token || !d.refresh_token) {
+      setError(d?.error || "Não consegui entrar agora. Tente de novo.");
+      return false;
+    }
+    const { error: sessaoErro } = await supabase.auth.setSession({
+      access_token: d.access_token,
+      refresh_token: d.refresh_token,
+    });
+    if (sessaoErro) {
+      setError("Não consegui abrir a sessão. Tente de novo.");
       return false;
     }
     navigate({ to: destination, replace: true });
@@ -88,8 +102,9 @@ function AuthPage() {
     setError(null);
     if (password.length < 10) return setError("A senha precisa ter pelo menos 10 caracteres.");
     if (password !== confirmacao) return setError("As duas senhas não são iguais.");
+    if (!codigo.trim()) return setError("Digite o código de instalação.");
     setBusy(true);
-    const r = await fetch("/api/hub/acesso", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ senha: password }) });
+    const r = await fetch("/api/hub/acesso", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ senha: password, codigo: codigo.trim() }) });
     const d = (await r.json().catch(() => ({}))) as { error?: string };
     if (!r.ok) {
       setBusy(false);
@@ -141,17 +156,18 @@ function AuthPage() {
         <div className="loginCard">
           {mode === "carregando" ? (
             <p className="loginSubtitle">Verificando acesso…</p>
+          ) : mode === "indisponivel" ? (
+            <>
+              <h2 className="loginTitle">HUB indisponível</h2>
+              <p className="loginSubtitle">O HUB não conseguiu falar com o banco de dados. Tente de novo em alguns minutos; se continuar, confira as variáveis do servidor na Hostinger.</p>
+            </>
           ) : mode === "criar" ? (
             <>
               <span className="eyebrow">PRIMEIRO ACESSO</span>
               <h2 className="loginTitle">Crie a senha do HUB</h2>
               <p className="loginSubtitle">Esta senha é criada uma única vez e não pode ser trocada nem recuperada depois. Guarde em um lugar seguro.</p>
               <form onSubmit={handleCriar}>
-                <label>E-mail
-                  <span className="loginInputWrap"><Mail size={19} aria-hidden="true" />
-                    <input type="email" value={email} readOnly aria-readonly="true" />
-                  </span>
-                </label>
+                {campoSenha(codigo, setCodigo, "Código de instalação", "O código que está no servidor", "off")}
                 {campoSenha(password, setPassword, "Senha", "Mínimo de 10 caracteres", "new-password")}
                 {campoSenha(confirmacao, setConfirmacao, "Repita a senha", "Digite a mesma senha", "new-password")}
                 {error && <div className="demoNote authError">{error}</div>}
@@ -168,11 +184,6 @@ function AuthPage() {
               <h2 className="loginTitle">Acesse o HUB</h2>
               <p className="loginSubtitle">Clientes, campanhas, otimizações e relatórios da Scase num lugar só.</p>
               <form onSubmit={handleSignIn}>
-                <label>E-mail
-                  <span className="loginInputWrap"><Mail size={19} aria-hidden="true" />
-                    <input type="email" autoComplete="username" value={email} readOnly aria-readonly="true" />
-                  </span>
-                </label>
                 {campoSenha(password, setPassword, "Senha", "Sua senha", "current-password")}
                 {error && <div className="demoNote authError">{error}</div>}
                 <button className="primary full" type="submit" disabled={busy}>
