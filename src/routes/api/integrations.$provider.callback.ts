@@ -21,7 +21,8 @@ export const Route=createFileRoute("/api/integrations/$provider/callback")({
   // Revalidate the signed-in administrator with the original JWT after Google
   // redirects, even if the browser did not return its session cookie.
   const headers=new Headers(request.headers);headers.set("authorization","Bearer "+session);
-  const authenticatedRequest=new Request(request,{headers});
+  // Cópia com URL + método (new Request(request, ...) quebra no servidor Node da Hostinger)
+  const authenticatedRequest=new Request(request.url,{method:request.method,headers});
   if(!(await isAuthenticatedAgencyAdmin(authenticatedRequest)))return Response.json({error:NOT_READY,step:"oauth_admin_validation"},{status:403});
   const userId=await adminUserId(authenticatedRequest);
   if(!userId)return Response.json({error:"Sessão administrativa inválida ou expirada. Entre novamente no painel."},{status:403});
