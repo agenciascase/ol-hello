@@ -9,10 +9,17 @@ app **Node.js** na Hostinger, em `https://hub.agenciascase.com.br`, com banco pr
 
 ## Compilar e iniciar
 
-- Node 22.
-- Instalar: `npm install --legacy-peer-deps` (sem o `bun.lock`; o espelho de pacotes da Lovable não é usado).
-- Compilar: `npm run build:hub` (usa `.env.hub`: endereço e chave **pública** do Supabase do HUB).
-- Iniciar: `npm start` (roda `node .output/server/index.mjs`; porta pela variável `PORT`).
+- Node 22 (22.12 ou mais novo).
+- Instalar: `npm install` ou `npm ci` (o `.npmrc` já liga `legacy-peer-deps` e usa registry.npmjs.org;
+  versões fixas no `package-lock.json`; neste ramo não há `bun.lock`).
+- Compilar: `npm run build:hub` (ou `npm run build`: os dois usam o endereço e a chave **pública** do
+  Supabase do HUB, em `.env` / `.env.hub`).
+- Iniciar: arquivo de entrada **`app.js`** (`npm start` = `node app.js`); porta pela variável `PORT`.
+  Funciona rodado direto (`node app.js`) ou carregado por outro programa (`require`).
+
+Na Hostinger (hPanel → Websites → Add Website → Node.js web app → GitHub): repositório
+`agenciascase/ol-hello`, ramo **`hub`**, Node 22, comando de compilação `build:hub`, arquivo de
+entrada `app.js`.
 
 ## Variáveis do servidor
 
