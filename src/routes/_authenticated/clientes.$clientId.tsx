@@ -264,6 +264,8 @@ function ClientDetailPage() {
                       if (!failed.length) toast.success(`Relatório enviado para ${r.results.length} destinatário(s)`);
                       else toast.error(`${failed.length} envio(s) falharam: ${failed[0]?.error ?? ""}`);
                       for (const w of r.warnings) toast.warning(w);
+                      const partial = r.results.find((x) => x.status === "sent" && x.error);
+                      if (partial) toast.warning(partial.error ?? "");
                       refresh();
                     })
                   }

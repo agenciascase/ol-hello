@@ -83,7 +83,23 @@ ${goals}${analysis}${next}
 </table></td></tr></table></body></html>`;
 }
 
-async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, panelUrl: string, pdfUrl: string, filename: string) {
+/** Uploads the PDF to WhatsApp once; the returned media id is reused for every recipient. */
+async function uploadWhatsAppPdf(cfg: Extract<WhatsAppConfig, { provider: "meta" }>, pdf: Uint8Array, filename: string): Promise<string | null> {
+  try {
+    const form = new FormData();
+    form.append("messaging_product", "whatsapp");
+    form.append("type", "application/pdf");
+    form.append("file", new Blob([pdf], { type: "application/pdf" }), filename);
+    const res = await fetch(`https://graph.facebook.com/v24.0/${encodeURIComponent(cfg.phoneNumberId)}/media`, { method: "POST", headers: { authorization: "Bearer " + cfg.token }, body: form, cache: "no-store" });
+    const body = (await res.json().catch(() => ({}))) as { id?: string };
+    return res.ok && body.id ? body.id : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Sends one report by WhatsApp. Returns a note when it went out without the PDF (and why). */
+async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, panelUrl: string, pdfUrl: string, filename: string, mediaId: string | null = null): Promise<string | null> {
   const digits = phone.replace(/\D/g, "");
   if (cfg.provider === "zapi") {
     const caption = `*${r.clientName}* · ${r.reportName}\n${periodText(r)}\n\nPainel ao vivo: ${panelUrl}`;
@@ -94,7 +110,7 @@ async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, 
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Z-API recusou o envio (" + res.status + ").");
-    return;
+    return null;
   }
   // Business-initiated messages must use an approved template. The template is read from Meta first so the
   // message matches it exactly (document header or not, number and kind of variables); the configured
@@ -104,7 +120,8 @@ async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, 
   const values = [clean(r.clientName), clean(periodText(r)), panelUrl];
   const components: unknown[] = [];
   const withDoc = shape ? shape.header === "DOCUMENT" : cfg.documentHeader;
-  if (withDoc) components.push({ type: "header", parameters: [{ type: "document", document: { link: pdfUrl, filename } }] });
+  // The PDF goes as an uploaded file (media id); the public link is only the fallback.
+  if (withDoc) components.push({ type: "header", parameters: [{ type: "document", document: mediaId ? { id: mediaId, filename } : { link: pdfUrl, filename } }] });
   if (shape?.named?.length) {
     components.push({ type: "body", parameters: shape.named.map((name, i) => ({ type: "text", parameter_name: name, text: values[i] ?? values[values.length - 1] })) });
   } else {
@@ -119,10 +136,15 @@ async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, 
       cache: "no-store",
     });
   let res = await send(components);
+  let note: string | null = withDoc ? null : "Enviado sem PDF: o modelo aprovado na Meta não tem documento no cabeçalho.";
   if (!res.ok && withDoc) {
     // The approved version has no header (e.g. an edit adding the PDF is still under review): send without it.
-    const first = (await res.clone().json().catch(() => ({}))) as { error?: { error_data?: { details?: string } } };
-    if (/header/i.test(first.error?.error_data?.details ?? "")) res = await send(components.filter((c) => (c as { type: string }).type !== "header"));
+    const first = (await res.clone().json().catch(() => ({}))) as { error?: { message?: string; error_data?: { details?: string } } };
+    const why = [first.error?.message, first.error?.error_data?.details].filter(Boolean).join(" — ");
+    if (/header/i.test(why)) {
+      res = await send(components.filter((c) => (c as { type: string }).type !== "header"));
+      note = "Enviado sem PDF. A Meta recusou o documento: " + why;
+    }
   }
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: { message?: string; error_data?: { details?: string } } };
@@ -130,6 +152,7 @@ async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, 
     const hint = shape ? ` [modelo na Meta: ${shape.status}, cabeçalho ${shape.header ?? "nenhum"}, ${shape.named?.length ?? shape.bodyVars} variáveis]` : "";
     throw new Error("WhatsApp recusou o envio (" + res.status + ")" + (detail ? ": " + detail : "") + hint);
   }
+  return note;
 }
 
 type TemplateShape = { status: string; language: string; header: string | null; bodyVars: number; named: string[] | null };
@@ -197,11 +220,12 @@ export async function deliverReport(configId: string, opts: { trigger: "schedule
   }
   if (channels.includes("whatsapp")) {
     const ownPhones = ((config as { whatsapp_to?: string[] | null }).whatsapp_to ?? []).filter(Boolean);
+    const mediaId = delivery.whatsapp?.provider === "meta" ? await uploadWhatsAppPdf(delivery.whatsapp, pdf, filename) : null;
     for (const phone of ownPhones.length ? ownPhones : (clientRow?.whatsapp_numbers ?? []).filter(Boolean)) {
       try {
         if (!delivery.whatsapp) throw new Error("WhatsApp ainda não conectado. Conecte em Integrações.");
-        await sendWhatsApp(delivery.whatsapp, phone, report, panelUrl, reportPdfUrl(token), filename);
-        results.push({ channel: "whatsapp", recipient: phone, status: "sent", error: null });
+        const note = await sendWhatsApp(delivery.whatsapp, phone, report, panelUrl, reportPdfUrl(token), filename, mediaId);
+        results.push({ channel: "whatsapp", recipient: phone, status: "sent", error: note });
       } catch (e) {
         results.push({ channel: "whatsapp", recipient: phone, status: "failed", error: e instanceof Error ? e.message : "Falha no envio" });
       }
