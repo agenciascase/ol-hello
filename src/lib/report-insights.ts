@@ -42,7 +42,7 @@ export type MonthPoint = { month: string; spend: number; impressions: number; cl
 export type Status = "ok" | "warn" | "bad";
 export type GoalRow = { key: "conversions" | "cpa" | "roas"; label: string; target: number; actual: number | null; status: Status; text: string };
 export type Pacing = { budget: number; spentMonth: number; expectedToDate: number; projection: number; dayOfMonth: number; daysInMonth: number; status: Status; text: string };
-export type CampaignRow = ReportTotals & { name: string; platform: Platform; account: string };
+export type CampaignRow = ReportTotals & { name: string; platform: Platform; account: string; /** What counts as a conversion for this campaign (Meta: its optimisation goal). */ conversionLabel?: string | null | undefined };
 
 /** Everything a full report carries; produced on the server, rendered by the panel, the PDF and the e-mail. */
 export type FullReport = {
@@ -63,6 +63,8 @@ export type FullReport = {
   campaigns: CampaignRow[];
   daily: DailyPoint[];
   conversionTypes: ConversionType[];
+  /** Single conversion name when every campaign with results counts the same thing (e.g. "Visualizações da página de destino"). */
+  conversionLabel?: string | null | undefined;
   funnel: Funnel;
   creatives: Creative[];
   searchTerms: SearchTerm[];

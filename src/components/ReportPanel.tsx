@@ -204,7 +204,10 @@ function CampaignTables({ data, platforms }: { data: PanelData; platforms: Platf
                 </tr>
                 {rows.map((c, i) => (
                   <tr key={c.account + c.name + i}>
-                    <td className="name">{c.name}</td>
+                    <td className="name">
+                      {c.name}
+                      {c.conversionLabel && <small className="rpxConvLabel">Conversões: {c.conversionLabel.toLowerCase()}</small>}
+                    </td>
                     {CAMPAIGN_COLS.map(([k]) => (
                       <td key={k} className="num">
                         {formatMetric(k, metricValue(k, c))}
@@ -304,7 +307,7 @@ export function ReportView({ d, pdfHref, embedded = false, onLogo }: { d: PanelD
     const cur = metricValue(k, d.total.current);
     return (
       <div key={k} className={big ? "rpxKpi rpxKpiBig" : "rpxKpi"}>
-        <span className="rpxKpiLabel">{METRIC_LABELS[k]}</span>
+        <span className="rpxKpiLabel">{k === "conversions" && d.conversionLabel ? `Conversões: ${d.conversionLabel.toLowerCase()}` : METRIC_LABELS[k]}</span>
         <strong>{formatMetric(k, cur)}</strong>
         {d.compare && d.total.previous && <Delta k={k} cur={cur} prev={metricValue(k, d.total.previous)} />}
       </div>

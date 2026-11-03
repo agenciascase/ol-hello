@@ -49,7 +49,7 @@ export function reportEmailHtml(r: BuiltReport, panelUrl: string) {
       const v = r.total.previous ? variation(cur, metricValue(k, r.total.previous)) : null;
       const good = isPositiveChange(k, v);
       const color = good === null ? "#61776a" : good ? "#087a48" : "#b91c1c";
-      return `<tr><td style="${td};color:#61776a">${METRIC_LABELS[k]}</td><td style="${td};text-align:right;font-weight:700;color:#102f1d">${esc(formatMetric(k, cur))}</td><td style="${td};padding-left:12px;text-align:right;font-size:12px;color:${color}">${esc(formatVariation(v))}</td></tr>`;
+      return `<tr><td style="${td};color:#61776a">${k === "conversions" && r.conversionLabel ? esc(`Conversões: ${r.conversionLabel.toLowerCase()}`) : METRIC_LABELS[k]}</td><td style="${td};text-align:right;font-weight:700;color:#102f1d">${esc(formatMetric(k, cur))}</td><td style="${td};padding-left:12px;text-align:right;font-size:12px;color:${color}">${esc(formatVariation(v))}</td></tr>`;
     })
     .join("");
   const has = (s: string) => (r.sections as string[]).includes(s);
@@ -93,7 +93,7 @@ async function uploadWhatsAppPdf(cfg: Extract<WhatsAppConfig, { provider: "meta"
     const form = new FormData();
     form.append("messaging_product", "whatsapp");
     form.append("type", "application/pdf");
-    form.append("file", new Blob([pdf], { type: "application/pdf" }), filename);
+    form.append("file", new Blob([new Uint8Array(pdf).buffer as ArrayBuffer], { type: "application/pdf" }), filename);
     const res = await fetch(`https://graph.facebook.com/v24.0/${encodeURIComponent(cfg.phoneNumberId)}/media`, { method: "POST", headers: { authorization: "Bearer " + cfg.token }, body: form, cache: "no-store" });
     const body = (await res.json().catch(() => ({}))) as { id?: string };
     return res.ok && body.id ? body.id : null;

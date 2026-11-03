@@ -137,6 +137,75 @@ const actionMax = (list: unknown, types: string[]) => {
 /** Meta conversions = leads + conversations started + purchases. */
 const metaConversions = (actions: unknown) => actionMax(actions, LEAD) + actionMax(actions, MESSAGING) + actionMax(actions, PURCHASE);
 
+/* Conversion per campaign = the result its ad sets are optimised for (Meta "optimization_goal"). */
+type Goal = { label: string; types: string[] | null };
+const LPV = ["landing_page_view", "omni_landing_page_view"];
+const EVENT_GOALS: Record<string, Goal> = {
+  PURCHASE: { label: "Compras", types: PURCHASE },
+  LEAD: { label: "Leads", types: LEAD },
+  COMPLETE_REGISTRATION: { label: "Cadastros concluídos", types: ["complete_registration", "offsite_conversion.fb_pixel_complete_registration"] },
+  CONTACT: { label: "Contatos", types: ["contact_total", "contact", "offsite_conversion.fb_pixel_contact"] },
+  ADD_TO_CART: { label: "Adições ao carrinho", types: ["add_to_cart", "omni_add_to_cart", "offsite_conversion.fb_pixel_add_to_cart"] },
+  INITIATED_CHECKOUT: { label: "Finalizações de compra iniciadas", types: ["initiate_checkout", "omni_initiated_checkout", "offsite_conversion.fb_pixel_initiate_checkout"] },
+  SUBMIT_APPLICATION: { label: "Inscrições enviadas", types: ["submit_application", "offsite_conversion.fb_pixel_submit_application"] },
+  SCHEDULE: { label: "Agendamentos", types: ["schedule", "offsite_conversion.fb_pixel_schedule"] },
+};
+function goalOf(optimization: string, event: string | undefined): Goal | null {
+  switch (optimization) {
+    case "LANDING_PAGE_VIEWS":
+      return { label: "Visualizações da página de destino", types: LPV };
+    case "LINK_CLICKS":
+      return { label: "Cliques no link", types: ["link_click"] };
+    case "LEAD_GENERATION":
+    case "QUALITY_LEAD":
+      return { label: "Leads", types: LEAD };
+    case "CONVERSATIONS":
+    case "REPLIES":
+      return { label: "Conversas iniciadas", types: MESSAGING };
+    case "POST_ENGAGEMENT":
+      return { label: "Engajamentos", types: ["post_engagement"] };
+    case "PAGE_LIKES":
+      return { label: "Curtidas na página", types: ["like"] };
+    case "VIDEO_VIEWS":
+    case "THRUPLAY":
+      return { label: "Visualizações de vídeo", types: ["video_view"] };
+    case "REACH":
+    case "IMPRESSIONS":
+    case "AD_RECALL_LIFT":
+      return { label: "Alcance (sem conversão)", types: [] };
+    case "OFFSITE_CONVERSIONS":
+    case "VALUE":
+    case "QUALITY_CALL":
+      return (event && EVENT_GOALS[event]) || null;
+    default:
+      return null;
+  }
+}
+const goalCache = new Map<string, { at: number; goals: Map<string, Goal> }>();
+/** Campaign id → its conversion goal, read from the ad sets (the most common goal wins). Cached 5 min. */
+async function metaGoals(token: string, accountId: string): Promise<Map<string, Goal>> {
+  const hit = goalCache.get(accountId);
+  if (hit && Date.now() - hit.at < 5 * 60_000) return hit.goals;
+  const rows = await graphPages(`${GRAPH}${accountId}/adsets?fields=campaign_id,optimization_goal,promoted_object{custom_event_type}&limit=200`, token, 10).catch(() => [] as Row[]);
+  const votes = new Map<string, Map<string, { goal: Goal; n: number }>>();
+  for (const r of rows) {
+    const goal = goalOf(String(r["optimization_goal"] ?? ""), (r["promoted_object"] as { custom_event_type?: string } | undefined)?.custom_event_type);
+    if (!goal) continue;
+    const cid = String(r["campaign_id"] ?? "");
+    const m = votes.get(cid) ?? new Map();
+    const v = m.get(goal.label) ?? { goal, n: 0 };
+    v.n++;
+    m.set(goal.label, v);
+    votes.set(cid, m);
+  }
+  const goals = new Map<string, Goal>();
+  for (const [cid, m] of votes) goals.set(cid, [...m.values()].sort((a, b) => b.n - a.n)[0]!.goal);
+  goalCache.set(accountId, { at: Date.now(), goals });
+  return goals;
+}
+/** Conversions of one insights row by its campaign's goal (falls back to leads + conversations + purchases). */
+const conversionsFor = (actions: unknown, goal: Goal | undefined) => (goal?.types ? actionMax(actions, goal.types) : metaConversions(actions));
+
 type Range = { since: string; until: string };
 
 /** Which campaigns of an account enter the report. ids are the platform's campaign IDs. */
@@ -157,7 +226,10 @@ function metaUrl(accountId: string, params: Record<string, string>, range: Range
 }
 
 async function metaCampaigns(token: string, accountId: string, range: Range, filter: Filter): Promise<CampaignRow[]> {
-  const rows = await graphPages(metaUrl(accountId, { level: "campaign", fields: "campaign_name,spend,impressions,clicks,reach,actions,action_values", limit: "200" }, range, filter), token, 10);
+  const [rows, goals] = await Promise.all([
+    graphPages(metaUrl(accountId, { level: "campaign", fields: "campaign_id,campaign_name,spend,impressions,clicks,reach,actions,action_values", limit: "200" }, range, filter), token, 10),
+    metaGoals(token, accountId),
+  ]);
   return rows.map((r) => ({
     platform: "meta" as const,
     account: accountId,
@@ -167,7 +239,8 @@ async function metaCampaigns(token: string, accountId: string, range: Range, fil
     clicks: Number(r["clicks"] ?? 0),
     reach: Number(r["reach"] ?? 0),
     leads: actionMax(r["actions"], LEAD),
-    conversions: metaConversions(r["actions"]),
+    conversions: conversionsFor(r["actions"], goals.get(String(r["campaign_id"] ?? ""))),
+    conversionLabel: goals.get(String(r["campaign_id"] ?? ""))?.label ?? "Leads, conversas e compras",
     revenue: actionMax(r["action_values"], PURCHASE),
   }));
 }
@@ -276,23 +349,44 @@ async function metaAdImages(token: string, accountId: string, ids: string[], not
 async function metaExtras(token: string, accountId: string, range: Range, history: Range, filter: Filter, sections: Set<SectionKey>): Promise<Extras> {
   const base = "spend,impressions,clicks,actions";
   const [dailyRows, ads, ageGender, region, device, placement, months] = await Promise.all([
-    optional("meta daily", () => graphPages(metaUrl(accountId, { level: "account", fields: base, time_increment: "1", limit: "100" }, range, filter), token, 5), [] as Row[]),
+    optional("meta daily", () => graphPages(metaUrl(accountId, { level: "campaign", fields: "campaign_id," + base, time_increment: "1", limit: "500" }, range, filter), token, 8), [] as Row[]),
     sections.has("creatives")
-      ? optional("meta ads", () => graphPages(metaUrl(accountId, { level: "ad", fields: "ad_id,ad_name," + base, sort: "spend_descending", limit: "8" }, range, filter), token, 1), [] as Row[])
+      ? optional("meta ads", () => graphPages(metaUrl(accountId, { level: "ad", fields: "ad_id,ad_name,campaign_id," + base, sort: "spend_descending", limit: "8" }, range, filter), token, 1), [] as Row[])
       : Promise.resolve([] as Row[]),
     sections.has("audience") ? optional("meta age", () => graphPages(metaUrl(accountId, { fields: base, breakdowns: "age,gender", limit: "100" }, range, filter), token, 2), [] as Row[]) : Promise.resolve([] as Row[]),
     sections.has("audience") ? optional("meta region", () => graphPages(metaUrl(accountId, { fields: base, breakdowns: "region", limit: "100" }, range, filter), token, 2), [] as Row[]) : Promise.resolve([] as Row[]),
     sections.has("audience") ? optional("meta device", () => graphPages(metaUrl(accountId, { fields: base, breakdowns: "device_platform", limit: "50" }, range, filter), token, 1), [] as Row[]) : Promise.resolve([] as Row[]),
     sections.has("audience") ? optional("meta placement", () => graphPages(metaUrl(accountId, { fields: base, breakdowns: "publisher_platform", limit: "50" }, range, filter), token, 1), [] as Row[]) : Promise.resolve([] as Row[]),
     sections.has("history") || sections.has("goals")
-      ? optional("meta history", () => graphPages(metaUrl(accountId, { level: "account", fields: base + ",action_values", time_increment: "monthly", limit: "12" }, history, filter), token, 2), [] as Row[])
+      ? optional("meta history", () => graphPages(metaUrl(accountId, { level: "campaign", fields: "campaign_id," + base + ",action_values", time_increment: "monthly", limit: "500" }, history, filter), token, 4), [] as Row[])
       : Promise.resolve([] as Row[]),
   ]);
 
   const out = emptyExtras();
-  out.daily = dailyRows.map((r) => ({ date: String(r["date_start"] ?? ""), spend: Number(r["spend"] ?? 0), impressions: Number(r["impressions"] ?? 0), clicks: Number(r["clicks"] ?? 0), conversions: metaConversions(r["actions"]) }));
-  out.landingPageViews = dailyRows.reduce((s, r) => s + actionMax(r["actions"], ["landing_page_view", "omni_landing_page_view"]), 0);
-  out.conversionTypes = META_TYPES.map(([label, types]) => ({ platform: "meta" as const, label, value: dailyRows.reduce((s, r) => s + actionMax(r["actions"], types), 0) })).filter((t) => t.value > 0);
+  const goals = await metaGoals(token, accountId);
+  const goalOfRow = (r: Row) => goals.get(String(r["campaign_id"] ?? ""));
+  // Daily and monthly rows come per campaign: add them up by date / month.
+  const byDate = new Map<string, DailyPoint>();
+  for (const r of dailyRows) {
+    const date = String(r["date_start"] ?? "");
+    const d = byDate.get(date) ?? { date, spend: 0, impressions: 0, clicks: 0, conversions: 0 };
+    d.spend += Number(r["spend"] ?? 0);
+    d.impressions += Number(r["impressions"] ?? 0);
+    d.clicks += Number(r["clicks"] ?? 0);
+    d.conversions += conversionsFor(r["actions"], goalOfRow(r));
+    byDate.set(date, d);
+  }
+  out.daily = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+  out.landingPageViews = dailyRows.reduce((s, r) => s + actionMax(r["actions"], LPV), 0);
+  // "Conversões por tipo": each campaign's result under its own name.
+  const types = new Map<string, number>();
+  for (const r of dailyRows) {
+    const g = goalOfRow(r);
+    if (g?.types) {
+      if (g.types.length) types.set(g.label, (types.get(g.label) ?? 0) + actionMax(r["actions"], g.types));
+    } else for (const [label, t] of META_TYPES) types.set(label, (types.get(label) ?? 0) + actionMax(r["actions"], t));
+  }
+  out.conversionTypes = [...types.entries()].filter(([, v]) => v > 0).map(([label, value]) => ({ platform: "meta" as const, label, value }));
 
   if (ads.length) {
     const ids = ads.map((a) => String(a["ad_id"] ?? "")).filter((id) => /^\d+$/.test(id));
@@ -309,7 +403,7 @@ async function metaExtras(token: string, accountId: string, range: Range, histor
     }
     out.creatives = ads.map((a) => {
       const id = String(a["ad_id"] ?? "");
-      return { id, name: String(a["ad_name"] ?? "Anúncio"), thumbnail: thumbs[id] ?? null, imageNote: notes[id] ?? null, spend: Number(a["spend"] ?? 0), impressions: Number(a["impressions"] ?? 0), clicks: Number(a["clicks"] ?? 0), conversions: metaConversions(a["actions"]) };
+      return { id, name: String(a["ad_name"] ?? "Anúncio"), thumbnail: thumbs[id] ?? null, imageNote: notes[id] ?? null, spend: Number(a["spend"] ?? 0), impressions: Number(a["impressions"] ?? 0), clicks: Number(a["clicks"] ?? 0), conversions: conversionsFor(a["actions"], goalOfRow(a)) };
     });
   }
   out.audience = {
@@ -318,14 +412,18 @@ async function metaExtras(token: string, accountId: string, range: Range, histor
     device: audienceRows(device, (r) => META_DEVICE[String(r["device_platform"] ?? "")] ?? "Outros"),
     placement: audienceRows(placement, (r) => PLACEMENT[String(r["publisher_platform"] ?? "")] ?? String(r["publisher_platform"] ?? "Outros")),
   };
-  out.history = months.map((r) => ({
-    month: String(r["date_start"] ?? "").slice(0, 7),
-    spend: Number(r["spend"] ?? 0),
-    impressions: Number(r["impressions"] ?? 0),
-    clicks: Number(r["clicks"] ?? 0),
-    conversions: metaConversions(r["actions"]),
-    revenue: actionMax(r["action_values"], PURCHASE),
-  }));
+  const byMonth = new Map<string, MonthPoint>();
+  for (const r of months) {
+    const month = String(r["date_start"] ?? "").slice(0, 7);
+    const m = byMonth.get(month) ?? { month, spend: 0, impressions: 0, clicks: 0, conversions: 0, revenue: 0 };
+    m.spend += Number(r["spend"] ?? 0);
+    m.impressions += Number(r["impressions"] ?? 0);
+    m.clicks += Number(r["clicks"] ?? 0);
+    m.conversions += conversionsFor(r["actions"], goalOfRow(r));
+    m.revenue += actionMax(r["action_values"], PURCHASE);
+    byMonth.set(month, m);
+  }
+  out.history = [...byMonth.values()];
   return out;
 }
 
@@ -651,6 +749,10 @@ export async function buildReport(input: ReportConfigInput): Promise<FullReport>
     campaigns,
     daily: fillDays(extras.flatMap((e) => e.daily), range),
     conversionTypes,
+    conversionLabel: (() => {
+      const labels = new Set(current.filter((c) => c.conversions > 0).map((c) => c.conversionLabel ?? (c.platform === "google" ? "Conversões do Google Ads" : null)));
+      return labels.size === 1 ? [...labels][0] ?? null : null;
+    })(),
     funnel,
     creatives: extras
       .flatMap((e) => e.creatives)

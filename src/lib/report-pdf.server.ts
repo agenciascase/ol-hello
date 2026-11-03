@@ -268,7 +268,7 @@ export function renderReportPdf(report: FullReport, panelUrl: string | null): Ui
       const good = isPositiveChange(key, v);
       const primary = i < OBJECTIVES[report.objective].primary.length && OBJECTIVES[report.objective].primary.includes(key);
       doc.rect(x, top, cw, ch, primary ? C.soft : C.card, C.border);
-      doc.text(x + 10, top - 16, fit(METRIC_LABELS[key], 8, cw - 20), 8, { color: C.muted });
+      doc.text(x + 10, top - 16, fit(key === "conversions" && report.conversionLabel ? `Conversões: ${report.conversionLabel.toLowerCase()}` : METRIC_LABELS[key], 8, cw - 20), 8, { color: C.muted });
       doc.text(x + 10, top - 37, fit(formatMetric(key, cur), 15, cw - 20, true), 15, { bold: true });
       if (report.compare && v !== null) doc.text(x + 10, top - 51, formatVariation(v), 8, { bold: true, color: good === null ? C.muted : good ? C.good : C.bad });
     });
