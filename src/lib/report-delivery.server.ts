@@ -22,8 +22,12 @@ async function admin() {
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
-const periodText = (r: BuiltReport) =>
-  `${periodLabel(r.period) || "Período"} (${formatDateBR(r.range.since)} a ${formatDateBR(r.range.until)})`;
+const periodText = (r: BuiltReport) => {
+  const dates = r.range.since === r.range.until ? formatDateBR(r.range.since) : `${formatDateBR(r.range.since)} a ${formatDateBR(r.range.until)}`;
+  const label = periodLabel(r.period);
+  // Fixed dates ("custom_…") have no name: show only the dates.
+  return label && label !== "Período" ? `${label} (${dates})` : dates;
+};
 
 /** Returns the config's public token, creating one when it does not exist yet. */
 export async function ensureShareToken(configId: string, current: string | null) {
