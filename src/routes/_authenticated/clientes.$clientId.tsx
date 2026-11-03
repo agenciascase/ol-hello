@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, CalendarClock, Copy, Download, ExternalLink, FileBarChart2, Link2, Pencil, Plus, Send, Trash2, Unlink } from "lucide-react";
+import { ArrowLeft, CalendarClock, Copy, Download, ExternalLink, FileBarChart2, Link2, Pencil, Plus, Send, Trash2, Unlink, Images } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AgencyShell } from "@/components/agency/AgencyShell";
@@ -113,6 +113,11 @@ function ClientDetailPage() {
           <button className="secondary" type="button" onClick={() => setEditingClient(true)}>
             <Pencil size={16} /> Editar dados
           </button>
+          {accounts.some((a) => a.provider === "meta") && (
+            <Link to="/criativos/$clientId" params={{ clientId }} className="secondary">
+              <Images size={16} /> Criativos ativos (PDF)
+            </Link>
+          )}
           <button className="primary" type="button" onClick={() => setReportForm({})}>
             <Plus size={16} /> Novo relatório
           </button>
