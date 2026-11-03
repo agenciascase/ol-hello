@@ -1,0 +1,48 @@
+.cr{--pine:#071b14;--leaf:#0f9d58;--ink:#102f1d;--muted:#6b8073;--line:#dfe9e2;--mist:#f1f6f3;min-height:100vh;background:var(--mist);color:var(--ink);font-family:"Manrope","DM Sans",Arial,sans-serif;font-size:14px}
+.cr *{box-sizing:border-box}
+.cr .crBar{display:flex;justify-content:space-between;gap:10px;padding:12px clamp(16px,4vw,40px);background:#fff;border-bottom:1px solid var(--line)}
+.cr .crBtn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:10px;padding:10px 16px;font:inherit;font-weight:800;background:#00ee70;color:#062419;cursor:pointer;text-decoration:none}
+.cr .crBtn:disabled{opacity:.5;cursor:not-allowed}
+.cr .crBtn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.cr .crHero{background:radial-gradient(120% 140% at 85% 0%,#0f4a33 0%,var(--pine) 55%);color:#eafff3;padding:28px clamp(16px,4vw,40px);display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.cr .crWho{display:flex;align-items:center;gap:16px;min-width:0}
+.cr .crLogo{width:64px;height:64px;border-radius:16px;background:#fff;color:var(--pine);display:grid;place-items:center;font-weight:800;font-size:20px;overflow:hidden;flex:none}
+.cr .crLogo img{width:100%;height:100%;object-fit:contain;padding:6px}
+.cr .crTag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:#8fe9b8}
+.cr h1{margin:4px 0;font-size:clamp(22px,2.6vw,30px);color:#fff}
+.cr .crHero p{margin:0;color:#9fd8b9;font-size:13px}
+.cr .crCount{background:#ffffff12;border:1px solid #ffffff26;border-radius:14px;padding:12px 18px;display:grid;justify-items:center}
+.cr .crCount strong{font-size:28px;color:#fff}
+.cr .crCount span{font-size:12px;color:#9fd8b9}
+.cr .crWrap{max-width:1120px;margin:0 auto;padding:24px clamp(16px,4vw,40px) 40px}
+.cr .crState{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin:0 0 12px}
+.cr .crErr{border-color:#f3c2c2;color:#9b1c1c}
+.cr .crGroup{margin-bottom:26px}
+.cr .crGroup h2{font-size:16px;margin:0 0 12px;display:flex;align-items:baseline;gap:10px;overflow-wrap:anywhere}
+.cr .crGroup h2 small{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+.cr .crGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.cr .crCard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;break-inside:avoid;page-break-inside:avoid}
+.cr .crImg{position:relative;aspect-ratio:1;background:#eef4f0}
+.cr .crImg img,.cr .crNoImg{width:100%;height:100%;object-fit:cover;display:grid;place-items:center;color:var(--muted)}
+.cr .crFormat{position:absolute;top:8px;left:8px;background:#071b14cc;color:#eafff3;font-size:10.5px;font-weight:700;border-radius:999px;padding:3px 9px;text-transform:capitalize}
+.cr .crBody{padding:12px 14px 14px;display:grid;gap:6px}
+.cr .crName{font-size:13px;overflow-wrap:anywhere}
+.cr .crSet{color:var(--muted);font-size:11.5px;overflow-wrap:anywhere}
+.cr .crTitle{margin:2px 0 0;font-weight:700;font-size:13px}
+.cr .crText{margin:0;font-size:12.5px;line-height:1.45;color:#3d5546;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
+.cr .crCta{justify-self:start;font-size:11.5px;font-weight:700;color:#0a7a45;background:#e5f8ee;border-radius:6px;padding:3px 8px}
+.cr .crStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:6px 0 0;padding-top:8px;border-top:1px dashed var(--line)}
+.cr .crStats div{display:grid;gap:1px}
+.cr .crStats dt{font-size:10px;color:var(--muted)}
+.cr .crStats dd{margin:0;font-size:12px;font-weight:800;white-space:nowrap}
+.cr .crFoot{font-size:11px;color:var(--muted);text-align:center;margin-top:18px}
+@media print{
+  @page{size:A4;margin:10mm}
+  .cr{background:#fff}
+  .cr .crBar{display:none}
+  .cr .crHero{-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:12px}
+  .cr .crWrap{padding:16px 0 0;max-width:none}
+  .cr .crGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cr .crText{-webkit-line-clamp:unset;display:block}
+  .cr .crImg,.cr .crFormat,.cr .crCta{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
