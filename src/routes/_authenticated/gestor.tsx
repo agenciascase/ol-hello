@@ -621,7 +621,14 @@ function GestorPage() {
   });
   const pedidos = useQuery({
     queryKey: ["gestor-pedidos"],
-    refetchInterval: 30_000,
+    // Com pedido em andamento, confere a cada 30 s (para ver a resposta do Claude logo);
+    // sem nada em andamento, a cada 5 min (economiza o limite do banco com a página aberta o dia todo).
+    refetchInterval: (q) =>
+      ((q.state.data as Pedido[] | undefined) ?? []).some((p) =>
+        ["pendente", "ativando", "executando", "criando"].includes(p.status),
+      )
+        ? 30_000
+        : 300_000,
     queryFn: async () => {
       const { data, error } = await db
         .from("gestor_pedidos")
