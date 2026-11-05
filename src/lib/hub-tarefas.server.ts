@@ -126,10 +126,21 @@ async function pedidosAguardando() {
 
 /** Chama a tarefa do Claude. Não chama de novo em menos de 45 s (uma rodada do Claude já pega a fila toda). */
 export async function chamarClaude(motivo: string, opts: { forcar?: boolean } = {}) {
-  const url = process.env["ROTINA_URL"] ?? "";
-  const token = process.env["ROTINA_TOKEN"] ?? "";
-  if (!ROTINA_RE.test(url) || !token)
-    return { ok: false, erro: "tarefa do Claude não configurada (ROTINA_URL/ROTINA_TOKEN)" };
+  // tira espaços/aspas que costumam vir junto ao copiar e colar
+  const limpar = (v: string) =>
+    v
+      .trim()
+      .replace(/^["']|["']$/g, "")
+      .trim();
+  const url = limpar(process.env["ROTINA_URL"] ?? "").replace(/\/+$/, "");
+  const token = limpar(process.env["ROTINA_TOKEN"] ?? "");
+  if (!url) return { ok: false, erro: "falta a variável ROTINA_URL na Hostinger" };
+  if (!ROTINA_RE.test(url))
+    return {
+      ok: false,
+      erro: "a ROTINA_URL não está no formato https://api.anthropic.com/v1/claude_code/routines/trig_.../fire",
+    };
+  if (!token) return { ok: false, erro: "falta a variável ROTINA_TOKEN na Hostinger" };
   if (!opts.forcar && Date.now() - ultimoDisparo < 45_000) return { ok: true, adiado: true };
   ultimoDisparo = Date.now();
   try {
@@ -145,7 +156,15 @@ export async function chamarClaude(motivo: string, opts: { forcar?: boolean } = 
       signal: AbortSignal.timeout(20_000),
     });
     ultimo["claude"] = { quando: new Date().toISOString(), codigo: res.status };
-    return { ok: res.ok, codigo: res.status };
+    if (res.ok) return { ok: true, codigo: res.status };
+    // motivo da recusa (a resposta de erro não traz o token)
+    const corpo = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+    const causa = (corpo.error?.message ?? "").slice(0, 160);
+    return {
+      ok: false,
+      codigo: res.status,
+      erro: `a tarefa do Claude recusou a chamada (HTTP ${res.status}${causa ? ": " + causa : ""})`,
+    };
   } catch (e) {
     ultimo["claude"] = {
       quando: new Date().toISOString(),
