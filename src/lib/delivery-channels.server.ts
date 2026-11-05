@@ -7,7 +7,9 @@ import { decryptToken, encryptToken } from "./ads-credentials.server";
 export type EmailConfig = { apiKey: string; from: string };
 export type WhatsAppConfig =
   | { provider: "meta"; token: string; phoneNumberId: string; templateName: string; language: string; documentHeader: boolean }
-  | { provider: "zapi"; instanceId: string; token: string; clientToken: string };
+  | { provider: "zapi"; instanceId: string; token: string; clientToken: string }
+  // WhatsApp pelo QR Code (conexão própria do HUB; a sessão fica no servidor, não aqui)
+  | { provider: "web" };
 export type Channel = "email" | "whatsapp";
 export type ChannelPublic = { connected: boolean; source: "plataforma" | "secrets" | null; info: Record<string, string>; updatedAt: string | null };
 
@@ -70,7 +72,7 @@ export async function channelsPublic(): Promise<Record<Channel, ChannelPublic>> 
   const w = envWhatsApp();
   return {
     email: of("email", e ? { from: e.from } : null),
-    whatsapp: of("whatsapp", w ? { provider: w.provider === "zapi" ? "Z-API" : "API oficial da Meta" } : null),
+    whatsapp: of("whatsapp", w ? { provider: w.provider === "zapi" ? "Z-API" : w.provider === "web" ? "WhatsApp pelo QR Code" : "API oficial da Meta" } : null),
   };
 }
 
@@ -105,6 +107,11 @@ export async function sendEmailWith(cfg: EmailConfig, to: string[], subject: str
 
 /** Checks WhatsApp credentials and returns the connected number, when the provider exposes it. */
 export async function verifyWhatsApp(cfg: WhatsAppConfig): Promise<string | null> {
+  if (cfg.provider === "web") {
+    const wa = await import("./whatsapp-web.server");
+    await wa.garantirConexao(5_000);
+    return wa.situacao().numero;
+  }
   if (cfg.provider === "zapi") {
     const res = await fetch(`https://api.z-api.io/instances/${encodeURIComponent(cfg.instanceId)}/token/${encodeURIComponent(cfg.token)}/status`, {
       headers: cfg.clientToken ? { "Client-Token": cfg.clientToken } : {},

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Mail, MessageCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { agencyApi } from "@/lib/agency-client";
+import { QrConnect } from "./WhatsAppWeb";
 import { fmtDate, type ChannelState } from "./IntegrationsOverview";
 import { IntegrationCard } from "./IntegrationCard";
 
@@ -154,7 +155,7 @@ function EmailModal({ onClose, onDone }: { onClose: () => void; onDone: () => vo
 }
 
 function WhatsAppModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
-  const [provider, setProvider] = useState<"meta" | "zapi">("meta");
+  const [provider, setProvider] = useState<"web" | "meta" | "zapi">("web");
   const [token, setToken] = useState("");
   const [phoneNumberId, setPhoneNumberId] = useState("");
   const [templateName, setTemplateName] = useState("");
@@ -164,6 +165,20 @@ function WhatsAppModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
   const [clientToken, setClientToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  async function submitWeb() {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await agencyApi<{ number: string | null }>("/api/integrations/channels/whatsapp", { method: "POST", body: { action: "connect", provider: "web" } });
+      toast.success(r.number ? `WhatsApp conectado: ${r.number}` : "WhatsApp conectado");
+      onDone();
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível conectar.");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function submit() {
     setBusy(true);
     setError("");
@@ -184,6 +199,10 @@ function WhatsAppModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
       <div className="rpField">
         <span>Como a agência envia pelo WhatsApp</span>
         <div className="rpObjectives" role="radiogroup">
+          <button type="button" role="radio" aria-checked={provider === "web"} className="rpObjective" onClick={() => setProvider("web")}>
+            <strong>WhatsApp pelo QR Code</strong>
+            <small>Grátis. Conecta o WhatsApp do celular e envia o PDF nos grupos dos clientes.</small>
+          </button>
           <button type="button" role="radio" aria-checked={provider === "meta"} className="rpObjective" onClick={() => setProvider("meta")}>
             <strong>API oficial da Meta</strong>
             <small>Número comercial próprio, mensagens por modelo aprovado.</small>
@@ -194,7 +213,9 @@ function WhatsAppModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
           </button>
         </div>
       </div>
-      {provider === "meta" ? (
+      {provider === "web" ? (
+        <QrConnect onConectado={() => void submitWeb()} />
+      ) : provider === "meta" ? (
         <>
           <p className="rpFormHint">
             No Meta for Developers, abra o app da agência → WhatsApp → Configuração da API. Use um token permanente de usuário do sistema e crie um modelo de mensagem com três variáveis: cliente, período e link do painel.
@@ -242,15 +263,17 @@ function WhatsAppModal({ onClose, onDone }: { onClose: () => void; onDone: () =>
           </label>
         </>
       )}
-      <p className="rpFormHint">Antes de salvar, conferimos as credenciais com o provedor. Elas ficam guardadas criptografadas.</p>
+      {provider !== "web" && <p className="rpFormHint">Antes de salvar, conferimos as credenciais com o provedor. Elas ficam guardadas criptografadas.</p>}
       {error && <p className="rpError">{error}</p>}
       <div className="rpModalFoot">
         <button className="secondary" type="button" onClick={onClose}>
           Cancelar
         </button>
-        <button className="primary" type="button" disabled={busy || !token || (provider === "meta" ? !phoneNumberId || !templateName : !instanceId)} onClick={submit}>
-          {busy ? "Verificando e conectando…" : "Conectar WhatsApp"}
-        </button>
+        {provider !== "web" && (
+          <button className="primary" type="button" disabled={busy || !token || (provider === "meta" ? !phoneNumberId || !templateName : !instanceId)} onClick={submit}>
+            {busy ? "Verificando e conectando…" : "Conectar WhatsApp"}
+          </button>
+        )}
       </div>
     </Modal>
   );

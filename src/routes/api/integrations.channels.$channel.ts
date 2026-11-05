@@ -38,9 +38,12 @@ export const Route = createFileRoute("/api/integrations/channels/$channel")({
             await saveChannel("email", cfg, { from: cfg.from, testedWith: me }, userId);
             return Response.json({ ok: true, testedWith: me }, { headers: noStore });
           }
-          const provider = str(body["provider"]) === "zapi" ? "zapi" : "meta";
+          const escolhido = str(body["provider"]);
+          const provider = escolhido === "zapi" ? "zapi" : escolhido === "web" ? "web" : "meta";
           const cfg: WhatsAppConfig =
-            provider === "zapi"
+            provider === "web"
+              ? { provider: "web" }
+              : provider === "zapi"
               ? { provider: "zapi", instanceId: str(body["instanceId"], 120), token: str(body["token"], 200), clientToken: str(body["clientToken"], 200) }
               : {
                   provider: "meta",
@@ -54,7 +57,7 @@ export const Route = createFileRoute("/api/integrations/channels/$channel")({
           if (cfg.provider === "meta" && (!cfg.token || !/^\d+$/.test(cfg.phoneNumberId) || !/^[a-z0-9_]+$/.test(cfg.templateName)))
             return Response.json({ error: "Informe o token, o ID do número (só dígitos) e o nome do modelo de mensagem aprovado (letras minúsculas, números e _)." }, { status: 400, headers: noStore });
           const number = await verifyWhatsApp(cfg);
-          await saveChannel("whatsapp", cfg, { provider: cfg.provider === "zapi" ? "Z-API" : "API oficial da Meta", ...(number ? { number } : {}), ...(cfg.provider === "meta" ? { template: cfg.templateName } : {}) }, userId);
+          await saveChannel("whatsapp", cfg, { provider: cfg.provider === "zapi" ? "Z-API" : cfg.provider === "web" ? "WhatsApp pelo QR Code" : "API oficial da Meta", ...(number ? { number } : {}), ...(cfg.provider === "meta" ? { template: cfg.templateName } : {}) }, userId);
           return Response.json({ ok: true, number }, { headers: noStore });
         } catch (e) {
           return Response.json({ error: errorMessage(e, "Não foi possível conectar.") }, { status: 502, headers: noStore });

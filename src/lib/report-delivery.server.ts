@@ -103,7 +103,15 @@ async function uploadWhatsAppPdf(cfg: Extract<WhatsAppConfig, { provider: "meta"
 }
 
 /** Sends one report by WhatsApp. Returns a note when it went out without the PDF (and why). */
-async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, panelUrl: string, pdfUrl: string, filename: string, mediaId: string | null = null): Promise<string | null> {
+async function sendWhatsApp(cfg: WhatsAppConfig, phone: string, r: BuiltReport, panelUrl: string, pdfUrl: string, filename: string, mediaId: string | null = null, pdf: Uint8Array | null = null): Promise<string | null> {
+  if (cfg.provider === "web") {
+    // WhatsApp pelo QR Code: manda o PDF anexado, no grupo (id @g.us) ou no número, com o texto e o link.
+    if (!pdf) throw new Error("PDF do relatório indisponível.");
+    const caption = `*${r.clientName}* · ${r.reportName}\n${periodText(r)}\n\nPainel ao vivo: ${panelUrl}`;
+    const wa = await import("./whatsapp-web.server");
+    await wa.enviarDocumento(phone, pdf, filename, caption);
+    return null;
+  }
   const digits = phone.replace(/\D/g, "");
   if (cfg.provider === "zapi") {
     const caption = `*${r.clientName}* · ${r.reportName}\n${periodText(r)}\n\nPainel ao vivo: ${panelUrl}`;
@@ -228,7 +236,7 @@ export async function deliverReport(configId: string, opts: { trigger: "schedule
     for (const phone of ownPhones.length ? ownPhones : (clientRow?.whatsapp_numbers ?? []).filter(Boolean)) {
       try {
         if (!delivery.whatsapp) throw new Error("WhatsApp ainda não conectado. Conecte em Integrações.");
-        const note = await sendWhatsApp(delivery.whatsapp, phone, report, panelUrl, reportPdfUrl(token), filename, mediaId);
+        const note = await sendWhatsApp(delivery.whatsapp, phone, report, panelUrl, reportPdfUrl(token), filename, mediaId, pdf);
         results.push({ channel: "whatsapp", recipient: phone, status: "sent", error: note });
       } catch (e) {
         results.push({ channel: "whatsapp", recipient: phone, status: "failed", error: e instanceof Error ? e.message : "Falha no envio" });

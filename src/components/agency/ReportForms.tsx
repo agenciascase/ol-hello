@@ -8,6 +8,7 @@ import { normalisePhone } from "./ClientForm";
 import { E164, EMAIL, METRICS, WEEKDAYS, computeNextRun, formatNextRun, periodLabel, resolvePeriod, type Frequency, type ReportPeriod } from "@/lib/report-schedule";
 import { DateRangePicker, presetLabel } from "./DateRangePicker";
 import { PlatformMark } from "./PlatformMark";
+import { GroupPicker } from "./WhatsAppWeb";
 
 export type ReportConfigRow = {
   id: string;
@@ -96,7 +97,10 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
   const [emailTo, setEmailTo] = useState((config?.email_to ?? []).join(", "));
   const [emailSubject, setEmailSubject] = useState(config?.email_subject ?? "");
   const [emailMessage, setEmailMessage] = useState(config?.intro_message ?? "");
-  const [whatsTo, setWhatsTo] = useState((config?.whatsapp_to ?? []).join(", "));
+  // whatsapp_to guarda números e grupos (ids terminados em @g.us); na tela ficam separados
+  const [whatsTo, setWhatsTo] = useState((config?.whatsapp_to ?? []).filter((x) => !x.endsWith("@g.us")).join(", "));
+  const [grupos, setGrupos] = useState<string[]>((config?.whatsapp_to ?? []).filter((x) => x.endsWith("@g.us")));
+  const [numerosDoCadastro, setNumerosDoCadastro] = useState("");
   // Pre-fill recipients with the client's e-mails when the report has none of its own.
   useEffect(() => {
     if (config?.email_to?.length && config?.whatsapp_to?.length) return;
@@ -110,7 +114,10 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
         const list = (row?.emails ?? []).filter(Boolean);
         if (list.length && !config?.email_to?.length) setEmailTo((cur) => cur || list.join(", "));
         const phones = (row?.whatsapp_numbers ?? []).filter(Boolean);
-        if (phones.length && !config?.whatsapp_to?.length) setWhatsTo((cur) => cur || phones.join(", "));
+        if (phones.length && !config?.whatsapp_to?.length) {
+          setNumerosDoCadastro(phones.join(", "));
+          setWhatsTo((cur) => cur || phones.join(", "));
+        }
       });
   }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [active, setActive] = useState(config?.active ?? true);
@@ -166,7 +173,7 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
     if (channels.includes("whatsapp")) {
       const badPhone = phones.find((x) => !E164.test(x));
       if (badPhone) return setError(`Número de WhatsApp inválido: ${badPhone}. Use DDD + número, ex.: 14 99999-9999.`);
-      if (!phones.length) return setError("Informe pelo menos um número de WhatsApp.");
+      if (!phones.length && !grupos.length) return setError("Escolha pelo menos um grupo ou informe um número de WhatsApp.");
     }
     if (campaignMode === "selected" && !campaignIds.length) return setError("Marque pelo menos uma campanha ou escolha outra opção em Campanhas do relatório.");
     setSaving(true);
@@ -186,7 +193,7 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       intro_message: channels.includes("email") ? emailMessage.trim() || null : null,
       email_subject: channels.includes("email") ? emailSubject.trim().slice(0, 200) || null : null,
       email_to: channels.includes("email") ? recipients : [],
-      whatsapp_to: channels.includes("whatsapp") ? phones : [],
+      whatsapp_to: channels.includes("whatsapp") ? [...phones, ...grupos] : [],
       manager_notes: notes.trim() || null,
       actions_taken: null,
       next_steps: null,
@@ -346,10 +353,21 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
       {channels.includes("whatsapp") && (
         <div className="rfEmail">
           <h3 className="rpFormGroup">WhatsApp para o cliente</h3>
+          <div className="rpField">
+            <span>Grupos do WhatsApp</span>
+            <GroupPicker
+              selecionados={grupos}
+              onChange={setGrupos}
+              onStatus={(conectado) => {
+                // com o WhatsApp pelo QR Code ligado, relatório novo vai para o grupo: não preenche os números do cadastro
+                if (conectado && !config?.whatsapp_to?.length) setWhatsTo((cur) => (cur === numerosDoCadastro ? "" : cur));
+              }}
+            />
+          </div>
           <label className="rpField">
-            <span>Enviar para</span>
+            <span>Números (opcional)</span>
             <input value={whatsTo} onChange={(e) => setWhatsTo(e.target.value)} placeholder="14 99999-9999, 14 98888-8888" inputMode="tel" />
-            <small>Com DDD; separe vários números com vírgula. Vem preenchido com o WhatsApp do cadastro do cliente.</small>
+            <small>Com DDD; separe vários números com vírgula. Use se, além do grupo, alguém precisar receber no particular.</small>
           </label>
           <div className="rpField">
             <span>Mensagem que o cliente recebe</span>
@@ -359,7 +377,7 @@ export function ReportConfigForm({ clientId, config, availablePlatforms, onClose
                 Olá! Segue o relatório de performance de <b>{"{nome do cliente}"}</b> referente a <b>{"{período}"}</b>. Acompanhe também o painel completo: <b>{"{link do painel}"}</b>. Depois nos dê um feedback em relação a esses números!
               </p>
             </div>
-            <small>Pela API oficial da Meta, o texto é o modelo aprovado no WhatsApp Business; o nome, o período, o link e o PDF entram sozinhos em cada envio.</small>
+            <small>Pelo WhatsApp do QR Code, o PDF vai anexado com o nome do cliente, o período e o link do painel. Pela API oficial da Meta, o texto é o modelo aprovado no WhatsApp Business.</small>
           </div>
         </div>
       )}

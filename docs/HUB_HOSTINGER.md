@@ -40,6 +40,7 @@ entrada `app.js`.
 Opcionais: `GOOGLE_ADS_DEVELOPER_TOKEN` (o projeto Google Cloud "Agente de Trafego" já tem acesso aprovado à API), `GOOGLE_ADS_API_VERSION` (padrão v26), `META_LOGIN_CONFIG_ID`, `ANTHROPIC_API_KEY`
 (texto de análise dos relatórios; sem ela o texto é montado dos números), `HUB_BACKUP_DIR`
 (padrão `~/hub-backups`), `HUB_EMAIL` (e-mail da conta única; fica só no servidor).
+WhatsApp pelo QR Code (grátis, envia o PDF nos GRUPOS): Integrações → Conectar WhatsApp → "WhatsApp pelo QR Code" → ler o QR no celular (Aparelhos conectados). A sessão fica em `HUB_WHATSAPP_DIR` (padrão `~/hub-whatsapp/sessao`, fora do site, só o dono lê). No relatório, "Grupos do WhatsApp" lista os grupos do número conectado.
 E-mail (Resend) e WhatsApp (Z-API ou Meta) são conectados na página **Integrações** do HUB
 (ficam criptografados no banco); as variáveis `RESEND_API_KEY`, `REPORT_EMAIL_FROM`, `ZAPI_*` e
 `WHATSAPP_*` só servem de reserva.

@@ -35,6 +35,7 @@ import { Route as ApiIntegrationsOverviewRouteImport } from './routes/api/integr
 import { Route as ApiIntegrationsSessionRouteImport } from './routes/api/integrations.session'
 import { Route as ApiIntegrationsStatusRouteImport } from './routes/api/integrations.status'
 import { Route as ApiIntegrationsSyncAccountsRouteImport } from './routes/api/integrations.sync-accounts'
+import { Route as ApiIntegrationsWhatsappWebRouteImport } from './routes/api/integrations.whatsapp-web'
 import { Route as ApiIntegrationsProviderCallbackRouteImport } from './routes/api/integrations.$provider.callback'
 import { Route as ApiIntegrationsProviderStartRouteImport } from './routes/api/integrations.$provider.start'
 import { Route as ApiIntegrationsChannelsChannelRouteImport } from './routes/api/integrations.channels.$channel'
@@ -45,6 +46,7 @@ import { Route as ApiIntegrationsMetaAccountsRouteImport } from './routes/api/in
 import { Route as ApiIntegrationsMetaCallbackRouteImport } from './routes/api/integrations.meta.callback'
 import { Route as ApiIntegrationsMetaCampaignsRouteImport } from './routes/api/integrations.meta.campaigns'
 import { Route as ApiIntegrationsMetaStartRouteImport } from './routes/api/integrations.meta.start'
+import { Route as ApiIntegrationsWhatsappWebGruposRouteImport } from './routes/api/integrations.whatsapp-web.grupos'
 import { Route as ApiIntegrationsClientsIdAnalysisRouteImport } from './routes/api/integrations.clients.$id.analysis'
 import { Route as ApiIntegrationsClientsIdCampaignsRouteImport } from './routes/api/integrations.clients.$id.campaigns'
 import { Route as ApiIntegrationsReportsIdDraftRouteImport } from './routes/api/integrations.reports.$id.draft'
@@ -186,6 +188,12 @@ const ApiIntegrationsSyncAccountsRoute =
     path: '/api/integrations/sync-accounts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiIntegrationsWhatsappWebRoute =
+  ApiIntegrationsWhatsappWebRouteImport.update({
+    id: '/api/integrations/whatsapp-web',
+    path: '/api/integrations/whatsapp-web',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiIntegrationsProviderCallbackRoute =
   ApiIntegrationsProviderCallbackRouteImport.update({
     id: '/api/integrations/$provider/callback',
@@ -245,6 +253,12 @@ const ApiIntegrationsMetaStartRoute =
     id: '/api/integrations/meta/start',
     path: '/api/integrations/meta/start',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsWhatsappWebGruposRoute =
+  ApiIntegrationsWhatsappWebGruposRouteImport.update({
+    id: '/grupos',
+    path: '/grupos',
+    getParentRoute: () => ApiIntegrationsWhatsappWebRoute,
   } as any)
 const ApiIntegrationsClientsIdAnalysisRoute =
   ApiIntegrationsClientsIdAnalysisRouteImport.update({
@@ -308,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/api/integrations/session': typeof ApiIntegrationsSessionRoute
   '/api/integrations/status': typeof ApiIntegrationsStatusRoute
   '/api/integrations/sync-accounts': typeof ApiIntegrationsSyncAccountsRoute
+  '/api/integrations/whatsapp-web': typeof ApiIntegrationsWhatsappWebRouteWithChildren
   '/clientes/': typeof AuthenticatedClientesIndexRoute
   '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
   '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
@@ -319,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/api/integrations/meta/callback': typeof ApiIntegrationsMetaCallbackRoute
   '/api/integrations/meta/campaigns': typeof ApiIntegrationsMetaCampaignsRoute
   '/api/integrations/meta/start': typeof ApiIntegrationsMetaStartRoute
+  '/api/integrations/whatsapp-web/grupos': typeof ApiIntegrationsWhatsappWebGruposRoute
   '/api/integrations/clients/$id/analysis': typeof ApiIntegrationsClientsIdAnalysisRoute
   '/api/integrations/clients/$id/campaigns': typeof ApiIntegrationsClientsIdCampaignsRoute
   '/api/integrations/reports/$id/draft': typeof ApiIntegrationsReportsIdDraftRoute
@@ -351,6 +367,7 @@ export interface FileRoutesByTo {
   '/api/integrations/session': typeof ApiIntegrationsSessionRoute
   '/api/integrations/status': typeof ApiIntegrationsStatusRoute
   '/api/integrations/sync-accounts': typeof ApiIntegrationsSyncAccountsRoute
+  '/api/integrations/whatsapp-web': typeof ApiIntegrationsWhatsappWebRouteWithChildren
   '/clientes': typeof AuthenticatedClientesIndexRoute
   '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
   '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
@@ -362,6 +379,7 @@ export interface FileRoutesByTo {
   '/api/integrations/meta/callback': typeof ApiIntegrationsMetaCallbackRoute
   '/api/integrations/meta/campaigns': typeof ApiIntegrationsMetaCampaignsRoute
   '/api/integrations/meta/start': typeof ApiIntegrationsMetaStartRoute
+  '/api/integrations/whatsapp-web/grupos': typeof ApiIntegrationsWhatsappWebGruposRoute
   '/api/integrations/clients/$id/analysis': typeof ApiIntegrationsClientsIdAnalysisRoute
   '/api/integrations/clients/$id/campaigns': typeof ApiIntegrationsClientsIdCampaignsRoute
   '/api/integrations/reports/$id/draft': typeof ApiIntegrationsReportsIdDraftRoute
@@ -396,6 +414,7 @@ export interface FileRoutesById {
   '/api/integrations/session': typeof ApiIntegrationsSessionRoute
   '/api/integrations/status': typeof ApiIntegrationsStatusRoute
   '/api/integrations/sync-accounts': typeof ApiIntegrationsSyncAccountsRoute
+  '/api/integrations/whatsapp-web': typeof ApiIntegrationsWhatsappWebRouteWithChildren
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
   '/api/integrations/$provider/callback': typeof ApiIntegrationsProviderCallbackRoute
   '/api/integrations/$provider/start': typeof ApiIntegrationsProviderStartRoute
@@ -407,6 +426,7 @@ export interface FileRoutesById {
   '/api/integrations/meta/callback': typeof ApiIntegrationsMetaCallbackRoute
   '/api/integrations/meta/campaigns': typeof ApiIntegrationsMetaCampaignsRoute
   '/api/integrations/meta/start': typeof ApiIntegrationsMetaStartRoute
+  '/api/integrations/whatsapp-web/grupos': typeof ApiIntegrationsWhatsappWebGruposRoute
   '/api/integrations/clients/$id/analysis': typeof ApiIntegrationsClientsIdAnalysisRoute
   '/api/integrations/clients/$id/campaigns': typeof ApiIntegrationsClientsIdCampaignsRoute
   '/api/integrations/reports/$id/draft': typeof ApiIntegrationsReportsIdDraftRoute
@@ -441,6 +461,7 @@ export interface FileRouteTypes {
     | '/api/integrations/session'
     | '/api/integrations/status'
     | '/api/integrations/sync-accounts'
+    | '/api/integrations/whatsapp-web'
     | '/clientes/'
     | '/api/integrations/$provider/callback'
     | '/api/integrations/$provider/start'
@@ -452,6 +473,7 @@ export interface FileRouteTypes {
     | '/api/integrations/meta/callback'
     | '/api/integrations/meta/campaigns'
     | '/api/integrations/meta/start'
+    | '/api/integrations/whatsapp-web/grupos'
     | '/api/integrations/clients/$id/analysis'
     | '/api/integrations/clients/$id/campaigns'
     | '/api/integrations/reports/$id/draft'
@@ -484,6 +506,7 @@ export interface FileRouteTypes {
     | '/api/integrations/session'
     | '/api/integrations/status'
     | '/api/integrations/sync-accounts'
+    | '/api/integrations/whatsapp-web'
     | '/clientes'
     | '/api/integrations/$provider/callback'
     | '/api/integrations/$provider/start'
@@ -495,6 +518,7 @@ export interface FileRouteTypes {
     | '/api/integrations/meta/callback'
     | '/api/integrations/meta/campaigns'
     | '/api/integrations/meta/start'
+    | '/api/integrations/whatsapp-web/grupos'
     | '/api/integrations/clients/$id/analysis'
     | '/api/integrations/clients/$id/campaigns'
     | '/api/integrations/reports/$id/draft'
@@ -528,6 +552,7 @@ export interface FileRouteTypes {
     | '/api/integrations/session'
     | '/api/integrations/status'
     | '/api/integrations/sync-accounts'
+    | '/api/integrations/whatsapp-web'
     | '/_authenticated/clientes/'
     | '/api/integrations/$provider/callback'
     | '/api/integrations/$provider/start'
@@ -539,6 +564,7 @@ export interface FileRouteTypes {
     | '/api/integrations/meta/callback'
     | '/api/integrations/meta/campaigns'
     | '/api/integrations/meta/start'
+    | '/api/integrations/whatsapp-web/grupos'
     | '/api/integrations/clients/$id/analysis'
     | '/api/integrations/clients/$id/campaigns'
     | '/api/integrations/reports/$id/draft'
@@ -569,6 +595,7 @@ export interface RootRouteChildren {
   ApiIntegrationsSessionRoute: typeof ApiIntegrationsSessionRoute
   ApiIntegrationsStatusRoute: typeof ApiIntegrationsStatusRoute
   ApiIntegrationsSyncAccountsRoute: typeof ApiIntegrationsSyncAccountsRoute
+  ApiIntegrationsWhatsappWebRoute: typeof ApiIntegrationsWhatsappWebRouteWithChildren
   ApiIntegrationsProviderCallbackRoute: typeof ApiIntegrationsProviderCallbackRoute
   ApiIntegrationsProviderStartRoute: typeof ApiIntegrationsProviderStartRoute
   ApiIntegrationsChannelsChannelRoute: typeof ApiIntegrationsChannelsChannelRoute
@@ -771,6 +798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsSyncAccountsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/whatsapp-web': {
+      id: '/api/integrations/whatsapp-web'
+      path: '/api/integrations/whatsapp-web'
+      fullPath: '/api/integrations/whatsapp-web'
+      preLoaderRoute: typeof ApiIntegrationsWhatsappWebRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/$provider/callback': {
       id: '/api/integrations/$provider/callback'
       path: '/api/integrations/$provider/callback'
@@ -841,6 +875,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIntegrationsMetaStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/whatsapp-web/grupos': {
+      id: '/api/integrations/whatsapp-web/grupos'
+      path: '/grupos'
+      fullPath: '/api/integrations/whatsapp-web/grupos'
+      preLoaderRoute: typeof ApiIntegrationsWhatsappWebGruposRouteImport
+      parentRoute: typeof ApiIntegrationsWhatsappWebRoute
+    }
     '/api/integrations/clients/$id/analysis': {
       id: '/api/integrations/clients/$id/analysis'
       path: '/api/integrations/clients/$id/analysis'
@@ -905,6 +946,21 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApiIntegrationsWhatsappWebRouteChildren {
+  ApiIntegrationsWhatsappWebGruposRoute: typeof ApiIntegrationsWhatsappWebGruposRoute
+}
+
+const ApiIntegrationsWhatsappWebRouteChildren: ApiIntegrationsWhatsappWebRouteChildren =
+  {
+    ApiIntegrationsWhatsappWebGruposRoute:
+      ApiIntegrationsWhatsappWebGruposRoute,
+  }
+
+const ApiIntegrationsWhatsappWebRouteWithChildren =
+  ApiIntegrationsWhatsappWebRoute._addFileChildren(
+    ApiIntegrationsWhatsappWebRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -927,6 +983,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiIntegrationsSessionRoute: ApiIntegrationsSessionRoute,
   ApiIntegrationsStatusRoute: ApiIntegrationsStatusRoute,
   ApiIntegrationsSyncAccountsRoute: ApiIntegrationsSyncAccountsRoute,
+  ApiIntegrationsWhatsappWebRoute: ApiIntegrationsWhatsappWebRouteWithChildren,
   ApiIntegrationsProviderCallbackRoute: ApiIntegrationsProviderCallbackRoute,
   ApiIntegrationsProviderStartRoute: ApiIntegrationsProviderStartRoute,
   ApiIntegrationsChannelsChannelRoute: ApiIntegrationsChannelsChannelRoute,
