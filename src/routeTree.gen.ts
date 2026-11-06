@@ -28,6 +28,8 @@ import { Route as ApiCronGestorRouteImport } from './routes/api/cron.gestor'
 import { Route as ApiCronHubRouteImport } from './routes/api/cron.hub'
 import { Route as ApiCronReportsRouteImport } from './routes/api/cron.reports'
 import { Route as ApiGestorAvisarRouteImport } from './routes/api/gestor.avisar'
+import { Route as ApiGestorExcluirRouteImport } from './routes/api/gestor.excluir'
+import { Route as ApiGestorGestoresRouteImport } from './routes/api/gestor.gestores'
 import { Route as ApiHubAcessoRouteImport } from './routes/api/hub.acesso'
 import { Route as ApiHubEntrarRouteImport } from './routes/api/hub.entrar'
 import { Route as ApiIntegrationsClientLookupRouteImport } from './routes/api/integrations.client-lookup'
@@ -149,6 +151,16 @@ const ApiCronReportsRoute = ApiCronReportsRouteImport.update({
 const ApiGestorAvisarRoute = ApiGestorAvisarRouteImport.update({
   id: '/api/gestor/avisar',
   path: '/api/gestor/avisar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGestorExcluirRoute = ApiGestorExcluirRouteImport.update({
+  id: '/api/gestor/excluir',
+  path: '/api/gestor/excluir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGestorGestoresRoute = ApiGestorGestoresRouteImport.update({
+  id: '/api/gestor/gestores',
+  path: '/api/gestor/gestores',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHubAcessoRoute = ApiHubAcessoRouteImport.update({
@@ -315,6 +327,8 @@ export interface FileRoutesByFullPath {
   '/api/cron/hub': typeof ApiCronHubRoute
   '/api/cron/reports': typeof ApiCronReportsRoute
   '/api/gestor/avisar': typeof ApiGestorAvisarRoute
+  '/api/gestor/excluir': typeof ApiGestorExcluirRoute
+  '/api/gestor/gestores': typeof ApiGestorGestoresRoute
   '/api/hub/acesso': typeof ApiHubAcessoRoute
   '/api/hub/entrar': typeof ApiHubEntrarRoute
   '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
@@ -360,6 +374,8 @@ export interface FileRoutesByTo {
   '/api/cron/hub': typeof ApiCronHubRoute
   '/api/cron/reports': typeof ApiCronReportsRoute
   '/api/gestor/avisar': typeof ApiGestorAvisarRoute
+  '/api/gestor/excluir': typeof ApiGestorExcluirRoute
+  '/api/gestor/gestores': typeof ApiGestorGestoresRoute
   '/api/hub/acesso': typeof ApiHubAcessoRoute
   '/api/hub/entrar': typeof ApiHubEntrarRoute
   '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
@@ -407,6 +423,8 @@ export interface FileRoutesById {
   '/api/cron/hub': typeof ApiCronHubRoute
   '/api/cron/reports': typeof ApiCronReportsRoute
   '/api/gestor/avisar': typeof ApiGestorAvisarRoute
+  '/api/gestor/excluir': typeof ApiGestorExcluirRoute
+  '/api/gestor/gestores': typeof ApiGestorGestoresRoute
   '/api/hub/acesso': typeof ApiHubAcessoRoute
   '/api/hub/entrar': typeof ApiHubEntrarRoute
   '/api/integrations/client-lookup': typeof ApiIntegrationsClientLookupRoute
@@ -454,6 +472,8 @@ export interface FileRouteTypes {
     | '/api/cron/hub'
     | '/api/cron/reports'
     | '/api/gestor/avisar'
+    | '/api/gestor/excluir'
+    | '/api/gestor/gestores'
     | '/api/hub/acesso'
     | '/api/hub/entrar'
     | '/api/integrations/client-lookup'
@@ -499,6 +519,8 @@ export interface FileRouteTypes {
     | '/api/cron/hub'
     | '/api/cron/reports'
     | '/api/gestor/avisar'
+    | '/api/gestor/excluir'
+    | '/api/gestor/gestores'
     | '/api/hub/acesso'
     | '/api/hub/entrar'
     | '/api/integrations/client-lookup'
@@ -545,6 +567,8 @@ export interface FileRouteTypes {
     | '/api/cron/hub'
     | '/api/cron/reports'
     | '/api/gestor/avisar'
+    | '/api/gestor/excluir'
+    | '/api/gestor/gestores'
     | '/api/hub/acesso'
     | '/api/hub/entrar'
     | '/api/integrations/client-lookup'
@@ -588,6 +612,8 @@ export interface RootRouteChildren {
   ApiCronHubRoute: typeof ApiCronHubRoute
   ApiCronReportsRoute: typeof ApiCronReportsRoute
   ApiGestorAvisarRoute: typeof ApiGestorAvisarRoute
+  ApiGestorExcluirRoute: typeof ApiGestorExcluirRoute
+  ApiGestorGestoresRoute: typeof ApiGestorGestoresRoute
   ApiHubAcessoRoute: typeof ApiHubAcessoRoute
   ApiHubEntrarRoute: typeof ApiHubEntrarRoute
   ApiIntegrationsClientLookupRoute: typeof ApiIntegrationsClientLookupRoute
@@ -747,6 +773,20 @@ declare module '@tanstack/react-router' {
       path: '/api/gestor/avisar'
       fullPath: '/api/gestor/avisar'
       preLoaderRoute: typeof ApiGestorAvisarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gestor/excluir': {
+      id: '/api/gestor/excluir'
+      path: '/api/gestor/excluir'
+      fullPath: '/api/gestor/excluir'
+      preLoaderRoute: typeof ApiGestorExcluirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gestor/gestores': {
+      id: '/api/gestor/gestores'
+      path: '/api/gestor/gestores'
+      fullPath: '/api/gestor/gestores'
+      preLoaderRoute: typeof ApiGestorGestoresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/hub/acesso': {
@@ -976,6 +1016,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronHubRoute: ApiCronHubRoute,
   ApiCronReportsRoute: ApiCronReportsRoute,
   ApiGestorAvisarRoute: ApiGestorAvisarRoute,
+  ApiGestorExcluirRoute: ApiGestorExcluirRoute,
+  ApiGestorGestoresRoute: ApiGestorGestoresRoute,
   ApiHubAcessoRoute: ApiHubAcessoRoute,
   ApiHubEntrarRoute: ApiHubEntrarRoute,
   ApiIntegrationsClientLookupRoute: ApiIntegrationsClientLookupRoute,

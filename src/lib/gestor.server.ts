@@ -998,6 +998,15 @@ export async function sincronizarGestor(
     client_ad_accounts: ClienteGestor["contas"];
   };
   const todos = ((clientes.data ?? []) as Linha[]).filter((c) => c.client_ad_accounts?.length);
+  // cliente desativado (ou sem conta de anúncio) sai do Gestor IA
+  const ativos = new Set(todos.map((c) => c.id));
+  const sobrando = linhas.map((p) => p.client_id).filter((id) => !ativos.has(id));
+  if (todos.length && sobrando.length)
+    for (let i = 0; i < sobrando.length; i += 50)
+      await sb
+        .from("gestor_painel")
+        .delete()
+        .in("client_id", sobrando.slice(i, i + 50));
   const agora = Date.now();
   const fila = opts.clienteId
     ? todos.filter((c) => c.id === opts.clienteId)

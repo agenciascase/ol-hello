@@ -180,6 +180,16 @@ function avisarClaude(avisar?: (t: string, k?: string) => void) {
 
 const GESTORES = ["Augusto Venâncio", "Alecsander Chipoletti", "Matheus Aracema"];
 const gestoresDe = (c: Doc) => (c.gestor ? c.gestor.split(/\s*[,;·]\s*/).filter(Boolean) : []);
+// Rodando = gastou ontem ou hoje (campanha no ar e entregando). Pausado = não gastou nesses dois dias
+// (campanha pausada, conta sem saldo, anúncio reprovado ou qualquer outro motivo).
+const rodando = (c: Doc) => (c.serie ?? []).slice(-2).some((p) => (p.gasto ?? 0) > 0);
+// Grava quem cuida do cliente (pode ser mais de um gestor).
+async function salvarGestores(clientId: string, gestores: string[]) {
+  await agencyApi("/api/gestor/gestores", {
+    method: "POST",
+    body: { client_id: clientId, gestores },
+  });
+}
 
 /* ───────────── formatação ───────────── */
 
@@ -656,6 +666,9 @@ function GestorPage() {
   });
   const [gestor, setGestor] = useState(() => ler("quem", "todos"));
   const [filtro, setFiltro] = useState(() => ler("filtro", "todos"));
+  const [sit, setSit] = useState(() => ler("sit", "todos"));
+  const [addAberto, setAddAberto] = useState(false);
+  const [buscaAdd, setBuscaAdd] = useState("");
   const [per, setPer] = useState(() => ler("per", "7"));
   const [mets, setMets] = useState<string[]>(() => {
     try {
@@ -721,6 +734,7 @@ function GestorPage() {
                   ? (c.plataformas ?? []).includes("Meta")
                   : (c.plataformas ?? []).includes("Google"),
     )
+    .filter((c) => (sit === "ativos" ? rodando(c) : sit === "pausados" ? !rodando(c) : true))
     .sort(
       (a, b) =>
         (ORD[a.saude ?? "ok"] ?? 3) - (ORD[b.saude ?? "ok"] ?? 3) || a.nome.localeCompare(b.nome),
@@ -875,6 +889,87 @@ function GestorPage() {
                   <span className="ct num">{n}</span>
                 </button>
               ))}
+              {GESTORES.includes(gestor) && (
+                <button aria-pressed={addAberto} onClick={() => setAddAberto(!addAberto)}>
+                  + Adicionar cliente
+                </button>
+              )}
+            </div>
+            {addAberto && GESTORES.includes(gestor) && (
+              <div className="confirm" style={{ marginBottom: 12 }}>
+                <b>Adicionar cliente ao painel de {gestor}</b>
+                <p style={{ margin: "4px 0 8px" }}>
+                  O cliente continua no painel de quem já cuida dele: dois gestores podem acompanhar
+                  o mesmo cliente.
+                </p>
+                <input
+                  value={buscaAdd}
+                  onChange={(e) => setBuscaAdd(e.target.value)}
+                  placeholder="Buscar cliente pelo nome"
+                  style={{ width: "100%", marginBottom: 8 }}
+                />
+                <div style={{ maxHeight: 280, overflowY: "auto", display: "grid", gap: 6 }}>
+                  {todos
+                    .filter(
+                      (c) =>
+                        !gestoresDe(c).includes(gestor) &&
+                        c.nome.toLowerCase().includes(buscaAdd.trim().toLowerCase()),
+                    )
+                    .sort((a, b) => a.nome.localeCompare(b.nome))
+                    .map((c) => (
+                      <div
+                        key={c.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <span>
+                          {c.nome}{" "}
+                          <small style={{ opacity: 0.6 }}>
+                            {gestoresDe(c).join(" · ") || "sem gestor"}
+                          </small>
+                        </span>
+                        <button
+                          className="b small primary"
+                          onClick={async () => {
+                            try {
+                              await salvarGestores(c.id, [...gestoresDe(c), gestor]);
+                              avisar(`${c.nome} entrou no painel de ${gestor}.`);
+                              void qc.invalidateQueries({ queryKey: ["gestor-painel"] });
+                            } catch {
+                              avisar("Não consegui adicionar. Tente de novo.", "err");
+                            }
+                          }}
+                        >
+                          Adicionar
+                        </button>
+                      </div>
+                    ))}
+                </div>
+                <button
+                  className="b small"
+                  style={{ marginTop: 8 }}
+                  onClick={() => setAddAberto(false)}
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
+            <div className="gest" role="group" aria-label="Filtrar por situação das campanhas">
+              <span className="lb">Situação</span>
+              {[
+                ["todos", "Todos", doGestor.length] as const,
+                ["ativos", "Ativos", doGestor.filter(rodando).length] as const,
+                ["pausados", "Pausados", doGestor.filter((c) => !rodando(c)).length] as const,
+              ].map(([k, t, n]) => (
+                <button key={k} aria-pressed={sit === k} onClick={() => escolher(setSit, "sit")(k)}>
+                  {t}
+                  <span className="ct num">{n}</span>
+                </button>
+              ))}
             </div>
             <div className="summary">
               <div className="stat">
@@ -999,6 +1094,9 @@ function GestorPage() {
                         <div style={{ minWidth: 0 }}>
                           <div className="n">{c.nome}</div>
                           <div className="plats">{plats(c)}</div>
+                          <div className="gs" style={{ color: rodando(c) ? "#16a34a" : undefined }}>
+                            {rodando(c) ? "● Rodando" : "⏸ Pausado"}
+                          </div>
                           {gestor === "todos" && gestoresDe(c).length > 0 && (
                             <div className="gs">{gestoresDe(c).join(" · ")}</div>
                           )}
@@ -1140,6 +1238,85 @@ function FichaCompleta({
   return <Ficha c={ficha.data} {...resto} />;
 }
 
+function ExcluirDoHub({
+  c,
+  avisar,
+  onExcluido,
+}: {
+  c: Cartao;
+  avisar: (t: string, k?: string) => void;
+  onExcluido: () => void;
+}) {
+  const qc = useQueryClient();
+  const [ocupado, setOcupado] = useState(false);
+  async function excluir() {
+    if (
+      !window.confirm(
+        `Excluir ${c.nome} do HUB?\n\nO cliente some do Gestor IA e da lista de clientes, e as agendas de relatório dele são desligadas. O histórico fica guardado: dá para trazer de volta em Clientes → Inativos.`,
+      )
+    )
+      return;
+    setOcupado(true);
+    try {
+      await agencyApi("/api/gestor/excluir", { method: "POST", body: { client_id: c.id } });
+      avisar(`${c.nome} foi excluído do HUB.`);
+      void qc.invalidateQueries({ queryKey: ["gestor-painel"] });
+      onExcluido();
+    } catch {
+      avisar("Não consegui excluir. Tente de novo.", "err");
+    } finally {
+      setOcupado(false);
+    }
+  }
+  return (
+    <button
+      className="b small"
+      style={{ marginTop: 8 }}
+      disabled={ocupado}
+      onClick={() => void excluir()}
+    >
+      {ocupado ? "Excluindo…" : "Excluir do HUB (não atendemos mais)"}
+    </button>
+  );
+}
+
+function GestoresDoCliente({ c, avisar }: { c: Cartao; avisar: (t: string, k?: string) => void }) {
+  const qc = useQueryClient();
+  const [lista, setLista] = useState(() => gestoresDe(c));
+  const [salvando, setSalvando] = useState(false);
+  async function alternar(g: string) {
+    const nova = lista.includes(g) ? lista.filter((x) => x !== g) : [...lista, g];
+    setSalvando(true);
+    try {
+      await salvarGestores(c.id, nova);
+      setLista(nova);
+      avisar(
+        nova.length ? `Gestores de ${c.nome}: ${nova.join(", ")}.` : `${c.nome} ficou sem gestor.`,
+      );
+      void qc.invalidateQueries({ queryKey: ["gestor-painel"] });
+    } catch {
+      avisar("Não consegui salvar os gestores. Tente de novo.", "err");
+    } finally {
+      setSalvando(false);
+    }
+  }
+  return (
+    <div className="gest" role="group" aria-label="Gestores do cliente" style={{ marginTop: 8 }}>
+      <span className="lb">Gestores</span>
+      {GESTORES.map((g) => (
+        <button
+          key={g}
+          aria-pressed={lista.includes(g)}
+          disabled={salvando}
+          onClick={() => void alternar(g)}
+        >
+          {g}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Ficha({
   c,
   pedidos,
@@ -1252,6 +1429,8 @@ function Ficha({
                   {quando(c.atualizado_em)}
                 </span>
               </div>
+              <GestoresDoCliente c={c} avisar={avisar} />
+              <ExcluirDoHub c={c} avisar={avisar} onExcluido={onVoltar} />
             </div>
             <span className={"chip " + s[1]}>{s[0]}</span>
           </div>
