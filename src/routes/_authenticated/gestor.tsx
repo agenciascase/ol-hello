@@ -1252,7 +1252,7 @@ function ExcluirDoHub({
   async function excluir() {
     if (
       !window.confirm(
-        `Excluir ${c.nome} do HUB?\n\nO cliente some do Gestor IA e da lista de clientes, e as agendas de relatório dele são desligadas. O histórico fica guardado: dá para trazer de volta em Clientes → Inativos.`,
+        `Tem certeza que deseja excluir o cliente ${c.nome} do HUB?\n\nEle some do Gestor IA e da lista de clientes, e as agendas de relatório dele são desligadas. O histórico fica guardado: se precisar, dá para trazer de volta em Clientes → Inativos.`,
       )
     )
       return;
